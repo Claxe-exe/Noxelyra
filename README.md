@@ -55,4 +55,4 @@ Proje yapısı: `ClaxeDesktop.Core` (modeller, ayarlar, kurallar), `ClaxeDesktop
 
 ## Lisans
 
-[MIT](LICENSE). WebView2 ve palet renkleri kendi lisanslarıyla gelir; referans/moodboard görselleri depoda yoktur.
+[MIT](LICENSE). Üçüncü taraf bileşenler: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
