@@ -3,24 +3,13 @@
 .vs/
 .dotnet/
 TestResults/
-artifacts/runtime/
-artifacts/phase2-inspect/
-artifacts/publish/
+.taste-skill/
+design-system/
+
+# Build, package and verification output. Test runs read the real desktop, running apps and
+# media sessions of the machine they run on, so none of it belongs in a public repository.
+artifacts/
+
+# Reference and moodboard images are third-party art used only as local design targets.
 assets/moodboard/*.png
 assets/references/*.png
-artifacts/integration-runtime/
-artifacts/taskbar-runtime/
-artifacts/publish-v*/
-artifacts/advanced-runtime/
-artifacts/release-runtime/
-artifacts/release-install-test/
-artifacts/ClaxeDesktop-*-win-x64/
-artifacts/ClaxeDesktop-*-win-x64.zip
-
-artifacts/noxelyra-runtime/
-artifacts/Noxelyra-*-win-x64/
-artifacts/Noxelyra-*-win-x64.zip
-
-artifacts/Noxelyra-desktop.png
-
-artifacts/acceptance-runtime/
