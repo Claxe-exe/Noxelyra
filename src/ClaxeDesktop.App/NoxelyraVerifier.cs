@@ -64,6 +64,22 @@ internal static class NoxelyraVerifier
             var ready = space.MediaReady; space.Hide();
             Check("Real local MP4 imports decodes and pauses when space is hidden", ready && !space.Playing && (await store.LoadAsync()).Settings.DesktopSpace.VideoPath is not null);
             await controller.SetDesktopVideoAsync(null); space.LoadOptions(); space.Show(); space.Place();
+            // Intro clip QA (not one of the 12 checks): real MP4 length probe, animated GIF decode and both imports.
+            var qa = new List<string>();
+            qa.Add("mp4 length: " + await IntroMedia.VideoDurationAsync(file.Path));
+            await controller.SetIntroMediaAsync(file.Path); qa.Add("mp4 import: " + ((await store.LoadAsync()).Settings.DesktopSpace.IntroMediaPath is { } introMp4 && IntroWindow.CustomClip((await store.LoadAsync()).Settings, directory) == introMp4));
+            var gifPath = Path.Combine(directory, "fixture.gif");
+            using (var gifStream = File.Create(gifPath))
+            {
+                var encoder = new GifBitmapEncoder();
+                foreach (var shade in new[] { Colors.MediumPurple, Colors.Plum, Colors.SlateBlue })
+                { var visual = new DrawingVisual(); using (var dc = visual.RenderOpen()) dc.DrawRectangle(new SolidColorBrush(shade), null, new Rect(0, 0, 64, 64)); var frame = new RenderTargetBitmap(64, 64, 96, 96, PixelFormats.Pbgra32); frame.Render(visual); encoder.Frames.Add(BitmapFrame.Create(frame)); }
+                encoder.Save(gifStream);
+            }
+            var decoded = IntroMedia.LoadGif(gifPath); qa.Add($"gif frames: {decoded.Frames.Count}, length: {decoded.Duration}");
+            await controller.SetIntroMediaAsync(gifPath); qa.Add("gif import: " + ((await store.LoadAsync()).Settings.DesktopSpace.IntroMediaPath?.EndsWith(".gif") == true));
+            await controller.SetIntroMediaAsync(null); qa.Add("reset: " + ((await store.LoadAsync()).Settings.DesktopSpace.IntroMediaPath is null));
+            await File.WriteAllLinesAsync(Path.Combine(directory, "intro-qa.txt"), qa);
             await controller.UseOriginalMascotAsync();
             var mascot = controller.ViewModel.Settings.Mascot;
             Check("Original moon mascot generates both expressions and enables existing mascot host", mascot.Enabled && File.Exists(mascot.ImagePath) && File.Exists(mascot.HappyImagePath) && controller.Windows.OfType<MascotWindow>().Any());

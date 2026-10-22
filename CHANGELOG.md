@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.25.0 · 2026-10-22 · Kendi açılış klibin
+
+- Kontrol merkezi → Açılış: en fazla 10 saniyelik yerel MP4/M4V/WMV veya GIF seçilebilir. Süre kopyalamadan önce ölçülür; uzun klip, çözülemeyen video veya 200 MB üstü video / 40 MB üstü GIF reddedilir. Klip Noxelyra veri klasörüne kopyalanır.
+- Klip bitince seçilen geçiş: "TV açılışı" (görüntü parlak bir çizgiye iner, ekran o çizgiden açılarak masaüstü görünür) veya "Kararma". Varsayılan açılış animasyonu klip yokken aynen oynar; klip açılamazsa ona dönülür.
+- "Önizle" açılışı hemen oynatır, "Varsayılana dön" klibi kaldırır. GIF'ler kare gecikmeleri ve konumlarıyla kendi oynatıcısında oynar.
+- QA: gerçek MP4 2,0 sn ölçüldü, 3 kareli GIF çözüldü, ikisi de içe aktarıldı ve sıfırlandı.
+
 ## 0.24.0 · 2026-10-22 · TV gibi açılış ve kapanış
 
 - Açılış yeniden: ekranın ortasında bir ışık çizgisi, tema renginde dört nokta sırayla iki kez zıplar, merkezde birleşip hilale dönüşür, ardından NOXELYRA harf harf gelir ve üzerinden bir parıltı geçer. "masaüstün uyanıyor" yazısı kaldırıldı.

@@ -142,17 +142,77 @@ internal sealed class IntroWindow : Window
         fade.Completed += (_, _) => { Close(); done.TrySetResult(); };
         stage.BeginAnimation(OpacityProperty, fade);
     }
-    private static bool Allowed(Settings settings) => !Suppressed && settings.IntroSequence && settings.AnimationsEnabled && SystemParameters.ClientAreaAnimation && !SystemParameters.HighContrast;
-    private static async Task PlayAsync(Settings settings, bool boot)
+    /// <summary>The user's own clip (MP4/GIF, at most ten seconds), then either a fade or the TV power-on reveal.</summary>
+    private void PlayCustom(string path, string transition)
     {
-        if (!Allowed(settings)) return;
+        foreach (UIElement child in stage.Children) child.Visibility = Visibility.Collapsed;
+        stage.Background = Brushes.Black;
+        var layer = new Grid(); stage.Children.Add(layer);
+        stage.BeginAnimation(OpacityProperty, A(1, 220, 0));
+        var ended = false; IntroMedia.GifPlayer? gif = null; MediaElement? video = null;
+        void End()
+        {
+            if (ended || leaving) return; ended = true;
+            gif?.Stop(); video?.Pause();
+            if (transition == "fade") { Finish(700); return; }
+            Reveal(layer, () => { video?.Close(); });
+        }
+        void Fallback() { if (ended) return; ended = true; stage.Children.Remove(layer); foreach (UIElement child in stage.Children) child.Visibility = Visibility.Visible; Boot(); }
+        try
+        {
+            if (IntroMedia.IsGif(path))
+            {
+                gif = new IntroMedia.GifPlayer(IntroMedia.LoadGif(path));
+                layer.Children.Add(new Image { Source = gif.Surface, Stretch = Stretch.Uniform });
+                gif.Ended += End; gif.Play();
+            }
+            else
+            {
+                video = new MediaElement { LoadedBehavior = System.Windows.Controls.MediaState.Manual, UnloadedBehavior = System.Windows.Controls.MediaState.Close, Stretch = Stretch.Uniform, Source = new Uri(path) };
+                video.MediaEnded += (_, _) => End(); video.MediaFailed += (_, _) => Fallback();
+                layer.Children.Add(video); video.Play();
+            }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException or FileFormatException) { Fallback(); return; }
+        After((int)(DesktopSpaceOptions.IntroMaxSeconds * 1000) + 300, End);
+    }
+    // CRT-style power on: the picture collapses to a bright line, then the screen opens from that line to reveal the desktop.
+    private void Reveal(Grid layer, Action release)
+    {
+        layer.BeginAnimation(OpacityProperty, A(0, 220, 0));
+        var half = Height / 2;
+        var top = new Rectangle { Fill = Brushes.Black, Height = half, VerticalAlignment = VerticalAlignment.Top, RenderTransform = new TranslateTransform() };
+        var bottom = new Rectangle { Fill = Brushes.Black, Height = half, VerticalAlignment = VerticalAlignment.Bottom, RenderTransform = new TranslateTransform() };
+        beam.Visibility = Visibility.Visible; beam.Width = 0; beam.Opacity = 1;
+        stage.Children.Add(top); stage.Children.Add(bottom); stage.Children.Remove(beam); stage.Children.Add(beam);
+        stage.Background = Brushes.Transparent;
+        var open = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        beam.BeginAnimation(WidthProperty, A(Width, 380, 200));
+        top.RenderTransform.BeginAnimation(TranslateTransform.YProperty, A(-half, 650, 560, easing: open));
+        bottom.RenderTransform.BeginAnimation(TranslateTransform.YProperty, A(half, 650, 560, easing: open));
+        beam.BeginAnimation(OpacityProperty, A(0, 450, 700));
+        After(1300, () => { release(); leaving = true; Close(); done.TrySetResult(); });
+    }
+    private static bool Allowed(Settings settings) => !Suppressed && settings.IntroSequence && settings.AnimationsEnabled && SystemParameters.ClientAreaAnimation && !SystemParameters.HighContrast;
+    /// <summary>The managed copy of the user's clip, or null when unset, missing or outside Noxelyra's data folder.</summary>
+    internal static string? CustomClip(Settings settings, string dataDirectory)
+    {
+        if (settings.DesktopSpace.IntroMediaPath is not { } path) return null;
+        var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(dataDirectory, "intro-assets")) + System.IO.Path.DirectorySeparatorChar;
+        return System.IO.Path.GetFullPath(path).StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0 ? path : null;
+    }
+    private static async Task PlayAsync(Settings settings, bool boot, string? clip, bool force = false)
+    {
+        if (!force && !Allowed(settings)) return;
         var window = new IntroWindow(settings);
-        window.Loaded += (_, _) => { if (boot) window.Boot(); else window.PowerOff(); };
+        window.Loaded += (_, _) => { if (!boot) window.PowerOff(); else if (clip is not null) window.PlayCustom(clip, settings.DesktopSpace.IntroTransition); else window.Boot(); };
         window.Show(); window.Activate();
-        await Task.WhenAny(window.done.Task, Task.Delay(boot ? 5000 : 3000));
+        await Task.WhenAny(window.done.Task, Task.Delay(boot ? (clip is null ? 5000 : 13500) : 3000));
         if (!window.done.Task.IsCompleted) window.Close();
     }
-    internal static Task PlayAsync(Settings settings) => PlayAsync(settings, true);
+    internal static Task PlayAsync(Settings settings, string dataDirectory) => PlayAsync(settings, true, CustomClip(settings, dataDirectory));
+    /// <summary>Plays the boot sequence now from the control center, even when it is switched off for startup.</summary>
+    internal static Task PreviewAsync(Settings settings, string dataDirectory) => PlayAsync(settings, true, CustomClip(settings, dataDirectory), force: true);
     /// <summary>Shutdown counterpart; Noxelyra tears down underneath while it plays.</summary>
-    internal static Task PlayOutroAsync(Settings settings) => PlayAsync(settings, false);
+    internal static Task PlayOutroAsync(Settings settings) => PlayAsync(settings, false, null);
 }

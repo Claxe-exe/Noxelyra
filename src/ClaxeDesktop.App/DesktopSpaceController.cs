@@ -95,6 +95,26 @@ public sealed partial class DesktopController
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
         return asset;
     }
+    internal async Task SetIntroMediaAsync(string? file)
+    {
+        if (safe || ReadOnly || exiting) return;
+        try
+        {
+            string? asset = null;
+            if (file is not null)
+            {
+                new DesktopSpaceOptions { IntroMediaPath = file }.Validate();
+                // Check the length before copying so a long film is refused without filling the disk.
+                var length = IntroMedia.IsGif(file) ? IntroMedia.LoadGif(file).Duration : await IntroMedia.VideoDurationAsync(file) ?? throw new InvalidDataException("Windows bu videoyu açamadı; başka bir MP4 dene.");
+                if (length.TotalSeconds > DesktopSpaceOptions.IntroMaxSeconds + .5) throw new InvalidDataException($"Açılış en fazla {DesktopSpaceOptions.IntroMaxSeconds:0} saniye olabilir; seçilen {length.TotalSeconds:0.0} saniye.");
+                asset = await ImportDesktopAssetAsync(file, "intro-assets", IntroMedia.IsGif(file) ? 41943040 : 209715200, "En fazla 200 MB video veya 40 MB GIF seç.");
+            }
+            if (await PersistDesktopSpaceAsync(options => options with { IntroMediaPath = asset })) ViewModel.Status = asset is null ? "Varsayılan açılış animasyonu kullanılacak." : "Açılış klibi kaydedildi; Önizle ile deneyebilirsin.";
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException or FileFormatException) { Log.Write("intro-import-failed", ex); ViewModel.Status = "Açılış klibi eklenemedi: " + ex.Message; }
+    }
+    internal Task<bool> SetIntroTransitionAsync(string transition) => PersistDesktopSpaceAsync(options => options with { IntroTransition = transition });
+    internal Task PreviewIntroAsync() => IntroWindow.PreviewAsync(committed, desktopData);
     internal void ValidateDesktopVideo(string file) => ValidateDesktopAsset(file, "video-assets", "Kayıtlı yerel video bulunamadı veya geçersiz.");
     internal void ValidateDesktopImage(string file) => ValidateDesktopAsset(file, "image-assets", "Kayıtlı arka plan görseli bulunamadı veya geçersiz.");
     private void ValidateDesktopAsset(string file, string folder, string error)

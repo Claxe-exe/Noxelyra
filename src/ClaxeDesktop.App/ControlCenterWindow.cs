@@ -57,6 +57,14 @@ internal sealed class ControlCenterWindow : Window
         var accent=Button(lookActions,"Vurgu rengini palete eşle · deneysel",()=>Refresh(controller.MatchWindowsAccent()));accent.IsEnabled=dark.IsEnabled;
         accent.ToolTip="Belgelenmiş bir API değildir. Windows Ayarları'nda 'vurgu rengini otomatik seç' açıksa Windows rengi yeniden değiştirebilir.";
         restoreLook=Button(lookActions,"Windows görünümünü eski haline getir",()=>Refresh(controller.RestoreWindowsLook()));restoreLook.IsEnabled=dark.IsEnabled&&controller.WindowsLookChanged;
+        var intro=Section(root,"Açılış");
+        var introStatus=new TextBlock{TextWrapping=TextWrapping.Wrap,Opacity=.7};void IntroText(){introStatus.Text=controller.ViewModel.Settings.DesktopSpace.IntroMediaPath is null?"Varsayılan Noxelyra açılışı. En fazla 10 saniyelik kendi MP4 veya GIF klibini koyabilirsin.":"Kendi klibin oynuyor; bitince seçtiğin geçişle masaüstü açılır.";}IntroText();intro.Children.Add(introStatus);
+        var transition=new ComboBox{ItemsSource=new[]{"TV açılışı","Kararma"},SelectedIndex=controller.ViewModel.Settings.DesktopSpace.IntroTransition=="fade"?1:0,Margin=new(0,8,0,8),IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};System.Windows.Automation.AutomationProperties.SetName(transition,"Klip bitince geçiş");intro.Children.Add(transition);
+        transition.SelectionChanged+=async(_,_)=>await controller.SetIntroTransitionAsync(transition.SelectedIndex==1?"fade":"tv");
+        var introActions=new WrapPanel();intro.Children.Add(introActions);
+        Button(introActions,"Klip seç (MP4 / GIF, en fazla 10 sn)…",async()=>{var picker=new OpenFileDialog{Filter="Açılış klibi|*.mp4;*.m4v;*.wmv;*.gif",CheckFileExists=true};if(picker.ShowDialog(this)==true){introStatus.Text="Klip kontrol ediliyor…";await controller.SetIntroMediaAsync(picker.FileName);IntroText();introStatus.Text=controller.ViewModel.Status;}});
+        Button(introActions,"Varsayılana dön",async()=>{await controller.SetIntroMediaAsync(null);IntroText();});
+        Button(introActions,"Önizle",async()=>await controller.PreviewIntroAsync());
         var space=Section(root,"Noxelyra masaüstü alanı");
         space.Children.Add(new TextBlock{Text="Gerçek masaüstü dosyaların, sürüklenebilir ikonlar, özgün gece görünümü ve yerel video. Esc ile Windows masaüstüne dönersin. Bu bağımsız alan Explorer ikon ayarlarını değiştirmez.",TextWrapping=TextWrapping.Wrap,Opacity=.75});
         var spaceStartup=new CheckBox{Content="Noxelyra açılınca masaüstü alanını aç",IsChecked=controller.ViewModel.Settings.DesktopSpace.Enabled,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};space.Children.Add(spaceStartup);
