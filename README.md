@@ -4,7 +4,17 @@
 <p align="center"><b>Windows 11 için Linux rice ruhunda, yumuşak ve kişiselleştirilebilir bir masaüstü katmanı.</b><br>
 <sub>A soft, Linux-rice-style desktop layer for Windows 11 — bar, dock, widgets, its own desktop and a lighten center, without replacing Explorer.</sub></p>
 
-<p align="center">v0.26 · .NET 10 WPF · MIT</p>
+<p align="center">v0.27 · .NET 10 WPF · MIT</p>
+
+> [!TIP]
+> ### 📥 Nasıl kurulur? (30 saniye)
+> 1. **[Noxelyra-win-Setup.exe'yi indir](https://github.com/Claxe-exe/Noxelyra/releases/latest/download/Noxelyra-win-Setup.exe)** (~90 MB, her zaman en son sürüm)
+> 2. İndirdiğin dosyayı çalıştır. Windows "*bilgisayarınızı korudu*" derse **Ek bilgi → Yine de çalıştır**'a bas (dosya imzasız olduğu için çıkar).
+> 3. Bu kadar! Noxelyra masaüstüne ve Başlat menüsüne eklenir, yeni sürümleri kendisi indirir. Ayrıca .NET kurman gerekmez.
+>
+> Kurulum istemiyorsan: [taşınabilir sürüm (ZIP)](https://github.com/Claxe-exe/Noxelyra/releases/latest/download/Noxelyra-win-Portable.zip) indir, bir klasöre çıkar, içindeki `Noxelyra.exe`'yi aç.
+>
+> ⚠️ Yeşil **Code → Download ZIP** düğmesi uygulamayı değil **kaynak kodunu** indirir; içinde çalıştırılacak bir program yoktur. **EN:** Noxelyra is a soft, Linux-rice-style desktop layer for Windows 11, built with C# / .NET 10 / WPF: a Waybar-like glass bar, a paged dock with drag-and-drop pinning, its own desktop that Win+D shows, seven themes including Catppuccin and Tokyo Night, a TV-style boot animation (or your own 10-second clip) and a restorable lighten center for startup apps and Windows extras. Explorer is never replaced. Interface in Turkish.
 
 ---
 
@@ -24,15 +34,15 @@
 
 ## Kurulum
 
-1. [Releases](../../releases) sayfasından son `Noxelyra-x.y.z-win-x64.zip` dosyasını indir ve SHA-256 değerini `.sha256` dosyasıyla karşılaştır.
-2. Zip'i bir klasöre çıkar, PowerShell'de `Install.ps1` çalıştır. Yönetici izni istemez; `%LOCALAPPDATA%\Programs\Noxelyra` altına kurar. Taşınabilir kullanım için `app\Noxelyra.exe` yeterli.
-3. Kaldırmak için kurulum kökündeki `Uninstall.ps1`. Önce Windows'un görev çubuğu, arka planı ve diğer değişiklikleri geri yüklenir; kişisel ayarların korunur.
+Setup.exe kullanıcı kapsamında kurar (yönetici izni istemez): `%LOCALAPPDATA%\Noxelyra`, masaüstü ve Başlat menüsü kısayolu, Ayarlar → Uygulamalar'da kaldırma girdisi. Kaldırırken önce Windows'un görev çubuğu, arka planı ve Noxelyra'nın değiştirdiği diğer ayarlar geri yüklenir; kişisel ayarların `%LOCALAPPDATA%\ClaxeDesktop` altında korunur.
 
-**Gerekenler:** Windows 11 (22H2+ önerilir), [.NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/10.0), web widget'ları için WebView2 Runtime.
+**Gerekenler:** Windows 11 x64. Web widget'ları için WebView2 Runtime (Windows 11'de hazır gelir). .NET pakete gömülüdür.
+
+**Güncellemeler:** Kurulu sürüm açılışta bu deponun GitHub sürümlerini denetler, yenisini arka planda indirir ve kapanışta kurar. Kontrol merkezi → Güncellemeler'den kapatabilir ya da "Güncelle ve yeniden başlat" diyebilirsin. Senden hiçbir bilgi gönderilmez.
 
 ## Güvenlik
 
-Noxelyra Explorer'ı kapatmaz ya da değiştirmez, DLL enjekte etmez, ağ isteği ve telemetri göndermez. Windows'ta değiştirdiği her şeyin eski halini kaydeder ve çıkışta, kaldırmada veya çökme sonrası geri getirir. Ayrıntı: [SECURITY.md](SECURITY.md).
+Noxelyra Explorer'ı kapatmaz ya da değiştirmez, DLL enjekte etmez, telemetri göndermez; tek ağ isteği kapatılabilir güncelleme denetimidir. Windows'ta değiştirdiği her şeyin eski halini kaydeder ve çıkışta, kaldırmada veya çökme sonrası geri getirir. Ayrıntı: [SECURITY.md](SECURITY.md).
 
 ## Geliştirme
 
@@ -41,7 +51,7 @@ dotnet build ClaxeDesktop.sln -c Release
 dotnet run --project tests/ClaxeDesktop.Core.Tests -c Release -- --desktop   # masaüstü, tema, hafifletme kontrolleri
 dotnet run --project tests/ClaxeDesktop.Core.Tests -c Release -- --widgets   # widget kontrolleri
 ./scripts/Verify-Noxelyra.ps1    # izole veri klasöründe 12 uygulama kontrolü
-./scripts/Package-Release.ps1    # artifacts/ altına zip + SHA-256
+./scripts/Package-Setup.ps1      # Velopack: Setup.exe, taşınabilir zip, güncelleme paketleri (-Upload ile GitHub'a)
 ```
 
 Proje yapısı: `ClaxeDesktop.Core` (modeller, ayarlar, kurallar), `ClaxeDesktop.Platform.Win` (Windows API sarmalayıcıları), `ClaxeDesktop.WebWidgets` (WebView2 sandbox), `ClaxeDesktop.App` (WPF arayüz). Ad alanları geriye uyumluluk için `ClaxeDesktop` olarak kalır. Sürüm geçmişi [CHANGELOG.md](CHANGELOG.md), mimari kararlar [DECISIONS.md](DECISIONS.md), ayrıntılı tasarım ve faz raporları `docs/` altında.

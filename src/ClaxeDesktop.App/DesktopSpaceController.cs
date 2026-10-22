@@ -13,7 +13,7 @@ public sealed partial class DesktopController
     internal nint ForegroundWindow => windowService.Foreground;
     internal void RaiseDesktopParts() { foreach (var window in windows.Where(w => w.IsVisible)) RaiseDesktopPart(new System.Windows.Interop.WindowInteropHelper(window).Handle, 0, 0, 0, 0, 0, 0x0013); }
     internal DesktopSpaceWindow? SpaceWindow => desktopSpace;
-    private void StartDesktopSpace() { _ = RestoreExternalWallpaperAsync(); ConfigureDesktopFollowing(); ConfigureShowDesktop(); if (!safe && committed.DesktopSpace.Enabled) OpenDesktopSpace(!committed.DesktopSpace.FollowDesktop); }
+    private void StartDesktopSpace() { _ = CheckUpdatesLaterAsync(); _ = RestoreExternalWallpaperAsync(); ConfigureDesktopFollowing(); ConfigureShowDesktop(); if (!safe && committed.DesktopSpace.Enabled) OpenDesktopSpace(!committed.DesktopSpace.FollowDesktop); }
     public async void ShowDesktopSpace()
     {
         if (safe || ReadOnly || exiting) { ViewModel.Status = "Güvenli/salt okunur modda masaüstü alanı açılamaz."; return; }
@@ -130,6 +130,23 @@ public sealed partial class DesktopController
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException or FileFormatException or System.Runtime.InteropServices.COMException) { Log.Write("intro-import-failed", ex); ViewModel.Status = "Açılış klibi eklenemedi: " + ex.Message; }
         finally { if (asset is not null && File.Exists(asset)) try { File.Delete(asset); } catch (IOException) { } }
     }
+    internal UpdateService Updates { get; } = new();
+    private bool restartForUpdate;
+    internal Task<bool> SetCheckForUpdatesAsync(bool enabled) => PersistDesktopSpaceAsync(options => options with { CheckForUpdates = enabled });
+    internal async Task<string> CheckUpdatesAsync()
+    {
+        var status = await Updates.CheckAsync(lifetime.Token); ViewModel.Status = status;
+        if (Updates.ReadyVersion is { } version) tray?.ShowBalloonTip(6000, "Noxelyra " + version + " hazır", "Kapanışta kurulur. Kontrol merkezinden hemen yeniden başlatabilirsin.", System.Windows.Forms.ToolTipIcon.Info);
+        return status;
+    }
+    // Quiet background check a little after start, only for installed copies with the option on.
+    private async Task CheckUpdatesLaterAsync()
+    {
+        if (safe || IntroWindow.Suppressed || !committed.DesktopSpace.CheckForUpdates || !Updates.Installed) return;
+        try { await Task.Delay(TimeSpan.FromSeconds(25), lifetime.Token); } catch (TaskCanceledException) { return; }
+        if (!exiting) await CheckUpdatesAsync();
+    }
+    internal void RestartToUpdate() { if (Updates.ReadyVersion is null) return; restartForUpdate = true; Exit(); }
     internal Task<bool> SetIntroFadeAsync(int milliseconds) => PersistDesktopSpaceAsync(options => options with { IntroFadeMs = Math.Clamp(milliseconds, 300, 6000) });
     internal Task<bool> SetIntroTransitionAsync(string transition) => PersistDesktopSpaceAsync(options => options with { IntroTransition = transition });
     internal Task PreviewIntroAsync() => IntroWindow.PreviewAsync(committed, desktopData);

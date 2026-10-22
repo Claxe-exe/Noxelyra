@@ -5,7 +5,7 @@ namespace ClaxeDesktop.App;
 
 internal static class Maintenance
 {
-    internal static async Task<int> RunAsync()
+    internal static async Task<int> RunAsync(bool quiet = false)
     {
         var data = Environment.GetEnvironmentVariable("CLAXE_DATA_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ClaxeDesktop");
         var log = new LocalLog(Path.Combine(data, "logs"));
@@ -32,7 +32,7 @@ internal static class Maintenance
         catch (Exception ex)
         {
             log.Write("maintenance-blocked", ex);
-            if (!fixture) MessageBox.Show("Windows görünümü geri yüklenemedi veya Noxelyra hâlâ açık. Kaldırma durduruldu; uygulama ve kurtarma kayıtları korunuyor.\n\n" + ex.Message, "Noxelyra bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (!fixture && !quiet) MessageBox.Show("Windows görünümü geri yüklenemedi veya Noxelyra hâlâ açık. Kaldırma durduruldu; uygulama ve kurtarma kayıtları korunuyor.\n\n" + ex.Message, "Noxelyra bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
             return 2;
         }
         finally { if (owned) gate.ReleaseMutex(); }

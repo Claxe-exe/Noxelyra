@@ -21,3 +21,10 @@ GitHub yayımlama öncesi kaynak lisansı seçimi, kod imzalama ve temiz Windows
 WPF MediaElement ve Windows yerel codec desteği video oynatır; yeni NuGet/runtime bağımlılığı eklenmedi. Windows.Media.Editing yalnız test MP4 fixture üretiminde kullanılır. Wallpaper Engine ayrı kurulu üründür; yalnız resmi CLI üzerinden isteğe bağlı çağrılır, pakete dahil edilmez. OriginalArt.cs içindeki ay/dağ ve Nox çizimleri ile Noxelyra.ico özgün proje varlıklarıdır, üçüncü taraf karakter veya font dağıtılmaz. Kaynak/varlık dağıtım lisansı sahibi tarafından kesinleştirilecektir.
 
 0.11: foreground izleme ve özel konsol sorgusu yalnız Windows sistem API'lerini kullanır. Yeni NuGet/SDK veya lisans bağımlılığı eklenmedi. Gerçek WE 2.8 kurulu sistemde uygulama/geri dönüş ve guardian testi yapıldı; WE hâlâ ayrı kurulu isteğe bağlı üründür.
+
+## Velopack (eklendi 0.27.0)
+
+- Paket: `Velopack` 1.2.161 (NuGet) ve paketleme aracı `vpk` 1.2.161. Lisans: MIT.
+- Neden: tek dosyalık Setup.exe, kullanıcı kapsamında kurulum, kısayollar, Uygulamalar listesinde kaldırma ve GitHub sürümlerinden kendini güncelleme. PowerShell kurulum betiklerinin yerini alır.
+- Güvenlik: yalnız `https://github.com/Claxe-exe/Noxelyra` sürümlerine bağlanır; indirilen paketler sürüm dosyasındaki özetle doğrulanır. Güncelleme denetimi kontrol merkezinden kapatılabilir. Kaldırma kancası Windows durumunu geri yükler.
+

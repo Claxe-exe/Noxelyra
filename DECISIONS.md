@@ -130,3 +130,9 @@
 
 - DWM Acrylic/Mica köşe yarıçapını 8 px'e sabitler ve Windows'un gri tonunu ekler; kullanıcı önceki boyalı görünümü tercih etti. Gerçek cam "acrylic" panel stili olarak kapalı varsayılanla kaldı.
 
+## Setup.exe ve kendini güncelleme · 23 Ekim 2026
+
+- Kullanıcı Sorune'deki gibi tek tıkla kurulan Setup.exe ve kendini güncelleyen uygulama istedi. Velopack (MIT) seçildi; makinede zaten kullanılan vpk sürümüyle eşleşir. Uygulama self-contained yayımlanır, hedef bilgisayarda .NET gerekmez.
+- Güncelleme denetimi projenin "gizli ağ isteği yok" kuralına karşı görünür ve kapatılabilir bir ayardır; kullanıcının isteğiyle varsayılan açıktır. Yeni sürüm arka planda indirilir, kapanışta kurulur; "Güncelle ve yeniden başlat" normal kapanış (Windows durumunu geri yükleme) sonrasında uygular.
+- Velopack kancaları özel `Program.Main` içinde, WPF ve tek-örnek mutex'inden önce çalışır. Kaldırma kancası çalışan Noxelyra'yı kapatır, görev çubuğunu/arka planı/WE'yi geri yükler ve başlangıç kısayolunu siler.
+

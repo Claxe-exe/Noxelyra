@@ -57,6 +57,14 @@ internal sealed class ControlCenterWindow : Window
         var accent=Button(lookActions,"Vurgu rengini palete eşle · deneysel",()=>Refresh(controller.MatchWindowsAccent()));accent.IsEnabled=dark.IsEnabled;
         accent.ToolTip="Belgelenmiş bir API değildir. Windows Ayarları'nda 'vurgu rengini otomatik seç' açıksa Windows rengi yeniden değiştirebilir.";
         restoreLook=Button(lookActions,"Windows görünümünü eski haline getir",()=>Refresh(controller.RestoreWindowsLook()));restoreLook.IsEnabled=dark.IsEnabled&&controller.WindowsLookChanged;
+        var updates=Section(root,"Güncellemeler");
+        var updateStatus=new TextBlock{TextWrapping=TextWrapping.Wrap,Opacity=.7,Text=controller.Updates.Installed?$"Noxelyra {controller.Updates.Version}. Yeni sürümler GitHub'daki Claxe-exe/Noxelyra sürümlerinden indirilir; senden bir bilgi gönderilmez.":"Bu kopya Setup ile kurulmadığı için kendini güncelleyemez. GitHub'daki Setup.exe ile kurarsan güncellemeler otomatik gelir."};updates.Children.Add(updateStatus);
+        var autoUpdate=new CheckBox{Content="Açılışta yeni sürümü denetle ve indir (kapanışta kurulur)",IsChecked=controller.ViewModel.Settings.DesktopSpace.CheckForUpdates,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};updates.Children.Add(autoUpdate);
+        autoUpdate.Click+=async(_,_)=>{await controller.SetCheckForUpdatesAsync(autoUpdate.IsChecked==true);autoUpdate.IsChecked=controller.ViewModel.Settings.DesktopSpace.CheckForUpdates;};
+        var updateActions=new WrapPanel();updates.Children.Add(updateActions);
+        Button? restartUpdate=null;
+        var checkNow=Button(updateActions,"Şimdi denetle",async()=>{updateStatus.Text="GitHub denetleniyor…";updateStatus.Text=await controller.CheckUpdatesAsync();restartUpdate!.IsEnabled=controller.Updates.ReadyVersion is not null;});checkNow.IsEnabled=controller.Updates.Installed;
+        restartUpdate=Button(updateActions,"Güncelle ve yeniden başlat",controller.RestartToUpdate);restartUpdate.IsEnabled=controller.Updates.ReadyVersion is not null;
         var intro=Section(root,"Açılış");
         var introStatus=new TextBlock{TextWrapping=TextWrapping.Wrap,Opacity=.7};void IntroText(){introStatus.Text=controller.ViewModel.Settings.DesktopSpace.IntroMediaPath is null?"Varsayılan Noxelyra açılışı. En fazla 10 saniyelik kendi MP4 veya GIF klibini koyabilirsin.":"Kendi klibin oynuyor; bitince seçtiğin geçişle masaüstü açılır.";}IntroText();intro.Children.Add(introStatus);
         var modes=new[]{"tv","fade","fade-tv"};

@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.27.0 · 2026-10-23 · Tek tıkla kurulum ve kendini güncelleme
+
+- `Noxelyra-win-Setup.exe` (~90 MB): yönetici izni olmadan kurar, masaüstü ve Başlat menüsü kısayolu, Uygulamalar listesinde kaldırma. .NET pakete gömülü. Ayrıca taşınabilir zip.
+- Kurulu kopya açılıştan ~25 sn sonra GitHub'daki yeni sürümü denetler, indirir ve kapanışta kurar; kontrol merkezinde "Şimdi denetle", "Güncelle ve yeniden başlat" ve kapatma anahtarı.
+- Kaldırırken Windows görev çubuğu, arka plan ve WE geri yüklenir, başlangıç kısayolu silinir; kişisel ayarlar korunur.
+- README'ye kurulum kutusu. QA: bu bilgisayarda Setup.exe ile kurulum, kısayollar, Uygulamalar girdisi ve başlangıç kısayolunun yeni konuma taşınması doğrulandı.
+
 ## 0.26.1 · 2026-10-23 · İlk herkese açık sürüm
 
 - GitHub'da MIT lisansıyla yayımlandı. Test çıktıları (bu makinenin masaüstü, açık uygulamaları ve medya başlıklarını içeren `artifacts/`) depodan ve geçmişten çıkarıldı; commit kimliği GitHub noreply adresine taşındı.

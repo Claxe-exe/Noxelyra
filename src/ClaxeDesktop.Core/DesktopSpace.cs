@@ -14,6 +14,7 @@ public sealed record DesktopSpaceOptions
     public string? IntroMediaPath { get; init; }
     public string IntroTransition { get; init; } = "tv";
     public int IntroFadeMs { get; init; } = 1500;
+    public bool CheckForUpdates { get; init; } = true;
     public string? EnginePath { get; init; }
     public List<DesktopIconPosition> Icons { get; init; } = [];
     public void Validate()

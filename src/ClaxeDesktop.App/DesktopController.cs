@@ -265,7 +265,9 @@ public sealed partial class DesktopController
         SystemEvents.DisplaySettingsChanged -= DisplayChanged; SystemEvents.SessionSwitch -= SessionChanged; SystemEvents.PowerModeChanged -= PowerChanged;
         tray?.Dispose(); StopDesktopSpace(); StopAdvancedServices();await StopDesktopServicesAsync(); Widgets.Close(); foreach (var window in windows.ToArray()) window.Close(); settingsWindow?.Close(); icons.Dispose();
         try { recovery.Complete(); } catch (Exception ex) { Log.Write("recovery-cleanup-failed", ex); }
-        Log.Write("clean-exit"); await outro; Application.Current.Shutdown();
+        Log.Write("clean-exit"); await outro;
+        try { Updates.ApplyOnExit(restartForUpdate); } catch (Exception ex) { Log.Write("update-apply-failed", ex); }
+        Application.Current.Shutdown();
     }
 }
 
