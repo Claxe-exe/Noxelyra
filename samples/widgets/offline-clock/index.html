@@ -1,0 +1,5 @@
+<!doctype html><html lang="tr"><meta charset="utf-8"><title>Claxe offline clock</title><style>body{margin:0;padding:12px;background:#191625;color:#f3effa;font:14px system-ui}h1{font-size:42px;margin:4px 0}small{opacity:.65}</style><small>YEREL WEB WIDGET</small><h1 id="clock"></h1><p id="date"></p><small>Ağ ve cihaz izni yok</small><script>
+window.hostReplies={};window.chrome.webview.addEventListener('message',e=>{hostReplies[e.data.id]=e.data.result;if(e.data.id==='theme'){document.body.style.color=e.data.result.text;document.body.style.background=e.data.result.surface;document.getElementById('clock').style.color=e.data.result.accent;}});
+chrome.webview.postMessage({id:'theme',method:'theme.getTokens'});chrome.webview.postMessage({id:'local',method:'time.getLocal'});
+window.polls=0;function tick(){polls++;const now=new Date();document.getElementById('clock').textContent=now.toLocaleTimeString('tr-TR');document.getElementById('date').textContent=now.toLocaleDateString('tr-TR');}tick();setInterval(tick,1000);
+</script></html>

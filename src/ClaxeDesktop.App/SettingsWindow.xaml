@@ -1,0 +1,62 @@
+<Window x:Class="ClaxeDesktop.App.SettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Noxelyra Desktop · Ayarlar" Width="1060" Height="820" MinWidth="850" MinHeight="620" WindowStartupLocation="CenterScreen" Background="{DynamicResource Canvas}" Foreground="{DynamicResource Text}" FontFamily="Segoe UI" FontSize="13">
+ <Window.Resources><BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+  <DataTemplate x:Key="BoolEditor"><CheckBox IsChecked="{Binding Value, Mode=TwoWay}" AutomationProperties.Name="{Binding Definition.Label}" HorizontalAlignment="Right" ToolTip="{Binding Help}"/></DataTemplate>
+  <DataTemplate x:Key="NumberEditor"><StackPanel><TextBlock Text="{Binding ValueText}" HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/><Slider Minimum="{Binding Definition.Minimum}" Maximum="{Binding Definition.Maximum}" TickFrequency="{Binding Definition.Step}" Value="{Binding Value, Mode=TwoWay}" AutomationProperties.Name="{Binding Definition.Label}" Margin="0,8,0,0"/></StackPanel></DataTemplate>
+  <DataTemplate x:Key="ChoiceEditor"><ComboBox ItemsSource="{Binding Definition.Choices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Value, Mode=TwoWay}" AutomationProperties.Name="{Binding Definition.Label}"/></DataTemplate>
+  <DataTemplate x:Key="ColorEditor"><TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="7" AutomationProperties.Name="{Binding Definition.Label}" ToolTip="#RRGGBB biçiminde renk"/></DataTemplate>
+ </Window.Resources>
+ <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="224"/><ColumnDefinition/></Grid.ColumnDefinitions>
+  <Border Background="{DynamicResource Surface}" Padding="18,28"><DockPanel>
+   <StackPanel DockPanel.Dock="Top"><TextBlock Text="C  NOXELYRA" Foreground="{DynamicResource Accent}" FontSize="25" FontWeight="Bold"/><TextBlock Text="Masaüstün, senin ritmin." Style="{StaticResource MutedText}" Margin="0,8,0,28"/>
+    <TextBlock Text="Ayarlarda ara" FontSize="11" Foreground="{DynamicResource Muted}" Margin="3,0,0,7"/><TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Ayarlarda ara" ToolTip="Ad, açıklama veya ayar anahtarıyla ara" Margin="0,0,0,22"/>
+   </StackPanel>
+   <StackPanel DockPanel.Dock="Bottom"><Button Content="Kontrol merkezi" Click="Controls" Margin="0,0,0,8"/><Button Content="Uygulamalar" Click="Applications" Margin="0,0,0,8"/><Button Content="Widget atölyesi" Click="Widgets" Margin="0,0,0,12"/><TextBlock Text="{Binding ActiveThemeName}" FontSize="10" Foreground="{DynamicResource Muted}"/><TextBlock Text="v0.5 · Masaüstün" Margin="0,7,0,0" Foreground="{DynamicResource Muted}"/></StackPanel>
+   <ListBox x:Name="Navigation" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory, Mode=TwoWay}" VerticalAlignment="Top" AutomationProperties.Name="Ayar kategorileri"/>
+  </DockPanel></Border>
+  <Grid Grid.Column="1" Margin="30,26"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Border Background="{DynamicResource Card}" CornerRadius="10" Padding="12" Margin="0,0,0,22"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" AutomationProperties.LiveSetting="Polite"/></Border>
+   <StackPanel Grid.Row="1" Margin="0,0,0,20"><TextBlock Text="{Binding Title}" Style="{StaticResource Heading}"/><TextBlock Text="{Binding Subtitle}" Style="{StaticResource MutedText}"/></StackPanel>
+   <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,12,0">
+    <StackPanel>
+     <StackPanel Visibility="{Binding ShowThemes, Converter={StaticResource BoolVisibility}}">
+      <ItemsControl ItemsSource="{Binding Themes}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding Id}" Click="SelectTheme" Background="{Binding Canvas}" BorderBrush="{Binding Accent}" Padding="12,16" Margin="0,0,10,12" ToolTip="Bu temayı masaüstünde önizle"><StackPanel><Border Background="{Binding Accent}" Height="6" CornerRadius="3" Margin="0,0,0,18"/><TextBlock Text="{Binding Name}" Foreground="{Binding Text}" FontWeight="SemiBold"/></StackPanel></Button></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,12"><DockPanel><StackPanel><TextBlock Text="{Binding ActiveThemeName}" FontWeight="SemiBold"/><TextBlock Text="{Binding Desktop.Settings.Material}" Foreground="{DynamicResource Muted}" Margin="0,6,0,0"/></StackPanel><Border Background="{DynamicResource Accent}" CornerRadius="8" HorizontalAlignment="Right" Padding="20,10"><TextBlock Text="Noxelyra" Foreground="{DynamicResource Canvas}"/></Border></DockPanel></Border>
+      <WrapPanel Margin="0,0,0,18"><Button Content="Tema içe aktar" Click="ImportTheme"/><Button Content="Tema dışa aktar" Click="ExportTheme"/></WrapPanel>
+     </StackPanel>
+     <StackPanel Visibility="{Binding ShowRows, Converter={StaticResource BoolVisibility}}">
+      <ItemsControl x:Name="SettingsRows" ItemsSource="{Binding VisibleRows}"><ItemsControl.ItemTemplate><DataTemplate>
+       <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,0,0,10">
+        <StackPanel>
+         <Grid IsEnabled="{Binding IsEnabled}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="210"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,0,20,0"><TextBlock Text="{Binding Definition.Category}" FontSize="10" Foreground="{DynamicResource Muted}" Margin="0,0,0,5"/><TextBlock Text="{Binding Definition.Label}" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding Help}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,6,0,0" ToolTip="{Binding Definition.Key}"/></StackPanel>
+          <ContentControl Grid.Column="1" Content="{Binding}" VerticalAlignment="Center"><ContentControl.Style><Style TargetType="ContentControl"><Style.Triggers><DataTrigger Binding="{Binding Definition.Kind}" Value="bool"><Setter Property="ContentTemplate" Value="{StaticResource BoolEditor}"/></DataTrigger><DataTrigger Binding="{Binding Definition.Kind}" Value="number"><Setter Property="ContentTemplate" Value="{StaticResource NumberEditor}"/></DataTrigger><DataTrigger Binding="{Binding Definition.Kind}" Value="choice"><Setter Property="ContentTemplate" Value="{StaticResource ChoiceEditor}"/></DataTrigger><DataTrigger Binding="{Binding Definition.Kind}" Value="color"><Setter Property="ContentTemplate" Value="{StaticResource ColorEditor}"/></DataTrigger></Style.Triggers></Style></ContentControl.Style></ContentControl>
+         </Grid>
+         <TextBlock Text="{Binding Error}" Foreground="#FFABB9" TextWrapping="Wrap" Visibility="{Binding HasError, Converter={StaticResource BoolVisibility}}" Margin="0,10,0,0" AutomationProperties.LiveSetting="Assertive"/>
+        </StackPanel>
+       </Border>
+      </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      <Button Content="Bu sayfadaki ayarları sıfırla" Click="ResetCategory" IsEnabled="{Binding CanReset}" HorizontalAlignment="Left" Margin="0,10,0,12"/>
+     </StackPanel>
+     <StackPanel Visibility="{Binding ShowShortcuts, Converter={StaticResource BoolVisibility}}">
+      <ListBox x:Name="ShortcutList" ItemsSource="{Binding Desktop.Shortcuts}" DisplayMemberPath="Name" Height="280" AutomationProperties.Name="Dock kısayolları" SelectionChanged="ShortcutSelectionChanged"/>
+      <WrapPanel Margin="0,14,0,12"><Button Content="+ Uygulama ekle" Click="AddShortcut"/><Button x:Name="RemoveShortcutButton" Content="Seçileni kaldır" Click="RemoveShortcut" IsEnabled="False"/><Button x:Name="LaunchShortcutButton" Content="Seçileni aç" Click="LaunchShortcut" IsEnabled="False"/></WrapPanel>
+      <TextBlock Text="Bu sayfadaki kısayol değişiklikleri Kaydet ile kalıcılaşır. Dock sağ tık menüsündeki eylemler hemen kaydedilir." Style="{StaticResource MutedText}"/>
+     </StackPanel>
+     <StackPanel Visibility="{Binding ShowMonitors, Converter={StaticResource BoolVisibility}}">
+      <ItemsControl ItemsSource="{Binding Desktop.Monitors}"><ItemsControl.ItemTemplate><DataTemplate><Border Background="{DynamicResource Surface}" CornerRadius="12" Padding="16" Margin="0,0,0,10"><StackPanel><TextBlock Text="{Binding Name}" FontWeight="SemiBold"/><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{DynamicResource Muted}"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      <Button Content="Ekranları yeniden algıla" Click="RefreshMonitors" HorizontalAlignment="Left" Margin="0,8,0,24"/>
+      <Button Content="Yerleşimi ana ekrana getir" Click="ResetLayout" HorizontalAlignment="Left" Margin="0,0,0,24"/>
+      <TextBlock Text="Başlangıç" FontSize="17" FontWeight="SemiBold"/><CheckBox x:Name="StartupCheck" Content="Windows oturumuyla birlikte başlat" Click="ChangeStartup"/>
+      <TextBlock Text="Başlangıç tercihi hemen uygulanır. Bildirim alanındaki Noxelyra menüsünden her zaman çıkabilirsin." Style="{StaticResource MutedText}" Margin="0,0,0,18"/>
+      <Button Content="Noxelyra'dan güvenli çık" Click="ExitApp" HorizontalAlignment="Left"/>
+     </StackPanel>
+    </StackPanel>
+   </ScrollViewer>
+   <Border Grid.Row="3" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,14,0,0" Margin="0,18,0,0"><StackPanel><TextBlock Text="{Binding ErrorSummary}" Foreground="#FFABB9" TextWrapping="Wrap" Margin="0,0,0,6"/><Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding Footer}" FontSize="11" Foreground="{DynamicResource Muted}"/><WrapPanel><Button Content="↶ Geri" Click="Undo" IsEnabled="{Binding CanUndo}" Padding="8,6"/><Button Content="↷ İleri" Click="Redo" IsEnabled="{Binding CanRedo}" Padding="8,6"/></WrapPanel></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Content="Geri al" Click="Revert"/><Button x:Name="SaveButton" Content="Kaydet" Background="{DynamicResource Selection}" IsEnabled="{Binding CanSave}" Click="Save"/></StackPanel></Grid></StackPanel></Border>
+  </Grid>
+ </Grid>
+</Window>
+
+
+
+

@@ -1,0 +1,1 @@
+Bu klasördeki 3 görsel önceki sohbetimizde oluşturduğumuz anime-atmosferli AI görsel referanslarıdır. Claxe Desktop uygulamasına otomatik dağıtım varlığı olarak gömmeyin. Kullanıcının kendi bilgisayarında seçilebilir tema görselleri / tasarım atmosferi olarak kullanın. Ticari/açık kaynak dağıtım öncesinde içerik haklarını ayrıca kontrol edin.

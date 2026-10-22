@@ -1,0 +1,3009 @@
+{
+  "schemaVersion": 1,
+  "project": "Claxe Desktop",
+  "note": "Planning catalog with implementation markers. Runtime support, effective limits and safe dependencies are defined in SettingsCatalog.cs; unsupported settings stay hidden.",
+  "categories": [
+    {
+      "id": "01",
+      "name": "Genel",
+      "summary": "Genel işletim tercihleri, ilk kurulum ve kullanıcı kimliği.",
+      "settings": [
+        {
+          "key": "general.language",
+          "label": "Arayüz dili",
+          "type": "enum(tr-TR,en-US)",
+          "default": "tr-TR",
+          "description": "Yerelleştirilmiş metinleri değiştirir",
+          "category": "Genel",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "tr-TR",
+              "en-US"
+            ]
+          }
+        },
+        {
+          "key": "general.startWithWindows",
+          "label": "Windows ile başlat",
+          "type": "bool",
+          "default": false,
+          "description": "İlk kurulumda ayrıca açık rıza sorulur",
+          "category": "Genel",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "general.minimizeToTray",
+          "label": "Kapatınca tepsiye küçült",
+          "type": "bool",
+          "default": true,
+          "description": "Tam çıkış menüsü ayrı görünür",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.restoreLastSession",
+          "label": "Önceki profili geri yükle",
+          "type": "bool",
+          "default": true,
+          "description": "Crash sonrası safe-mode öncelikli",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.showTrayIcon",
+          "label": "Bildirim alanı ikonu",
+          "type": "bool",
+          "default": true,
+          "description": "Acil çıkış yolu kalmalı",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.openSettingsAtStartup",
+          "label": "Açılışta ayarları göster",
+          "type": "bool",
+          "default": false,
+          "description": "Kullanıcı tercihine bağlı",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.launchMinimized",
+          "label": "Sessiz başlat",
+          "type": "bool",
+          "default": false,
+          "description": "Dock görünürlüğünü ayrı yönet",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.checkForUpdates",
+          "label": "Güncellemeleri kontrol et",
+          "type": "bool",
+          "default": true,
+          "description": "Otomatik indirme başlamaz",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.updateChannel",
+          "label": "Güncelleme kanalı",
+          "type": "enum(stable,beta)",
+          "default": "stable",
+          "description": "Beta opt-in",
+          "category": "Genel",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "stable",
+              "beta"
+            ]
+          }
+        },
+        {
+          "key": "general.confirmExit",
+          "label": "Çıkarken onayla",
+          "type": "bool",
+          "default": false,
+          "description": "Tray'den güvenli çıkışı geciktirmesin",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.firstRunWizardComplete",
+          "label": "Kurulum sihirbazı tamamlandı",
+          "type": "bool",
+          "default": false,
+          "description": "Kullanıcıdan auto-start ve izinler alınır",
+          "category": "Genel",
+          "implementationState": "planned"
+        },
+        {
+          "key": "general.defaultProfile",
+          "label": "Varsayılan profil",
+          "type": "id",
+          "default": null,
+          "description": "Profil yoksa Midnight Claxe",
+          "category": "Genel",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Görünüm",
+      "summary": "Tasarım tokenları ve global görünüm kontrolü.",
+      "settings": [
+        {
+          "key": "appearance.mode",
+          "label": "Renk modu",
+          "type": "enum(dark,light,system)",
+          "default": "dark",
+          "description": "Varsayılan koyu atmosfer",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "dark",
+              "light",
+              "system"
+            ]
+          }
+        },
+        {
+          "key": "appearance.accentPrimary",
+          "label": "Ana vurgu rengi",
+          "type": "color",
+          "default": "#A884FF",
+          "description": "Theme override",
+          "category": "Görünüm",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "appearance.accentSecondary",
+          "label": "İkincil vurgu",
+          "type": "color",
+          "default": "#7FDBF2",
+          "description": "Nadir vurgu",
+          "category": "Görünüm",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "appearance.surfaceOpacity",
+          "label": "Panel opaklığı",
+          "type": "number(0.35..1)",
+          "default": 0.82,
+          "description": "Kullanıcıya görünür önizleme",
+          "category": "Görünüm",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 0.35,
+            "max": 1.0
+          }
+        },
+        {
+          "key": "appearance.blurRadius",
+          "label": "Bulanıklık",
+          "type": "int(0..30)",
+          "default": 18,
+          "description": "Düşük güç profilinde sınırlanır",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 30.0
+          }
+        },
+        {
+          "key": "appearance.cornerRadius",
+          "label": "Köşe yuvarlaklığı DIP",
+          "type": "int(0..32)",
+          "default": 16,
+          "description": "Kart, panel, dock",
+          "category": "Görünüm",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 0.0,
+            "max": 32.0
+          }
+        },
+        {
+          "key": "appearance.borderWidth",
+          "label": "Kenar çizgisi DIP",
+          "type": "number(0..4)",
+          "default": 1.0,
+          "description": "Panel çevre çizgisi",
+          "category": "Görünüm",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 0.0,
+            "max": 4.0
+          }
+        },
+        {
+          "key": "appearance.shadowStrength",
+          "label": "Gölge düzeyi",
+          "type": "int(0..100)",
+          "default": 32,
+          "description": "Sıfır gölgeyi kapatır",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 100.0
+          }
+        },
+        {
+          "key": "appearance.fontFamily",
+          "label": "Arayüz fontu",
+          "type": "font",
+          "default": "Segoe UI",
+          "description": "Fallback varsayım",
+          "category": "Görünüm",
+          "implementationState": "planned"
+        },
+        {
+          "key": "appearance.baseFontSize",
+          "label": "Temel yazı DIP",
+          "type": "int(11..22)",
+          "default": 13,
+          "description": "Erişilebilirlik",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 11.0,
+            "max": 22.0
+          }
+        },
+        {
+          "key": "appearance.uiScale",
+          "label": "Claxe UI ölçeği",
+          "type": "number(0.75..1.5)",
+          "default": 1.0,
+          "description": "Windows DPI ile birlikte hesapla",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.75,
+            "max": 1.5
+          }
+        },
+        {
+          "key": "appearance.iconStyle",
+          "label": "İkon ailesi",
+          "type": "enum(outline,filled,duotone)",
+          "default": "outline",
+          "description": "Tutarlı çizgi ağırlığı",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "outline",
+              "filled",
+              "duotone"
+            ]
+          }
+        },
+        {
+          "key": "appearance.density",
+          "label": "Yoğunluk",
+          "type": "enum(compact,comfortable,spacious)",
+          "default": "comfortable",
+          "description": "Padding/height tokenları",
+          "category": "Görünüm",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "compact",
+              "comfortable",
+              "spacious"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Tema Motoru",
+      "summary": "Preset, canlı önizleme ve tema paketleri.",
+      "settings": [
+        {
+          "key": "themes.activeTheme",
+          "label": "Etkin tema",
+          "type": "id",
+          "default": "midnight-claxe",
+          "description": "İlk kurulum varsayılanı",
+          "category": "Tema Motoru",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "themes.panelStyle",
+          "label": "Panel materyali",
+          "type": "enum(glass,flat,neon)",
+          "default": "glass",
+          "description": "Dinamik kaynak sözlüğü",
+          "category": "Tema Motoru",
+          "implementationState": "implemented",
+          "constraints": {
+            "allowedValues": [
+              "glass",
+              "flat",
+              "neon"
+            ]
+          }
+        },
+        {
+          "key": "themes.syncAccentToWallpaper",
+          "label": "Wallpaper'dan renk çıkar",
+          "type": "bool",
+          "default": false,
+          "description": "Yerel palet analizi",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        },
+        {
+          "key": "themes.allowPerMonitorAccent",
+          "label": "Monitör bazlı vurgu",
+          "type": "bool",
+          "default": false,
+          "description": "Monitor override açılır",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        },
+        {
+          "key": "themes.autoSwitchWithSystem",
+          "label": "Sistem temasıyla eşleş",
+          "type": "bool",
+          "default": false,
+          "description": "Manuel profil önde",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        },
+        {
+          "key": "themes.livePreview",
+          "label": "Canlı tema önizlemesi",
+          "type": "bool",
+          "default": true,
+          "description": "İptal ile geri al",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        },
+        {
+          "key": "themes.previewTimeoutSec",
+          "label": "Önizleme süre aşımı",
+          "type": "int(5..60)",
+          "default": 20,
+          "description": "Görüntü kaybolursa geri al",
+          "category": "Tema Motoru",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 5.0,
+            "max": 60.0
+          }
+        },
+        {
+          "key": "themes.exportIncludeAssets",
+          "label": "Export'a görsel ekle",
+          "type": "bool",
+          "default": false,
+          "description": "Hak/format/boyut denetimi",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        },
+        {
+          "key": "themes.importConfirm",
+          "label": "Tema import önizlemesi",
+          "type": "bool",
+          "default": true,
+          "description": "Önce asset izin kontrolü",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        },
+        {
+          "key": "themes.animationsFollowTheme",
+          "label": "Tema animasyon stili",
+          "type": "bool",
+          "default": true,
+          "description": "Az hareket tercihi her zaman öncelikli",
+          "category": "Tema Motoru",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Dock",
+      "summary": "Dock konumlandırma, görünürlük ve davranış.",
+      "settings": [
+        {
+          "key": "dock.enabled",
+          "label": "Dock aktif",
+          "type": "bool",
+          "default": true,
+          "description": "Varsayılan başlangıç modülü",
+          "category": "Dock",
+          "implementationState": "planned"
+        },
+        {
+          "key": "dock.position",
+          "label": "Konum",
+          "type": "enum(bottom,top,left,right,floating)",
+          "default": "bottom",
+          "description": "Ekran kenarı veya serbest",
+          "category": "Dock",
+          "implementationState": "implemented",
+          "constraints": {
+            "allowedValues": [
+              "bottom",
+              "top",
+              "left",
+              "right",
+              "floating"
+            ]
+          }
+        },
+        {
+          "key": "dock.monitor",
+          "label": "Hedef ekran",
+          "type": "monitorId",
+          "default": "primary",
+          "description": "Monitör fallback",
+          "category": "Dock",
+          "implementationState": "planned"
+        },
+        {
+          "key": "dock.autoHide",
+          "label": "Otomatik gizle",
+          "type": "bool",
+          "default": false,
+          "description": "Kenar tetikleyici",
+          "category": "Dock",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "dock.hideDelayMs",
+          "label": "Gizleme gecikmesi",
+          "type": "int(0..2500)",
+          "default": 450,
+          "description": "İmleç dock üzerindeyken gizlenmez",
+          "category": "Dock",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 0.0,
+            "max": 2500.0
+          }
+        },
+        {
+          "key": "dock.iconSizeDip",
+          "label": "İkon boyutu",
+          "type": "int(24..96)",
+          "default": 48,
+          "description": "DIP",
+          "category": "Dock",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 24.0,
+            "max": 96.0
+          }
+        },
+        {
+          "key": "dock.iconSpacingDip",
+          "label": "İkon aralığı",
+          "type": "int(0..32)",
+          "default": 10,
+          "description": "Sık/seyrek dizilim",
+          "category": "Dock",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 32.0
+          }
+        },
+        {
+          "key": "dock.magnification",
+          "label": "Hover büyütme",
+          "type": "number(1..2)",
+          "default": 1.16,
+          "description": "Animasyon kapalıysa anlık",
+          "category": "Dock",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 1.0,
+            "max": 2.0
+          }
+        },
+        {
+          "key": "dock.showRunningApps",
+          "label": "Açık uygulamaları göster",
+          "type": "bool",
+          "default": true,
+          "description": "Gerçek pencere filtrele",
+          "category": "Dock",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "dock.groupWindows",
+          "label": "Aynı uygulamayı grupla",
+          "type": "bool",
+          "default": true,
+          "description": "Click to cycle",
+          "category": "Dock",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "dock.showBadges",
+          "label": "Uygulama göstergesi",
+          "type": "bool",
+          "default": true,
+          "description": "API durumu doğru",
+          "category": "Dock",
+          "implementationState": "planned"
+        },
+        {
+          "key": "dock.launchOnSingleClick",
+          "label": "Tek tıkla çalıştır",
+          "type": "bool",
+          "default": true,
+          "description": "Sürükleme ile karıştırma",
+          "category": "Dock",
+          "implementationState": "planned"
+        },
+        {
+          "key": "dock.pinnedAppsLimit",
+          "label": "Sabit öğe limiti",
+          "type": "int(4..64)",
+          "default": 24,
+          "description": "Kullanıcı özelleştirir",
+          "category": "Dock",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 4.0,
+            "max": 64.0
+          }
+        },
+        {
+          "key": "dock.alwaysOnTop",
+          "label": "Her zaman önde",
+          "type": "bool",
+          "default": false,
+          "description": "Tam ekranda otomatik geri çek",
+          "category": "Dock",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "dock.backgroundOpacity",
+          "label": "Dock opaklık",
+          "type": "number(0..1)",
+          "default": 0.78,
+          "description": "Tema override",
+          "category": "Dock",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Paneller",
+      "summary": "Üst/alt/yan floating paneller ve modüller.",
+      "settings": [
+        {
+          "key": "panels.topEnabled",
+          "label": "Üst panel",
+          "type": "bool",
+          "default": true,
+          "description": "Varsayılan saat ve sistem",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.bottomEnabled",
+          "label": "Alt panel",
+          "type": "bool",
+          "default": false,
+          "description": "Dock ile çakışmayı önle",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.leftEnabled",
+          "label": "Sol panel",
+          "type": "bool",
+          "default": false,
+          "description": "Opsiyonel",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.rightEnabled",
+          "label": "Sağ panel",
+          "type": "bool",
+          "default": false,
+          "description": "Opsiyonel",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.heightDip",
+          "label": "Panel yüksekliği",
+          "type": "int(28..90)",
+          "default": 42,
+          "description": "DIP",
+          "category": "Paneller",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 28.0,
+            "max": 90.0
+          }
+        },
+        {
+          "key": "panels.marginDip",
+          "label": "Kenar boşluğu",
+          "type": "int(0..40)",
+          "default": 16,
+          "description": "Floating hissi",
+          "category": "Paneller",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 40.0
+          }
+        },
+        {
+          "key": "panels.elementSpacingDip",
+          "label": "Öğe aralığı",
+          "type": "int(0..32)",
+          "default": 12,
+          "description": "Sol/orta/sağ alan",
+          "category": "Paneller",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 32.0
+          }
+        },
+        {
+          "key": "panels.autoHide",
+          "label": "Otomatik gizle",
+          "type": "bool",
+          "default": false,
+          "description": "Modül bazında override",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.autoHideDelayMs",
+          "label": "Gizleme gecikmesi",
+          "type": "int(0..3000)",
+          "default": 600,
+          "description": "Kapanma titremesi olmasın",
+          "category": "Paneller",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 3000.0
+          }
+        },
+        {
+          "key": "panels.clockFormat",
+          "label": "Saat formatı",
+          "type": "enum(24h,12h)",
+          "default": "24h",
+          "description": "Yerel saat",
+          "category": "Paneller",
+          "implementationState": "implemented",
+          "constraints": {
+            "allowedValues": [
+              "24h",
+              "12h"
+            ]
+          }
+        },
+        {
+          "key": "panels.showSystemTray",
+          "label": "Sistem tepsisi benzeri alan",
+          "type": "bool",
+          "default": true,
+          "description": "Gerçek OS tray kopyası garanti edilmez",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.showWorkspaces",
+          "label": "Çalışma alanı göstergesi",
+          "type": "bool",
+          "default": false,
+          "description": "Desteklenen API varsa",
+          "category": "Paneller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "panels.revealOnEdgeHover",
+          "label": "Kenarda aç",
+          "type": "bool",
+          "default": true,
+          "description": "Fullscreen'de bastırılabilir",
+          "category": "Paneller",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Widgetlar",
+      "summary": "Widget yaşam döngüsü, veri ve görünürlük.",
+      "settings": [
+        {
+          "key": "widgets.enabled",
+          "label": "Widget Engine aktif",
+          "type": "bool",
+          "default": true,
+          "description": "Native host",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.showOnDesktop",
+          "label": "Masaüstünde göster",
+          "type": "bool",
+          "default": true,
+          "description": "Gizli panel ile beraber olabilir",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.showShelf",
+          "label": "Widget çekmecesi",
+          "type": "bool",
+          "default": true,
+          "description": "Hotkey/launcher üzerinden",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.lockLayout",
+          "label": "Düzeni kilitle",
+          "type": "bool",
+          "default": false,
+          "description": "Yanlış taşıma engeli",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.pauseWhenHidden",
+          "label": "Gizliyken güncellemeyi durdur",
+          "type": "bool",
+          "default": true,
+          "description": "CPU ağ kullanımını azaltır",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.defaultRefreshSec",
+          "label": "Varsayılan yenileme",
+          "type": "int(1..3600)",
+          "default": 30,
+          "description": "Widget manifesti aralığı daraltabilir",
+          "category": "Widgetlar",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 3600.0
+          }
+        },
+        {
+          "key": "widgets.maxActive",
+          "label": "Aktif widget üst sınırı",
+          "type": "int(1..100)",
+          "default": 30,
+          "description": "Doğrulama",
+          "category": "Widgetlar",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 100.0
+          }
+        },
+        {
+          "key": "widgets.allowDuplicates",
+          "label": "Aynı widget çoklu",
+          "type": "bool",
+          "default": true,
+          "description": "Per-instance storage",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.transparentBackground",
+          "label": "Şeffaf arka plan",
+          "type": "bool",
+          "default": false,
+          "description": "Tema modu override",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.allowInteractions",
+          "label": "Tıklanabilir widgetlar",
+          "type": "bool",
+          "default": true,
+          "description": "Pointer passthrough moduyla ilişkili",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "widgets.defaultAnchor",
+          "label": "Varsayılan bölge",
+          "type": "enum(top-left,top-right,bottom-left,bottom-right,center)",
+          "default": "top-right",
+          "description": "Monitor safe area",
+          "category": "Widgetlar",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "top-left",
+              "top-right",
+              "bottom-left",
+              "bottom-right",
+              "center"
+            ]
+          }
+        },
+        {
+          "key": "widgets.autoSuspendHeavy",
+          "label": "Ağır widget'ları uyut",
+          "type": "bool",
+          "default": true,
+          "description": "Kullanıcı eşiği",
+          "category": "Widgetlar",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Widget Editor",
+      "summary": "Düzenleyici komutları, hizalama ve versiyonlama.",
+      "settings": [
+        {
+          "key": "editor.positionMode",
+          "label": "Yerleşim sistemi",
+          "type": "enum(free,grid)",
+          "default": "grid",
+          "description": "İki mod arasında kayıpsız geçiş",
+          "category": "Widget Editor",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "free",
+              "grid"
+            ]
+          }
+        },
+        {
+          "key": "editor.gridSizeDip",
+          "label": "Izgara boyutu",
+          "type": "int(4..64)",
+          "default": 12,
+          "description": "DIP",
+          "category": "Widget Editor",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 4.0,
+            "max": 64.0
+          }
+        },
+        {
+          "key": "editor.snapToGrid",
+          "label": "Izgaraya yapış",
+          "type": "bool",
+          "default": true,
+          "description": "Serbest modda da açılabilir",
+          "category": "Widget Editor",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "editor.snapToWidgets",
+          "label": "Diğer widgetlara hizala",
+          "type": "bool",
+          "default": true,
+          "description": "Kenar/merkez",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.showGuides",
+          "label": "Hizalama kılavuzları",
+          "type": "bool",
+          "default": true,
+          "description": "Düzenleme modunda",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.showGridOverlay",
+          "label": "Izgara çizgileri",
+          "type": "bool",
+          "default": true,
+          "description": "Sadece edit mode",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.undoDepth",
+          "label": "Geri al adımı",
+          "type": "int(10..200)",
+          "default": 50,
+          "description": "Komut geçmişi",
+          "category": "Widget Editor",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 10.0,
+            "max": 200.0
+          }
+        },
+        {
+          "key": "editor.multiSelect",
+          "label": "Çoklu seçim",
+          "type": "bool",
+          "default": true,
+          "description": "Ctrl+click",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.grouping",
+          "label": "Grup oluştur",
+          "type": "bool",
+          "default": true,
+          "description": "Group/ungroup",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.keepInSafeArea",
+          "label": "Güvenli alanda tut",
+          "type": "bool",
+          "default": true,
+          "description": "Monitör bounds",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.showCoordinates",
+          "label": "Koordinatları göster",
+          "type": "bool",
+          "default": false,
+          "description": "Gelişmiş kullanıcı",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        },
+        {
+          "key": "editor.editShortcut",
+          "label": "Düzenleme kısayolu",
+          "type": "hotkey",
+          "default": "Ctrl+Alt+E",
+          "description": "Çakışma kontrolü",
+          "category": "Widget Editor",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "Wallpaper",
+      "summary": "Kullanıcı resimleri, video, çoklu ekran, harici mod.",
+      "settings": [
+        {
+          "key": "wallpaper.mode",
+          "label": "Wallpaper kaynağı",
+          "type": "enum(system,external,internal-static,internal-animated)",
+          "default": "system",
+          "description": "Başlangıçta Windows korunur",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "system",
+              "external",
+              "internal-static",
+              "internal-animated"
+            ]
+          }
+        },
+        {
+          "key": "wallpaper.externalProvider",
+          "label": "Harici sağlayıcı",
+          "type": "enum(wallpaper-engine,none)",
+          "default": "none",
+          "description": "Kullanıcı seçimi",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "wallpaper-engine",
+              "none"
+            ]
+          }
+        },
+        {
+          "key": "wallpaper.picturePath",
+          "label": "Görsel yolu",
+          "type": "path",
+          "default": null,
+          "description": "Yalnız yerel güvenli referans",
+          "category": "Wallpaper",
+          "implementationState": "planned"
+        },
+        {
+          "key": "wallpaper.videoPath",
+          "label": "Video yolu",
+          "type": "path",
+          "default": null,
+          "description": "İleri fazda destek",
+          "category": "Wallpaper",
+          "implementationState": "planned"
+        },
+        {
+          "key": "wallpaper.fitting",
+          "label": "Görüntü yerleşimi",
+          "type": "enum(fill,fit,stretch,center,tile)",
+          "default": "fill",
+          "description": "Aspect korunmalı",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "fill",
+              "fit",
+              "stretch",
+              "center",
+              "tile"
+            ]
+          }
+        },
+        {
+          "key": "wallpaper.focalX",
+          "label": "Yatay odak",
+          "type": "number(0..1)",
+          "default": 0.5,
+          "description": "Crop merkezi",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 1.0
+          }
+        },
+        {
+          "key": "wallpaper.focalY",
+          "label": "Dikey odak",
+          "type": "number(0..1)",
+          "default": 0.5,
+          "description": "Crop merkezi",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 1.0
+          }
+        },
+        {
+          "key": "wallpaper.brightness",
+          "label": "Parlaklık çarpanı",
+          "type": "number(0..2)",
+          "default": 1.0,
+          "description": "UI readability",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 2.0
+          }
+        },
+        {
+          "key": "wallpaper.dimAmount",
+          "label": "Karartma",
+          "type": "number(0..1)",
+          "default": 0.15,
+          "description": "Widget okunurluğu",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 1.0
+          }
+        },
+        {
+          "key": "wallpaper.blurAmount",
+          "label": "Wallpaper blur",
+          "type": "int(0..30)",
+          "default": 0,
+          "description": "GPU perf",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 30.0
+          }
+        },
+        {
+          "key": "wallpaper.slideshowEnabled",
+          "label": "Slideshow",
+          "type": "bool",
+          "default": false,
+          "description": "Kullanıcı klasör kaynağı",
+          "category": "Wallpaper",
+          "implementationState": "planned"
+        },
+        {
+          "key": "wallpaper.slideshowIntervalMin",
+          "label": "Slideshow aralığı",
+          "type": "int(1..1440)",
+          "default": 30,
+          "description": "Varsayılan 30 dk",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 1440.0
+          }
+        },
+        {
+          "key": "wallpaper.slideshowShuffle",
+          "label": "Karıştır",
+          "type": "bool",
+          "default": false,
+          "description": "Tekrarlama",
+          "category": "Wallpaper",
+          "implementationState": "planned"
+        },
+        {
+          "key": "wallpaper.videoMuted",
+          "label": "Video sesini kapat",
+          "type": "bool",
+          "default": true,
+          "description": "Default sessiz",
+          "category": "Wallpaper",
+          "implementationState": "planned"
+        },
+        {
+          "key": "wallpaper.maxVideoFps",
+          "label": "Animasyon FPS sınırı",
+          "type": "enum(15,30,60)",
+          "default": "30",
+          "description": "Görsel kalite/enerji",
+          "category": "Wallpaper",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              15.0,
+              30.0,
+              60.0
+            ]
+          }
+        },
+        {
+          "key": "wallpaper.perMonitorMode",
+          "label": "Ekrana özel wallpaper",
+          "type": "bool",
+          "default": true,
+          "description": "Ortak tema yine varsayılan",
+          "category": "Wallpaper",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "name": "Animasyonlar",
+      "summary": "Global, modül bazında efekt ve azaltılmış hareket.",
+      "settings": [
+        {
+          "key": "animations.enabled",
+          "label": "Animasyon aktif",
+          "type": "bool",
+          "default": true,
+          "description": "Global switch",
+          "category": "Animasyonlar",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "animations.level",
+          "label": "Efekt yoğunluğu",
+          "type": "enum(off,subtle,balanced,showcase)",
+          "default": "balanced",
+          "description": "Showcase görsel ağırlıklı",
+          "category": "Animasyonlar",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "off",
+              "subtle",
+              "balanced",
+              "showcase"
+            ]
+          }
+        },
+        {
+          "key": "animations.durationMs",
+          "label": "Geçiş süresi",
+          "type": "int(0..1200)",
+          "default": 230,
+          "description": "Tüm bileşenlerde uygulanır",
+          "category": "Animasyonlar",
+          "implementationState": "implemented",
+          "constraints": {
+            "min": 0.0,
+            "max": 1200.0
+          }
+        },
+        {
+          "key": "animations.easing",
+          "label": "Easing eğrisi",
+          "type": "enum(linear,ease-out,spring)",
+          "default": "ease-out",
+          "description": "Tutarlı motion",
+          "category": "Animasyonlar",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "linear",
+              "ease-out",
+              "spring"
+            ]
+          }
+        },
+        {
+          "key": "animations.hoverEffects",
+          "label": "Hover efektleri",
+          "type": "bool",
+          "default": true,
+          "description": "Gerekirse azalt",
+          "category": "Animasyonlar",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "animations.glowEffects",
+          "label": "Neon parlama",
+          "type": "bool",
+          "default": false,
+          "description": "Neon tema açabilir",
+          "category": "Animasyonlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "animations.particles",
+          "label": "Parçacık efekti",
+          "type": "bool",
+          "default": false,
+          "description": "İleri faz, pahalı",
+          "category": "Animasyonlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "animations.dockBounce",
+          "label": "Dock bounce",
+          "type": "bool",
+          "default": false,
+          "description": "Gösterişli isteğe bağlı",
+          "category": "Animasyonlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "animations.launcherTransitions",
+          "label": "Launcher geçişleri",
+          "type": "bool",
+          "default": true,
+          "description": "İleri faz",
+          "category": "Animasyonlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "animations.widgetEntrance",
+          "label": "Widget giriş efekti",
+          "type": "bool",
+          "default": true,
+          "description": "Kullanıcı kapatabilir",
+          "category": "Animasyonlar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "animations.reduceMotionOverride",
+          "label": "Az hareket önceliği",
+          "type": "bool",
+          "default": true,
+          "description": "OS erişilebilirlik ayarına uyar",
+          "category": "Animasyonlar",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Performans",
+      "summary": "Resource guard, fullscreen, güç tasarrufu.",
+      "settings": [
+        {
+          "key": "performance.mode",
+          "label": "Performans profili",
+          "type": "enum(eco,balanced,visual)",
+          "default": "balanced",
+          "description": "Varsayılan dengeli",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "eco",
+              "balanced",
+              "visual"
+            ]
+          }
+        },
+        {
+          "key": "performance.fullscreenPolicy",
+          "label": "Tam ekran modu",
+          "type": "enum(off,reduce,pause,stop)",
+          "default": "pause",
+          "description": "Kendi motoru için",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "off",
+              "reduce",
+              "pause",
+              "stop"
+            ]
+          }
+        },
+        {
+          "key": "performance.fullscreenScope",
+          "label": "Tam ekranda kapsama",
+          "type": "enum(active-monitor,all-monitors)",
+          "default": "active-monitor",
+          "description": "2 monitör",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "active-monitor",
+              "all-monitors"
+            ]
+          }
+        },
+        {
+          "key": "performance.pauseWidgetsInFullscreen",
+          "label": "Widget güncellemesini durdur",
+          "type": "bool",
+          "default": true,
+          "description": "Etkilenen monitör",
+          "category": "Performans",
+          "implementationState": "planned"
+        },
+        {
+          "key": "performance.pauseWallpaperInFullscreen",
+          "label": "Wallpaper animasyonu durdur",
+          "type": "bool",
+          "default": true,
+          "description": "Sadece kendi renderer",
+          "category": "Performans",
+          "implementationState": "planned"
+        },
+        {
+          "key": "performance.maxUiFps",
+          "label": "UI animasyon üst sınırı",
+          "type": "enum(30,60,90,120)",
+          "default": "60",
+          "description": "Monitör ihtiyacına göre",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "30",
+              "60",
+              "90",
+              "120"
+            ]
+          }
+        },
+        {
+          "key": "performance.idleUiFps",
+          "label": "Boşta hedef",
+          "type": "enum(0,15,30)",
+          "default": "0",
+          "description": "Event-driven tercih",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "0",
+              "15",
+              "30"
+            ]
+          }
+        },
+        {
+          "key": "performance.onBatteryProfile",
+          "label": "Pilde otomatik profil",
+          "type": "enum(none,eco)",
+          "default": "eco",
+          "description": "Laptop cihazlara uygun",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "none",
+              "eco"
+            ]
+          }
+        },
+        {
+          "key": "performance.fullscreenDebounceMs",
+          "label": "Tam ekran bekleme",
+          "type": "int(100..3000)",
+          "default": 450,
+          "description": "False positives",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 100.0,
+            "max": 3000.0
+          }
+        },
+        {
+          "key": "performance.fullscreenRecoveryMs",
+          "label": "Dönüş bekleme",
+          "type": "int(100..5000)",
+          "default": 650,
+          "description": "Thrash önleme",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 100.0,
+            "max": 5000.0
+          }
+        },
+        {
+          "key": "performance.maxImageCacheMB",
+          "label": "Görsel önbellek limiti",
+          "type": "int(32..1024)",
+          "default": 256,
+          "description": "LRU cache",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 32.0,
+            "max": 1024.0
+          }
+        },
+        {
+          "key": "performance.widgetBudgetMs",
+          "label": "Widget yenileme bütçesi",
+          "type": "int(4..100)",
+          "default": 20,
+          "description": "Aşırı widget tespit",
+          "category": "Performans",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 4.0,
+            "max": 100.0
+          }
+        },
+        {
+          "key": "performance.logPerfDiagnostics",
+          "label": "Performans günlükleri",
+          "type": "bool",
+          "default": false,
+          "description": "Yerel logging ve izin",
+          "category": "Performans",
+          "implementationState": "planned"
+        },
+        {
+          "key": "performance.suspendOnLock",
+          "label": "Kilit ekranında uyut",
+          "type": "bool",
+          "default": true,
+          "description": "Boşta render yok",
+          "category": "Performans",
+          "implementationState": "planned"
+        },
+        {
+          "key": "performance.suspendOnRdp",
+          "label": "Uzak masaüstünde uyut",
+          "type": "bool",
+          "default": true,
+          "description": "RDP kaynak kullanımı",
+          "category": "Performans",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "name": "Başlatıcı",
+      "summary": "Başlat menüsü, arama, komut paleti.",
+      "settings": [
+        {
+          "key": "launcher.enabled",
+          "label": "Başlatıcı aktif",
+          "type": "bool",
+          "default": true,
+          "description": "Özel kısayol",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.layout",
+          "label": "Menü stili",
+          "type": "enum(list,grid,compact)",
+          "default": "compact",
+          "description": "Rofi-like varsayılan",
+          "category": "Başlatıcı",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "list",
+              "grid",
+              "compact"
+            ]
+          }
+        },
+        {
+          "key": "launcher.position",
+          "label": "Açılma konumu",
+          "type": "enum(center,top-center,cursor,dock)",
+          "default": "center",
+          "description": "Multi monitor",
+          "category": "Başlatıcı",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "center",
+              "top-center",
+              "cursor",
+              "dock"
+            ]
+          }
+        },
+        {
+          "key": "launcher.widthDip",
+          "label": "Panel genişliği",
+          "type": "int(360..1200)",
+          "default": 650,
+          "description": "DPI uyumlu",
+          "category": "Başlatıcı",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 360.0,
+            "max": 1200.0
+          }
+        },
+        {
+          "key": "launcher.showRecentApps",
+          "label": "Son kullanılanları göster",
+          "type": "bool",
+          "default": false,
+          "description": "Mahremiyet opt-in",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.showPinnedApps",
+          "label": "Sabitlenenler",
+          "type": "bool",
+          "default": true,
+          "description": "Gerçek launcher",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.showSystemCommands",
+          "label": "Sistem komutları",
+          "type": "bool",
+          "default": true,
+          "description": "Güvenli eylemler",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.searchWebEnabled",
+          "label": "Web'de ara",
+          "type": "bool",
+          "default": false,
+          "description": "İnternet opt-in",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.searchFilesEnabled",
+          "label": "Dosyalarda ara",
+          "type": "bool",
+          "default": false,
+          "description": "Yetki/indeks farkı",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.openShortcut",
+          "label": "Başlatıcı kısayol",
+          "type": "hotkey",
+          "default": "Ctrl+Space",
+          "description": "Konflikt çözümü",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        },
+        {
+          "key": "launcher.rememberLastCategory",
+          "label": "Son kategori",
+          "type": "bool",
+          "default": true,
+          "description": "Sadece yerel",
+          "category": "Başlatıcı",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Sistem Kontrolü",
+      "summary": "Ses, medya, Wi-Fi, Bluetooth ve hızlı ayarlar.",
+      "settings": [
+        {
+          "key": "system.audioPanelEnabled",
+          "label": "Ses paneli",
+          "type": "bool",
+          "default": true,
+          "description": "Gerçek API",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.audioDeviceSelector",
+          "label": "Çıkış aygıtı seçimi",
+          "type": "bool",
+          "default": true,
+          "description": "Destekli aygıt",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.showInputDevices",
+          "label": "Giriş aygıtları",
+          "type": "bool",
+          "default": false,
+          "description": "Gizlilik açısından kapalı",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.mediaControls",
+          "label": "Medya kontrolleri",
+          "type": "bool",
+          "default": true,
+          "description": "Desteklenen medya oturumları",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.wifiPanel",
+          "label": "Wi-Fi paneli",
+          "type": "bool",
+          "default": true,
+          "description": "Donanım yoksa unavailable",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.bluetoothPanel",
+          "label": "Bluetooth paneli",
+          "type": "bool",
+          "default": true,
+          "description": "API yetkisi yoksa settings deep-link",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.calendarFlyout",
+          "label": "Takvim açılır menü",
+          "type": "bool",
+          "default": true,
+          "description": "Yerel tarih, izinli takvim kaynağı opsiyonel",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.brightnessSlider",
+          "label": "Parlaklık slider",
+          "type": "bool",
+          "default": false,
+          "description": "Harici monitörlerde destek garanti değil",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.batteryStatus",
+          "label": "Pil göstergesi",
+          "type": "bool",
+          "default": true,
+          "description": "Masaüstünde gizlenebilir",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.quickSettingsColumns",
+          "label": "Hızlı ayar sütunları",
+          "type": "int(2..5)",
+          "default": 3,
+          "description": "Resize",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 2.0,
+            "max": 5.0
+          }
+        },
+        {
+          "key": "system.preferredSettingsFallback",
+          "label": "Sistem ayarlarına bağlantı",
+          "type": "bool",
+          "default": true,
+          "description": "Unsupported API durumunda",
+          "category": "Sistem Kontrolü",
+          "implementationState": "planned"
+        },
+        {
+          "key": "system.clockSeconds",
+          "label": "Saatte saniye göster",
+          "type": "bool",
+          "default": false,
+          "description": "Gereksiz timer düşür",
+          "category": "Sistem Kontrolü",
+          "implementationState": "implemented"
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "name": "Bildirimler",
+      "summary": "Claxe bildirimleri, filtre ve sessiz mod.",
+      "settings": [
+        {
+          "key": "notifications.enabled",
+          "label": "Claxe bildirimleri",
+          "type": "bool",
+          "default": true,
+          "description": "OS bildirim geçmişi yerine geçmez",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.position",
+          "label": "Bildirim yeri",
+          "type": "enum(top-right,top-left,bottom-right,bottom-left)",
+          "default": "top-right",
+          "description": "Monitör bazlı",
+          "category": "Bildirimler",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "top-right",
+              "top-left",
+              "bottom-right",
+              "bottom-left"
+            ]
+          }
+        },
+        {
+          "key": "notifications.displayMs",
+          "label": "Görünme süresi",
+          "type": "int(1500..20000)",
+          "default": 5000,
+          "description": "Sistem accessibility",
+          "category": "Bildirimler",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1500.0,
+            "max": 20000.0
+          }
+        },
+        {
+          "key": "notifications.quietHoursEnabled",
+          "label": "Sessiz saatler",
+          "type": "bool",
+          "default": false,
+          "description": "Süre tanımlanabilir",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.quietStart",
+          "label": "Sessiz başlangıç",
+          "type": "time",
+          "default": "22:00",
+          "description": "Yerel saat",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.quietEnd",
+          "label": "Sessiz bitiş",
+          "type": "time",
+          "default": "08:00",
+          "description": "Ertesi güne taşabilir",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.muteWhileFullscreen",
+          "label": "Tam ekranda sessize al",
+          "type": "bool",
+          "default": true,
+          "description": "Oyun odağı",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.storeHistory",
+          "label": "Bildirim geçmişi",
+          "type": "bool",
+          "default": false,
+          "description": "Mahremiyet opt-in",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.groupByApp",
+          "label": "Uygulamaya göre grupla",
+          "type": "bool",
+          "default": true,
+          "description": "Claxe kaynakları",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "notifications.soundEnabled",
+          "label": "Bildirim sesi",
+          "type": "bool",
+          "default": false,
+          "description": "Varsayılan sessiz",
+          "category": "Bildirimler",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "name": "Pencere Yönetimi",
+      "summary": "Windows pencere yerleşimleri ve kısayollar.",
+      "settings": [
+        {
+          "key": "windows.snapLayouts",
+          "label": "Hazır bölünmüş düzen",
+          "type": "bool",
+          "default": true,
+          "description": "Safe Win32 positioning",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.snapGridColumns",
+          "label": "Sütun sayısı",
+          "type": "int(2..6)",
+          "default": 3,
+          "description": "Yerleşim template",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 2.0,
+            "max": 6.0
+          }
+        },
+        {
+          "key": "windows.snapGapDip",
+          "label": "Pencere aralığı",
+          "type": "int(0..40)",
+          "default": 10,
+          "description": "Ekran DPI",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 40.0
+          }
+        },
+        {
+          "key": "windows.rememberPositions",
+          "label": "Konumları hatırla",
+          "type": "bool",
+          "default": false,
+          "description": "Uygulama izleme veri sınırı",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.excludeElevatedApps",
+          "label": "Yükseltilmiş uygulamaları atla",
+          "type": "bool",
+          "default": true,
+          "description": "Privilege escalation yok",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.excludeFullscreenApps",
+          "label": "Tam ekranları hariç tut",
+          "type": "bool",
+          "default": true,
+          "description": "Oyunlar",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.focusFollowsMouse",
+          "label": "Fare odak takibi",
+          "type": "bool",
+          "default": false,
+          "description": "Deneysel yüksek risk",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.enableGlobalHotkeys",
+          "label": "Global düzen kısayolu",
+          "type": "bool",
+          "default": true,
+          "description": "Conflict check",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.keepWindowsInMonitor",
+          "label": "Monitör alanında tut",
+          "type": "bool",
+          "default": true,
+          "description": "Offscreen fallback",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        },
+        {
+          "key": "windows.placementAnimation",
+          "label": "Yerleşim animasyonu",
+          "type": "bool",
+          "default": true,
+          "description": "Reduced motion",
+          "category": "Pencere Yönetimi",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "name": "Monitörler",
+      "summary": "Ekran algılama, DPI, per-monitor override.",
+      "settings": [
+        {
+          "key": "monitors.sharedThemeDefault",
+          "label": "Ortak tema varsayılanı",
+          "type": "bool",
+          "default": true,
+          "description": "Override yapılabilir",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.independentLayouts",
+          "label": "Ayrı düzenler",
+          "type": "bool",
+          "default": true,
+          "description": "Her monitörde widget/dock",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.independentWallpapers",
+          "label": "Ayrı arka planlar",
+          "type": "bool",
+          "default": true,
+          "description": "Opsiyonel",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.monitorFallback",
+          "label": "Kaybolan monitör politikası",
+          "type": "enum(primary,nearest,preserve)",
+          "default": "primary",
+          "description": "Layout saklanır",
+          "category": "Monitörler",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "primary",
+              "nearest",
+              "preserve"
+            ]
+          }
+        },
+        {
+          "key": "monitors.reactToHotplug",
+          "label": "Hotplug otomatik uyum",
+          "type": "bool",
+          "default": true,
+          "description": "Debounce",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.respectWorkArea",
+          "label": "Çalışma alanına uy",
+          "type": "bool",
+          "default": true,
+          "description": "Görev çubuğu safe zone",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.dpiAwareness",
+          "label": "DPI davranışı",
+          "type": "enum(per-monitor-v2)",
+          "default": "per-monitor-v2",
+          "description": "Değiştirilemeyen engine requirement",
+          "category": "Monitörler",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "per-monitor-v2"
+            ]
+          },
+          "engineInvariant": true
+        },
+        {
+          "key": "monitors.showDockOnAll",
+          "label": "Her ekranda dock",
+          "type": "bool",
+          "default": false,
+          "description": "İlk kurulumda ana monitör",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.showWidgetsOnAll",
+          "label": "Her ekranda widget",
+          "type": "bool",
+          "default": true,
+          "description": "Per instance",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.mirrorLayout",
+          "label": "Düzenleri aynala",
+          "type": "bool",
+          "default": false,
+          "description": "Diğer override silinmez",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        },
+        {
+          "key": "monitors.detectReorder",
+          "label": "Ekran sıralamasını algıla",
+          "type": "bool",
+          "default": true,
+          "description": "Stable ID fallback",
+          "category": "Monitörler",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "16",
+      "name": "Kısayollar",
+      "summary": "Kısayol yöneticisi ve çakışma analizi.",
+      "settings": [
+        {
+          "key": "shortcuts.enabled",
+          "label": "Kısayollar etkin",
+          "type": "bool",
+          "default": true,
+          "description": "Global manager",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.openLauncher",
+          "label": "Launcher",
+          "type": "hotkey",
+          "default": "Ctrl+Space",
+          "description": "Rebind edilebilir",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.openSettings",
+          "label": "Ayarları aç",
+          "type": "hotkey",
+          "default": "Ctrl+Alt+S",
+          "description": "Global çakışma doğrulaması",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.toggleWidgets",
+          "label": "Widgetları göster/gizle",
+          "type": "hotkey",
+          "default": "Ctrl+Alt+W",
+          "description": "Fallback tray menu",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.toggleDock",
+          "label": "Dock göster/gizle",
+          "type": "hotkey",
+          "default": "Ctrl+Alt+D",
+          "description": "Başka programı bozma",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.nextProfile",
+          "label": "Sonraki profil",
+          "type": "hotkey",
+          "default": "Ctrl+Alt+P",
+          "description": "Override status",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.enableMouseGestures",
+          "label": "Fare jestleri",
+          "type": "bool",
+          "default": false,
+          "description": "Yanlış tetiklemeyi azalt",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.showConflictWarning",
+          "label": "Çakışma uyarısı",
+          "type": "bool",
+          "default": true,
+          "description": "Kayıt hatası feedback",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.panicExit",
+          "label": "Acil çıkış",
+          "type": "hotkey",
+          "default": "Ctrl+Alt+Shift+F12",
+          "description": "Windows hotkey conflict check",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        },
+        {
+          "key": "shortcuts.keyboardNavigation",
+          "label": "Klavye navigasyonu",
+          "type": "bool",
+          "default": true,
+          "description": "Accessibility",
+          "category": "Kısayollar",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "17",
+      "name": "Maskot",
+      "summary": "İsteğe bağlı mini maskot ve etkileşim.",
+      "settings": [
+        {
+          "key": "mascot.enabled",
+          "label": "Maskot göster",
+          "type": "bool",
+          "default": false,
+          "description": "Varsayılan kapalı",
+          "category": "Maskot",
+          "implementationState": "planned"
+        },
+        {
+          "key": "mascot.assetId",
+          "label": "Maskot varlığı",
+          "type": "id",
+          "default": null,
+          "description": "Kullanıcı onaylı asset",
+          "category": "Maskot",
+          "implementationState": "planned"
+        },
+        {
+          "key": "mascot.position",
+          "label": "Konum",
+          "type": "enum(bottom-left,bottom-right,custom)",
+          "default": "bottom-right",
+          "description": "Floating widget",
+          "category": "Maskot",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "bottom-left",
+              "bottom-right",
+              "custom"
+            ]
+          }
+        },
+        {
+          "key": "mascot.scale",
+          "label": "Boyut çarpanı",
+          "type": "number(0.5..2)",
+          "default": 1.0,
+          "description": "Ekranı kaplamamalı",
+          "category": "Maskot",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.5,
+            "max": 2.0
+          }
+        },
+        {
+          "key": "mascot.clickAction",
+          "label": "Tıklama eylemi",
+          "type": "enum(none,launcher,settings,expression)",
+          "default": "none",
+          "description": "Native yetki sınırlı",
+          "category": "Maskot",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "none",
+              "launcher",
+              "settings",
+              "expression"
+            ]
+          }
+        },
+        {
+          "key": "mascot.showExpressions",
+          "label": "İfadeler",
+          "type": "bool",
+          "default": true,
+          "description": "Asset desteklerse",
+          "category": "Maskot",
+          "implementationState": "planned"
+        },
+        {
+          "key": "mascot.idleAnimation",
+          "label": "Boşta animasyon",
+          "type": "bool",
+          "default": false,
+          "description": "Performans",
+          "category": "Maskot",
+          "implementationState": "planned"
+        },
+        {
+          "key": "mascot.hideFullscreen",
+          "label": "Tam ekranda gizle",
+          "type": "bool",
+          "default": true,
+          "description": "Oyun dostu",
+          "category": "Maskot",
+          "implementationState": "planned"
+        },
+        {
+          "key": "mascot.allowSpeechBubbles",
+          "label": "Konuşma balonları",
+          "type": "bool",
+          "default": false,
+          "description": "İsteğe bağlı, ağ bağlantısı yok",
+          "category": "Maskot",
+          "implementationState": "planned"
+        },
+        {
+          "key": "mascot.reduceMotion",
+          "label": "Maskot animasyonları azalt",
+          "type": "bool",
+          "default": true,
+          "description": "OS preference",
+          "category": "Maskot",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "18",
+      "name": "Profiller",
+      "summary": "Hazır ve kullanıcı preset yönetimi.",
+      "settings": [
+        {
+          "key": "profiles.active",
+          "label": "Etkin profil",
+          "type": "id",
+          "default": "midnight-default",
+          "description": "Başlangıç preset",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.autoSaveChanges",
+          "label": "Değişikliği otomatik kaydet",
+          "type": "bool",
+          "default": false,
+          "description": "Kaydet/iptal kontrolü",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.confirmSwitch",
+          "label": "Geçerken onayla",
+          "type": "bool",
+          "default": false,
+          "description": "Kayıp değişiklikte sor",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.includeMonitorOverrides",
+          "label": "Ekran ayarlarıyla birlikte sakla",
+          "type": "bool",
+          "default": true,
+          "description": "Device mapping",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.includeWallpaperAssets",
+          "label": "Görselleri export'a göm",
+          "type": "bool",
+          "default": false,
+          "description": "Telif ve boyut kontrolü",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.backupBeforeImport",
+          "label": "Import öncesi yedek",
+          "type": "bool",
+          "default": true,
+          "description": "Geri alınabilir",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.importOverwritePolicy",
+          "label": "İçe alma çakışması",
+          "type": "enum(rename,ask,replace)",
+          "default": "ask",
+          "description": "Asla sessiz overwrite",
+          "category": "Profiller",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "rename",
+              "ask",
+              "replace"
+            ]
+          }
+        },
+        {
+          "key": "profiles.storeVersionHistory",
+          "label": "Profil versiyonları",
+          "type": "bool",
+          "default": true,
+          "description": "Undo/restore",
+          "category": "Profiller",
+          "implementationState": "planned"
+        },
+        {
+          "key": "profiles.maxBackups",
+          "label": "Yedek sayısı",
+          "type": "int(1..30)",
+          "default": 5,
+          "description": "Disk alanı",
+          "category": "Profiller",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 30.0
+          }
+        },
+        {
+          "key": "profiles.showPresetGallery",
+          "label": "Hazır preset galerisi",
+          "type": "bool",
+          "default": true,
+          "description": "Kullanıcı presets",
+          "category": "Profiller",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "19",
+      "name": "Otomasyon",
+      "summary": "App, saat ve monitör koşulları, conflict.",
+      "settings": [
+        {
+          "key": "automation.enabled",
+          "label": "Profil kuralları etkin",
+          "type": "bool",
+          "default": false,
+          "description": "Kullanıcı kuralları açınca aktif",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        },
+        {
+          "key": "automation.switchOnApp",
+          "label": "Uygulama açılınca değiştir",
+          "type": "bool",
+          "default": false,
+          "description": "Sadece kullanıcı tanımlı kural",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        },
+        {
+          "key": "automation.switchOnTime",
+          "label": "Saate göre değiştir",
+          "type": "bool",
+          "default": false,
+          "description": "Yerel saat",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        },
+        {
+          "key": "automation.switchOnMonitor",
+          "label": "Monitör durumuna göre",
+          "type": "bool",
+          "default": false,
+          "description": "Hotplug debounce",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        },
+        {
+          "key": "automation.priority",
+          "label": "Kural önceliği",
+          "type": "enum(manual-first,rules-first)",
+          "default": "manual-first",
+          "description": "Manuel seçim korunur",
+          "category": "Otomasyon",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "manual-first",
+              "rules-first"
+            ]
+          }
+        },
+        {
+          "key": "automation.cooldownSec",
+          "label": "Profil geçiş aralığı",
+          "type": "int(1..300)",
+          "default": 15,
+          "description": "Thrashing engelle",
+          "category": "Otomasyon",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 300.0
+          }
+        },
+        {
+          "key": "automation.manualOverrideMinutes",
+          "label": "Manuel kilit süresi",
+          "type": "int(0..1440)",
+          "default": 30,
+          "description": "0 süre = oturum sonu olarak yorumlanmaz",
+          "category": "Otomasyon",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 0.0,
+            "max": 1440.0
+          }
+        },
+        {
+          "key": "automation.pauseOnFullscreen",
+          "label": "Tam ekranda otomatik performans",
+          "type": "bool",
+          "default": true,
+          "description": "Claxe performans guard",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        },
+        {
+          "key": "automation.notifyOnProfileSwitch",
+          "label": "Profil değişince bildir",
+          "type": "bool",
+          "default": false,
+          "description": "Bildirim spam yok",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        },
+        {
+          "key": "automation.logRules",
+          "label": "Kural günlüğü",
+          "type": "bool",
+          "default": false,
+          "description": "Yerel minimal log",
+          "category": "Otomasyon",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "20",
+      "name": "Gizlilik & Güvenlik",
+      "summary": "İzinler ve açık rıza.",
+      "settings": [
+        {
+          "key": "privacy.telemetryOptIn",
+          "label": "Tanılama telemetrisi",
+          "type": "bool",
+          "default": false,
+          "description": "Default tamamen kapalı",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.crashReportingOptIn",
+          "label": "Çökme raporu gönder",
+          "type": "bool",
+          "default": false,
+          "description": "Dış ağ yok",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.allowRemoteWidgets",
+          "label": "Uzak widget içerikleri",
+          "type": "bool",
+          "default": false,
+          "description": "Faz 1 dışı",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.requireWidgetPermission",
+          "label": "Widget yetkisi sor",
+          "type": "bool",
+          "default": true,
+          "description": "Origin/broker kontrollü",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.allowWidgetNetwork",
+          "label": "Widget ağı",
+          "type": "bool",
+          "default": false,
+          "description": "Explicit allowlist",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.allowWidgetClipboard",
+          "label": "Widget pano erişimi",
+          "type": "bool",
+          "default": false,
+          "description": "İzin bazlı",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.allowWidgetMicrophone",
+          "label": "Widget mikrofonu",
+          "type": "bool",
+          "default": false,
+          "description": "Varsayılan yasak",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.allowWidgetCamera",
+          "label": "Widget kamerası",
+          "type": "bool",
+          "default": false,
+          "description": "Varsayılan yasak",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.allowWidgetLocation",
+          "label": "Widget konumu",
+          "type": "bool",
+          "default": false,
+          "description": "Varsayılan yasak",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.obfuscatePathsInLogs",
+          "label": "Loglarda dosya yollarını maskele",
+          "type": "bool",
+          "default": true,
+          "description": "Gizlilik",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.keepWidgetDataAfterUninstall",
+          "label": "Kaldırınca widget verisi kalsın",
+          "type": "bool",
+          "default": false,
+          "description": "Uninstall wizard",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "privacy.showPermissionAudit",
+          "label": "İzin denetim ekranı",
+          "type": "bool",
+          "default": true,
+          "description": "Her widget geçmiş izin",
+          "category": "Gizlilik & Güvenlik",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "21",
+      "name": "Gelişmiş",
+      "summary": "Deneysel/diagnostics/geri dönüş.",
+      "settings": [
+        {
+          "key": "advanced.experimentalEnabled",
+          "label": "Deneysel özellikleri etkinleştir",
+          "type": "bool",
+          "default": false,
+          "description": "Ayrı onay ve rollback",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.safeModeOnCrash",
+          "label": "Crash sonrası safe-mode",
+          "type": "bool",
+          "default": true,
+          "description": "Önce durum kurtar",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.restoreTaskbarOnExit",
+          "label": "Çıkışta görev çubuğunu geri yükle",
+          "type": "bool",
+          "default": true,
+          "description": "Eğer Claxe değiştirmişse",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.renderDebugOverlay",
+          "label": "Çizim tanılama",
+          "type": "bool",
+          "default": false,
+          "description": "Yalnız debug",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.verboseLogging",
+          "label": "Detaylı log",
+          "type": "bool",
+          "default": false,
+          "description": "Özel bilgiler maskelenmeli",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.maxLogFiles",
+          "label": "Log dosyası sayısı",
+          "type": "int(1..30)",
+          "default": 7,
+          "description": "Rotating",
+          "category": "Gelişmiş",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 30.0
+          }
+        },
+        {
+          "key": "advanced.maxLogSizeMB",
+          "label": "Log dosyası limiti",
+          "type": "int(1..100)",
+          "default": 10,
+          "description": "Disk limiti",
+          "category": "Gelişmiş",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 100.0
+          }
+        },
+        {
+          "key": "advanced.hardwareAcceleration",
+          "label": "Donanım hızlandırma",
+          "type": "enum(auto,on,off)",
+          "default": "auto",
+          "description": "GPU sorununa fallback",
+          "category": "Gelişmiş",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "auto",
+              "on",
+              "off"
+            ]
+          }
+        },
+        {
+          "key": "advanced.showDeveloperTools",
+          "label": "Geliştirici araçları",
+          "type": "bool",
+          "default": false,
+          "description": "Web widget debug ayrı",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.resetUI",
+          "label": "Görsel ayarları sıfırla",
+          "type": "action",
+          "default": null,
+          "description": "İşlem onayı gerekir",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.exportDiagnostics",
+          "label": "Tanılama paketi dışa aktar",
+          "type": "action",
+          "default": null,
+          "description": "Kişisel veri maskelenmeli",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        },
+        {
+          "key": "advanced.panicRestore",
+          "label": "Windows'a güvenli dön",
+          "type": "action",
+          "default": null,
+          "description": "Acil görünür eylem",
+          "category": "Gelişmiş",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "22",
+      "name": "Erişilebilirlik",
+      "summary": "Görsel ve motor erişilebilirliği.",
+      "settings": [
+        {
+          "key": "accessibility.followSystemReduceMotion",
+          "label": "Sistem az hareket ayarına uy",
+          "type": "bool",
+          "default": true,
+          "description": "İlk öncelik",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "accessibility.highContrast",
+          "label": "Yüksek kontrast",
+          "type": "enum(system,on,off)",
+          "default": "system",
+          "description": "Tema token override",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "system",
+              "on",
+              "off"
+            ]
+          }
+        },
+        {
+          "key": "accessibility.largeText",
+          "label": "Büyük metin modu",
+          "type": "bool",
+          "default": false,
+          "description": "UI ölçeğiyle birlikte",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "accessibility.keyboardFocusRing",
+          "label": "Klavye odak halkası",
+          "type": "bool",
+          "default": true,
+          "description": "Her etkileşimli öğe",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "accessibility.screenReaderLabels",
+          "label": "Erişilebilir etiketler",
+          "type": "bool",
+          "default": true,
+          "description": "UI Automation",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "accessibility.animationPhotosensitivity",
+          "label": "Yoğun ışık efektlerini sınırla",
+          "type": "bool",
+          "default": true,
+          "description": "Rapid flashing yok",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "accessibility.tooltips",
+          "label": "Açıklama baloncukları",
+          "type": "bool",
+          "default": true,
+          "description": "Ayar açıklaması",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        },
+        {
+          "key": "accessibility.colorBlindPresets",
+          "label": "Renk körlüğü profili",
+          "type": "enum(off,protan,deutan,tritan)",
+          "default": "off",
+          "description": "Renk tek gösterge değil",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "off",
+              "protan",
+              "deutan",
+              "tritan"
+            ]
+          }
+        },
+        {
+          "key": "accessibility.cursorTargetSize",
+          "label": "Tıklama hedefi",
+          "type": "enum(normal,large)",
+          "default": "normal",
+          "description": "Minimum hedef boyutu",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned",
+          "constraints": {
+            "allowedValues": [
+              "normal",
+              "large"
+            ]
+          }
+        },
+        {
+          "key": "accessibility.firstRunTour",
+          "label": "İlk kullanım rehberi",
+          "type": "bool",
+          "default": true,
+          "description": "Erişilebilir kapatma",
+          "category": "Erişilebilirlik",
+          "implementationState": "planned"
+        }
+      ]
+    },
+    {
+      "id": "23",
+      "name": "Yedekleme ve Depolama",
+      "summary": "Yerel yedek, export güvenliği, disk.",
+      "settings": [
+        {
+          "key": "storage.configLocation",
+          "label": "Config dizini",
+          "type": "path",
+          "default": "%LOCALAPPDATA%/ClaxeDesktop",
+          "description": "Kullanıcı klasörü",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned"
+        },
+        {
+          "key": "storage.atomicWrites",
+          "label": "Atomik config kaydı",
+          "type": "bool",
+          "default": true,
+          "description": "Kapalı bırakılamayan invariant",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned",
+          "engineInvariant": true
+        },
+        {
+          "key": "storage.autoBackup",
+          "label": "Otomatik config yedek",
+          "type": "bool",
+          "default": true,
+          "description": "Crash restore",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned"
+        },
+        {
+          "key": "storage.backupIntervalHours",
+          "label": "Yedekleme aralığı",
+          "type": "int(1..168)",
+          "default": 24,
+          "description": "Disk alanı",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 168.0
+          }
+        },
+        {
+          "key": "storage.maxBackupCount",
+          "label": "Yedek sayısı",
+          "type": "int(1..50)",
+          "default": 7,
+          "description": "Rotasyon",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 1.0,
+            "max": 50.0
+          }
+        },
+        {
+          "key": "storage.cacheLimitMB",
+          "label": "Toplam önbellek limiti",
+          "type": "int(32..2048)",
+          "default": 512,
+          "description": "Wallpaper/thumbnail",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned",
+          "constraints": {
+            "min": 32.0,
+            "max": 2048.0
+          }
+        },
+        {
+          "key": "storage.clearCacheOnExit",
+          "label": "Çıkışta cache temizle",
+          "type": "bool",
+          "default": false,
+          "description": "Startup maliyeti",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned"
+        },
+        {
+          "key": "storage.exportAnonymizePaths",
+          "label": "Export'ta mutlak yol çıkar",
+          "type": "bool",
+          "default": true,
+          "description": "Portable profil",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned"
+        },
+        {
+          "key": "storage.importConfirm",
+          "label": "Import öncesi kontrol",
+          "type": "bool",
+          "default": true,
+          "description": "Path validation",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned"
+        },
+        {
+          "key": "storage.preserveDataOnUpdate",
+          "label": "Güncellemede veriler kalsın",
+          "type": "bool",
+          "default": true,
+          "description": "Şema migration",
+          "category": "Yedekleme ve Depolama",
+          "implementationState": "planned"
+        }
+      ]
+    }
+  ]
+}

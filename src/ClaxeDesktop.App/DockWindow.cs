@@ -1,0 +1,202 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using ClaxeDesktop.Core;
+namespace ClaxeDesktop.App;
+public sealed class DockWindow : FloatingWindow
+{
+    public event Action<bool>? ActivationCompleted;
+    private readonly StackPanel row = new() { Orientation = Orientation.Horizontal };
+    private readonly DesktopViewModel vm;
+    private readonly Action<Shortcut> launch;
+    private readonly Action settings;
+    private readonly IWindowService windowService;
+    private readonly ShellIconService icons;
+    private readonly Action persistShortcuts;
+    private readonly Dictionary<string, string> targets = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, nint> lastActivated = new();
+    private IReadOnlyList<AppWindow> running = [];
+    private string signature = "";
+    private bool menuOpen, collapsed, closed, fullscreen, attached, rebuildPending;
+    private bool summoned;
+    private DateTime summonedUntil;
+    private DateTime summonedAt;
+    internal bool IsSummoned => summoned;
+    private bool fullscreenCandidate;
+    private DateTime fullscreenCandidateSince = DateTime.UtcNow;
+    private DateTime awaySince = DateTime.UtcNow;
+    private double expandedHeight;
+    private readonly DispatcherTimer visibilityTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
+    public DockWindow(DesktopViewModel vm, Action<Shortcut> launch, Action settings, IWindowService windowService, ShellIconService icons, Action persistShortcuts) : base("Dock")
+    {
+        this.vm = vm; this.launch = launch; this.settings = settings; this.windowService = windowService; this.icons = icons;
+        this.persistShortcuts = persistShortcuts;
+        Frame.Padding = new(10, 8, 10, 8); Frame.Child = new ScrollViewer { Content = row, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        vm.Shortcuts.CollectionChanged += ShortcutsChanged;
+        SourceInitialized += (_, _) => attached = true;
+        Closed += (_, _) => { closed = true; visibilityTimer.Stop(); vm.Shortcuts.CollectionChanged -= ShortcutsChanged; };
+        visibilityTimer.Tick += (_, _) => UpdateVisibility(); visibilityTimer.Start(); Rebuild();
+    }
+    public void ToggleSummon()
+    {
+        
+        if (closed || vm.Monitors.Count == 0) return;
+        summoned = true; summonedAt = DateTime.UtcNow; summonedUntil = summonedAt.AddSeconds(15);
+        SetCollapsed(false); Show(); Reposition(); Topmost = true;
+        RaiseSummonedDock();
+        if (Activate()) { row.Children.OfType<Button>().FirstOrDefault()?.Focus(); }
+        else vm.Status = "Dock öne getirildi. Windows klavye odağı vermedi; dock'a tıklayabilirsin.";
+    }
+    internal void DismissSummon()
+    {
+        if (!summoned) return;
+        summoned = false; awaySince = DateTime.UtcNow;
+        UpdateVisibility();
+    }
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Escape && summoned) { DismissSummon(); e.Handled = true; }
+        base.OnPreviewKeyDown(e);
+    }
+    private void RaiseSummonedDock()
+    {
+        // Reassert native z-order even when WPF Topmost already equals true.
+        SetWindowPos(new System.Windows.Interop.WindowInteropHelper(this).Handle, new nint(-1), 0, 0, 0, 0, 0x0013 | 0x0040);
+    }
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetWindowPos(nint hwnd, nint after, int x, int y, int width, int height, uint flags);
+    private void SetCollapsed(bool hide)
+    {
+        collapsed = hide; row.Visibility = hide ? Visibility.Hidden : Visibility.Visible;
+        Frame.Padding = hide ? new(0) : new(10, 8, 10, 8); Height = hide ? 6 : expandedHeight; Reposition();
+    }
+    private void ShortcutsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => Rebuild();
+    public void UpdateWindows(IReadOnlyList<AppWindow> windows)
+    {
+        running = windows;
+        var next = string.Join("|", windows.OrderBy(w => w.Handle).Select(w => $"{w.Handle}:{w.Title}:{w.Executable}"));
+        if (next != signature) { rebuildPending = true; }
+        if (rebuildPending && !menuOpen && !IsKeyboardFocusWithin && !IsDragging && !IsMouseOver) { signature = next; Rebuild(); }
+    }
+    public void Rebuild()
+    {
+        if (closed) return;
+        rebuildPending = false;
+        row.Children.Clear();
+        var handle = new TextBlock { Text = "⠿", FontSize = 20, Width = 22, VerticalAlignment = VerticalAlignment.Center, Foreground = (Brush)FindResource("Muted") }; MakeDragHandle(handle); row.Children.Add(handle);
+        IReadOnlyList<AppWindow> available = vm.Settings.ShowRunningApps ? running : [];
+        var consumed = new HashSet<nint>();
+        foreach (var shortcut in vm.Shortcuts)
+        {
+            var target = targets.GetValueOrDefault(shortcut.Target, shortcut.Target);
+            var matched = available.Where(w => string.Equals(w.Executable, target, StringComparison.OrdinalIgnoreCase) && !consumed.Contains(w.Handle)).OrderBy(w => w.Handle).ToList();
+            if (!vm.Settings.GroupWindows) matched = matched.Take(1).ToList();
+            foreach (var w in matched) consumed.Add(w.Handle);
+            AddButton(shortcut.Name, shortcut.Target, matched, shortcut);
+        }
+        foreach (var group in WindowGrouping.Build(available.Where(w => !consumed.Contains(w.Handle)), vm.Settings.GroupWindows))
+        {
+            var first = group.Windows[0]; AddButton(first.Title, first.Executable, group.Windows, null);
+        }
+        var config = new Button { Content = "+", ToolTip = "Kısayollar ve ayarlar", Width = vm.IconSize, Height = vm.IconSize, Padding = new(0), FontSize = 26, Foreground = (Brush)FindResource("Accent") }; config.Click += (_, _) => settings(); row.Children.Add(config);
+        var desired = 46 + (row.Children.Count - 1) * (vm.IconSize + 6);
+        Width = Math.Max(120, Math.Min(desired, vm.Monitors.Count > 0 ? vm.Monitors.Min(m => m.Width / m.Scale) - 48 : desired)); expandedHeight = vm.IconSize + (Width < desired ? 44 : 26); Height = collapsed ? 6 : expandedHeight;
+        if (IsLoaded) Reposition();
+    }
+    private void AddButton(string name, string? path, IReadOnlyList<AppWindow> windows, Shortcut? shortcut)
+    {
+        var grid = new Grid();
+        var visual = new ContentControl { Content = name[..1].ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, RenderTransformOrigin = new(.5, .5), RenderTransform = new ScaleTransform(1, 1) }; grid.Children.Add(visual);
+        if (windows.Count > 0) grid.Children.Add(new TextBlock { Text = windows.Count > 1 ? windows.Count.ToString() : "•", FontSize = 11, Foreground = (Brush)FindResource("Accent"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom });
+        var button = new Button { Content = grid, ToolTip = windows.Count > 0 ? string.Join("\n", windows.Select(w => w.Title)) : name, Width = vm.IconSize, Height = vm.IconSize, Padding = new(5), FontSize = 20 };
+        System.Windows.Automation.AutomationProperties.SetName(button, windows.Count > 0 ? $"{name}, {windows.Count} açık pencere" : name + " uygulamasını aç");
+        button.Click += (_, _) =>
+        {
+            if (windows.Count == 0) { if (shortcut is not null) launch(shortcut); return; }
+            var key = shortcut?.Target ?? windows[0].GroupKey;
+            var previous = windows.Any(w => w.Handle == windowService.Foreground) ? windowService.Foreground : lastActivated.GetValueOrDefault(key);
+            var next = WindowGrouping.Next(windows, previous)!; Activate(next); lastActivated[key] = next.Handle;
+        };
+        var menu = new ContextMenu();
+        foreach (var window in windows) { var item = new MenuItem { Header = window.Title }; item.Click += (_, _) => Activate(window); menu.Items.Add(item); }
+        if (windows.Count > 0) menu.Items.Add(new Separator());
+        if (shortcut is not null)
+        {
+            Item(menu, "Yeni pencere / uygulamayı aç", () => launch(shortcut));
+            Item(menu, "Dock'tan kaldır", () => { vm.Remove(shortcut); persistShortcuts(); });
+            Item(menu, "Sola taşı", () => { vm.MoveShortcut(shortcut, -1); persistShortcuts(); }, vm.Shortcuts.IndexOf(shortcut) > 0);
+            Item(menu, "Sağa taşı", () => { vm.MoveShortcut(shortcut, 1); persistShortcuts(); }, vm.Shortcuts.IndexOf(shortcut) < vm.Shortcuts.Count - 1);
+        }
+        else if (path is not null && LaunchPolicy.IsAllowed(path)) Item(menu, "Dock'a sabitle", () => { vm.Add(new(Path.GetFileNameWithoutExtension(path), path)); persistShortcuts(); }, vm.Shortcuts.Count < 24 && !vm.Shortcuts.Any(s => string.Equals(s.Target, path, StringComparison.OrdinalIgnoreCase)));
+        button.ContextMenu = menu;
+        menu.Opened += (_, _) => menuOpen = true;
+        menu.Closed += (_, _) => { menuOpen = false; awaySince = DateTime.UtcNow; Rebuild(); };
+        button.MouseEnter += (_, _) => Animate(visual, vm.Settings.Magnification); button.MouseLeave += (_, _) => Animate(visual, 1);
+        row.Children.Add(button);
+        if (path is not null) _ = LoadIconAsync(path, visual);
+    }
+    private async Task LoadIconAsync(string path, ContentControl visual)
+    {
+        var asset = await icons.GetAsync(path); if (closed) return;
+        if (asset.Icon is not null) visual.Content = new Image { Source = asset.Icon, Width = vm.IconSize * .64, Height = vm.IconSize * .64 };
+        if (asset.Target is not null && !string.Equals(path, asset.Target, StringComparison.OrdinalIgnoreCase) && !string.Equals(targets.GetValueOrDefault(path), asset.Target, StringComparison.OrdinalIgnoreCase))
+        { targets[path] = asset.Target; rebuildPending = true; }
+    }
+    private void Animate(ContentControl visual, double scale)
+    {
+        if (!vm.Settings.AnimationsEnabled || !vm.Settings.HoverAnimation || !SystemParameters.ClientAreaAnimation || SystemParameters.HighContrast) scale = 1;
+        var transform = (ScaleTransform)visual.RenderTransform;
+        var duration = scale == 1 || !vm.Settings.AnimationsEnabled || !vm.Settings.HoverAnimation ? 0 : vm.Settings.AnimationDurationMs;
+        transform.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(scale, TimeSpan.FromMilliseconds(duration)));
+        transform.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(scale, TimeSpan.FromMilliseconds(duration)));
+    }
+    private void Activate(AppWindow window)
+    {
+        var activated = windowService.Activate(window); ActivationCompleted?.Invoke(activated);
+        if (activated) { DismissSummon(); vm.Status = "Pencereye geçildi."; }
+        else { vm.Status = "Windows pencereye odak vermedi veya pencere kapandı. Alt+Tab ile geçiş yapabilirsin."; settings(); }
+    }
+    private static void Item(ContextMenu menu, string text, Action action, bool enabled = true) { var item = new MenuItem { Header = text, IsEnabled = enabled }; item.Click += (_, _) => action(); menu.Items.Add(item); }
+    private string EffectiveEdge => vm.Settings.IntegratedDesktop ? "bottom" : vm.Settings.DockEdge;
+    private MonitorInfo TargetMonitor => vm.Monitors.FirstOrDefault(m => !SafeMode && m.Id == vm.Settings.Dock?.MonitorId) ?? vm.Monitors.First(m => m.Primary);
+    internal bool IsCollapsed => collapsed;
+    internal IReadOnlyList<Button> AppButtons => row.Children.OfType<Button>().SkipLast(1).ToArray();
+    public bool SafeMode { get; set; }
+    private void Reposition()
+    {
+        if (vm.Monitors.Count == 0) return;
+        if (SafeMode || EffectiveEdge == "floating") { base.Place(SafeMode ? null : vm.Settings.Dock, vm.Monitors, vm.SnapToGrid); return; }
+        var m = TargetMonitor; var y = EffectiveEdge == "top" ? 0 : m.Height / m.Scale - Height;
+        base.Place(new(m.Id, (m.Width / m.Scale - Width) / 2, y), vm.Monitors, false);
+    }
+    public override void Place(Placement? placement, IReadOnlyList<MonitorInfo> monitors, bool snap)
+    {
+        if (SafeMode || EffectiveEdge == "floating") base.Place(placement, monitors, snap); else Reposition();
+    }
+    private void UpdateVisibility()
+    {
+        if (!attached || closed || vm.Monitors.Count == 0) return;
+        if (rebuildPending && !menuOpen && !IsKeyboardFocusWithin && !IsDragging && !IsMouseOver) Rebuild();
+        if (summoned)
+        {
+            if (IsMouseOver || (IsActive && IsKeyboardFocusWithin) || menuOpen || IsDragging) summonedUntil = DateTime.UtcNow.AddSeconds(15);
+            if (DateTime.UtcNow < summonedUntil) { Topmost = true; if (!IsVisible) Show(); return; }
+            summoned = false;
+        }
+        var full = windowService.IsFullscreenOn(TargetMonitor);
+        if (full != fullscreenCandidate) { fullscreenCandidate = full; fullscreenCandidateSince = DateTime.UtcNow; }
+        if (full != fullscreen && DateTime.UtcNow - fullscreenCandidateSince >= TimeSpan.FromMilliseconds(full ? 300 : 450))
+        { fullscreen = full; if (full) Hide(); else Show(); }
+        full = fullscreen;
+        Topmost = !SafeMode && !full && (vm.Settings.DockOnTop || (vm.Settings.DockAutoHide && EffectiveEdge != "floating"));
+        if (full) { if (IsVisible) Hide(); return; }
+        if (!IsVisible) Show();
+        if (IsMouseOver || IsKeyboardFocusWithin || menuOpen || IsDragging) awaySince = DateTime.UtcNow;
+        var hide = !SafeMode && DockVisibilityPolicy.Collapse(vm.Settings.DockAutoHide, EffectiveEdge, IsMouseOver, IsKeyboardFocusWithin, menuOpen, IsDragging, DateTime.UtcNow - awaySince, vm.Settings.DockHideDelayMs);
+        if (hide == collapsed) return;
+        SetCollapsed(hide);
+    }
+}
+

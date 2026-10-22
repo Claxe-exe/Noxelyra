@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "midnight-claxe",
+  "name": "Midnight Claxe",
+  "author": "Claxe Desktop concept",
+  "palette": {
+    "canvas": "#0C0B13",
+    "elevated": "#191625",
+    "surface": "#242034",
+    "accentPrimary": "#A884FF",
+    "accentSecondary": "#7FDBF2",
+    "textPrimary": "#F3EFFA",
+    "textSecondary": "#AEA6BF",
+    "success": "#6ED8AE",
+    "border": "#FFFFFF1F"
+  },
+  "panel": {
+    "style": "glass",
+    "opacity": 0.82,
+    "blur": 18,
+    "cornerRadiusDip": 16
+  },
+  "motion": {
+    "enabled": true,
+    "level": "balanced",
+    "transitionMs": 230
+  },
+  "wallpaper": {
+    "mode": "system",
+    "optionalUserImage": true
+  },
+  "distribution": {
+    "license": "Original theme configuration; third-party user assets excluded"
+  }
+}

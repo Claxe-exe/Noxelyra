@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "midnight-default",
+  "name": "Midnight Default",
+  "themeId": "midnight-claxe",
+  "layoutMode": "grid",
+  "monitors": {
+    "primary": {
+      "dock": {
+        "position": "bottom",
+        "enabled": true
+      },
+      "panels": {
+        "topEnabled": true
+      },
+      "widgets": [
+        {
+          "id": "native.clock",
+          "anchor": "top-right"
+        }
+      ]
+    }
+  },
+  "settingsOverrides": {
+    "performance.mode": "balanced",
+    "performance.fullscreenScope": "active-monitor"
+  },
+  "automations": [],
+  "notes": "Örnek planlama profili; app şeması ileride versiyonlanabilir."
+}
