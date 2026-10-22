@@ -28,6 +28,7 @@ public sealed record Settings
     public int DockHideDelayMs { get; init; } = 450;
     public double Magnification { get; init; } = 1.16;
     public bool AnimationsEnabled { get; init; } = true;
+    public bool IntroSequence { get; init; } = true;
     public int AnimationDurationMs { get; init; } = 230;
     public string ClockFormat { get; init; } = "24h";
     public int IconSize { get; init; } = 48;

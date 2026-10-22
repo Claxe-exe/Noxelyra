@@ -1304,6 +1304,15 @@
           "implementationState": "planned"
         },
         {
+          "key": "animations.introSequence",
+          "label": "Açılış fragmanı",
+          "type": "bool",
+          "default": true,
+          "description": "Noxelyra açılırken kısa giriş animasyonu",
+          "category": "Animasyonlar",
+          "implementationState": "implemented"
+        },
+        {
           "key": "animations.widgetEntrance",
           "label": "Widget giriş efekti",
           "type": "bool",

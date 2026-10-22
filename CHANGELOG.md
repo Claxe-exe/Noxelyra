@@ -1,5 +1,11 @@
 # Değişiklikler
 
+## 0.23.0 · 2026-10-22 · Açılış fragmanı ve pencere geçişleri
+
+- Noxelyra açılırken yaklaşık 3 saniyelik giriş: yıldızlı gece, yükselen hilal ve hale, harf harf NOXELYRA. Tıklama/Esc/herhangi bir tuş geçer; 4,5 saniyeden uzun sürmez. "Animasyonlar → Açılış fragmanı" ile kapatılır; animasyonlar kapalıyken, azaltılmış harekette, güvenli modda ve doğrulamada oynamaz.
+- Fragmandan sonra bar yukarıdan iner, dock aşağıdan yükselir, widget'lar sırayla belirir.
+- Kontrol merkezi, ayarlar, hafifletme, başlatıcı ve profiller pencereleri yumuşakça açılır (belirme + hafif büyüme) ve daha hızlı kapanır. Uygulama kapanırken animasyon beklenmez.
+
 ## 0.22.0 · 2026-10-22 · Önceki görünüm geri, gerçek cam isteğe bağlı
 
 - Kullanıcı 0.20 öncesi görünümü daha güzel buldu. Varsayılan yeniden boyalı cam (16 px köşe, tema yüzeyi). Animasyonlar (yükselerek belirme, dock dalgası) kaldı.

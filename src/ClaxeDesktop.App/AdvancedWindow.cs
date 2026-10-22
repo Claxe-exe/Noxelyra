@@ -23,7 +23,7 @@ internal sealed class AdvancedWindow:Window
     private bool refreshing,closed,working;
     public AdvancedWindow(DesktopController controller)
     {
-        this.controller=controller;Title="Noxelyra · Profiller ve pencere düzenleri";Width=900;Height=850;MinWidth=720;MinHeight=600;WindowStartupLocation=WindowStartupLocation.CenterScreen;SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");
+        this.controller=controller;Motion.Attach(this,controller.ViewModel,()=>controller.IsExiting);Title="Noxelyra · Profiller ve pencere düzenleri";Width=900;Height=850;MinWidth=720;MinHeight=600;WindowStartupLocation=WindowStartupLocation.CenterScreen;SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");
         var root=new DockPanel{Margin=new(24)};Content=root;var heading=new TextBlock{Text="Çalışma alanını yönet",FontSize=27,FontWeight=FontWeights.SemiBold,Margin=new(0,0,0,16)};DockPanel.SetDock(heading,Dock.Top);root.Children.Add(heading);DockPanel.SetDock(status,Dock.Bottom);root.Children.Add(status);root.Children.Add(tabs);
         ProfilesTab();RulesTab();WindowsTab();MascotTab();
         controller.AdvancedChanged+=Refresh;Closed+=(_,_)=>{closed=true;controller.AdvancedChanged-=Refresh;};

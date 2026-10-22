@@ -26,7 +26,8 @@ public class FloatingWindow : Window
         Frame = new Border { CornerRadius = new(16), BorderThickness = new(1), BorderBrush = (Brush)FindResource("Line"), Padding = new(16) };
         Content = Frame;
         if (glass) Glass.Prepare(this, BackdropKind.Acrylic, true, ok => { Backdrop = ok; if (model is not null) ApplyAppearance(model); });
-        Loaded += (_, _) => Enter();
+        // Staggered arrival: the bar drops in, the dock rises, widgets follow.
+        Loaded += (_, _) => { if (Kind == "Panel") Enter(-14, 0); else if (Kind == "Dock") Enter(18, 120); else Enter(12, 220); };
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape) Keyboard.ClearFocus();
@@ -60,11 +61,11 @@ public class FloatingWindow : Window
         Frame.Effect = !Backdrop && vm.Settings.Material == "neon" && !SystemParameters.HighContrast ? new DropShadowEffect { Color = (Color)ColorConverter.ConvertFromString(palette.Accent), BlurRadius = 12, ShadowDepth = 0, Opacity = .32 } : null;
     }
     /// <summary>Soft rise-and-fade when a surface appears; skipped when motion is off or reduced.</summary>
-    protected void Enter(double rise = 10)
+    protected void Enter(double rise = 10, int delay = 0)
     {
         if (model is null || !Motion.Enabled(model)) return;
         var shift = new TranslateTransform(0, rise); Frame.RenderTransform = shift; Frame.Opacity = 0;
-        Motion.To(Frame, OpacityProperty, 1, 260); Motion.To(shift, TranslateTransform.YProperty, 0, 340);
+        Motion.To(Frame, OpacityProperty, 1, 320, delay: delay); Motion.To(shift, TranslateTransform.YProperty, 0, 460, delay: delay);
     }
     public virtual void Place(Placement? placement, IReadOnlyList<MonitorInfo> monitors, bool snap)
     {

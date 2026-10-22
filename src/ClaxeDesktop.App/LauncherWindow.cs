@@ -27,14 +27,14 @@ internal sealed class LauncherWindow : Window
     public LauncherWindow(DesktopController controller)
     {
         this.controller=controller;Title="Noxelyra · Uygulamalar";Width=760;Height=720;MinHeight=480;WindowStartupLocation=WindowStartupLocation.CenterScreen;
-        SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");Glass.PrepareFramed(this, controller.ViewModel.Settings);
+        SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");Glass.PrepareFramed(this, controller.ViewModel.Settings);Motion.Attach(this,controller.ViewModel,()=>controller.IsExiting);
         var root=new DockPanel{Margin=new(28)};Content=root;
         var top=new StackPanel();DockPanel.SetDock(top,Dock.Top);root.Children.Add(top);
         top.Children.Add(new TextBlock{Text="C  NOXELYRA",FontSize=25,FontWeight=FontWeights.Bold});
         top.Children.Add(new TextBlock{Text="Windows uygulamaların ve masaüstün",Opacity=.6,Margin=new(0,8,0,0)});top.Children.Add(search);
         System.Windows.Automation.AutomationProperties.SetName(search,"Uygulama veya Noxelyra eylemi ara");
         var actions=new WrapPanel();top.Children.Add(actions);
-        AddAction(actions,"Kontrol merkezi",()=>{controller.ShowControls();Hide();});AddAction(actions,"Widget'lar",()=>{controller.Widgets.ShowEditor();Hide();});AddAction(actions,"Ayarlar",()=>{controller.ShowSettings();Hide();});
+        AddAction(actions,"Kontrol merkezi",()=>{controller.ShowControls();Motion.Leave(this,controller.ViewModel);});AddAction(actions,"Widget'lar",()=>{controller.Widgets.ShowEditor();Motion.Leave(this,controller.ViewModel);});AddAction(actions,"Ayarlar",()=>{controller.ShowSettings();Motion.Leave(this,controller.ViewModel);});
         AddAction(actions,"Liste / ızgara",()=>{grid=!grid;Render();});AddAction(actions,"Yenile",()=>_=LoadAsync());
         AddAction(actions,"Windows uygulamaları",()=>controller.OpenSystem("apps"));
         DockPanel.SetDock(status,Dock.Bottom);root.Children.Add(status);root.Children.Add(results);
@@ -42,7 +42,7 @@ internal sealed class LauncherWindow : Window
         results.MouseDoubleClick+=(_,_)=>RunSelected();
         search.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Down){results.Focus();if(results.Items.Count>0)results.SelectedIndex=0;e.Handled=true;}else if(e.Key==Key.Enter){RunSelected();e.Handled=true;}};
         results.KeyDown+=(_,e)=>{if(e.Key==Key.Enter){RunSelected();e.Handled=true;}};
-        PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){Hide();e.Handled=true;}};
+        PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){Motion.Leave(this,controller.ViewModel);e.Handled=true;}};
         Loaded+=async(_,_)=>{search.Focus();await LoadAsync();};Activated+=(_,_)=>search.Focus();
         Closed+=(_,_)=>{closed=true;lifetime.Cancel();debounce.Stop();icons.Dispose();lifetime.Dispose();};
     }
@@ -72,6 +72,6 @@ internal sealed class LauncherWindow : Window
         status.Text=chosen.Length==0?"Eşleşme yok. Windows uygulamaları düğmesinden tüm uygulamaları açabilirsin.":$"{apps.Count} Başlat menüsü kısayolu · {chosen.Length} sonuç · Enter ile aç · Esc ile kapat";
     }
     private async Task SetIconAsync(Image image,string path,int current){var asset=await icons.GetAsync(path);if(!closed&&generation==current)image.Source=asset.Icon;}
-    internal void RunSelected(){if(results.SelectedItem is ListBoxItem{Tag:Shortcut app}){controller.Launch(app);Hide();}}
+    internal void RunSelected(){if(results.SelectedItem is ListBoxItem{Tag:Shortcut app}){controller.Launch(app);Motion.Leave(this,controller.ViewModel);}}
 }
 

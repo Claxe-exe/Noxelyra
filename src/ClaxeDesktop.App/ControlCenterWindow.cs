@@ -28,7 +28,7 @@ internal sealed class ControlCenterWindow : Window
     public ControlCenterWindow(DesktopController controller)
     {
         this.controller=controller;Title="Noxelyra · Kontrol merkezi";Width=720;Height=850;MinWidth=580;MinHeight=580;WindowStartupLocation=WindowStartupLocation.CenterScreen;
-        SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");Glass.PrepareFramed(this, controller.ViewModel.Settings);
+        SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");Glass.PrepareFramed(this, controller.ViewModel.Settings);Motion.Attach(this,controller.ViewModel,()=>controller.IsExiting);
         var root=new StackPanel{Margin=new(28)};Content=new ScrollViewer{Content=root,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
         root.Children.Add(new TextBlock{Text="Masaüstün, tek yerde.",FontSize=28,FontWeight=FontWeights.SemiBold});
         var status=new TextBlock{TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,16)};status.DataContext=controller.ViewModel;status.SetBinding(TextBlock.TextProperty,"Status");root.Children.Add(status);
