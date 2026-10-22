@@ -30,7 +30,7 @@ public sealed class DockWindow : FloatingWindow
     private DateTime awaySince = DateTime.UtcNow;
     private double expandedHeight;
     private readonly DispatcherTimer visibilityTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
-    public DockWindow(DesktopViewModel vm, Action<Shortcut> launch, Action settings, IWindowService windowService, ShellIconService icons, Action persistShortcuts) : base("Dock")
+    public DockWindow(DesktopViewModel vm, Action<Shortcut> launch, Action settings, IWindowService windowService, ShellIconService icons, Action persistShortcuts) : base("Dock", true)
     {
         this.vm = vm; this.launch = launch; this.settings = settings; this.windowService = windowService; this.icons = icons;
         this.persistShortcuts = persistShortcuts;
@@ -39,6 +39,7 @@ public sealed class DockWindow : FloatingWindow
         AllowDrop = true;
         DragOver += (_, e) => { e.Effects = DroppedApps(e).Any() ? DragDropEffects.Link : DragDropEffects.None; e.Handled = true; };
         Drop += (_, e) => { foreach (var app in DroppedApps(e)) Pin?.Invoke(app); e.Handled = true; };
+        row.MouseMove += (_, e) => Magnify(e.GetPosition(row).X); row.MouseLeave += (_, _) => Magnify(null);
         PreviewMouseWheel += (_, e) => { if (pages > 1) { ShowPage(page + (e.Delta < 0 ? 1 : -1)); e.Handled = true; } };
         vm.Shortcuts.CollectionChanged += ShortcutsChanged;
         SourceInitialized += (_, _) => attached = true;
@@ -89,6 +90,23 @@ public sealed class DockWindow : FloatingWindow
     public Func<Shortcut, bool>? Pin { get; set; }
     public Action? AddApps { get; set; }
     private readonly List<Button> items = [];
+    private readonly Dictionary<Button, ContentControl> visuals = [];
+    // macOS-style wave: the icon under the pointer grows most and its neighbours follow on a gaussian falloff.
+    private void Magnify(double? pointer)
+    {
+        foreach (var (button, visual) in visuals)
+        {
+            if (!button.IsVisible) continue;
+            var scale = 1.0;
+            if (pointer is { } x)
+            {
+                var center = button.TranslatePoint(new Point(button.ActualWidth / 2, 0), row).X;
+                var distance = (x - center) / (vm.IconSize + 12);
+                scale = 1 + (vm.Settings.Magnification - 1) * Math.Exp(-distance * distance * .9);
+            }
+            Animate(visual, scale);
+        }
+    }
     private int page, pages = 1;
     private static IEnumerable<Shortcut> DroppedApps(DragEventArgs e) =>
         e.Data.GetData(DataFormats.FileDrop) is string[] files ? files.Where(LaunchPolicy.IsAllowed).Take(Settings.MaxShortcuts).Select(f => new Shortcut(Path.GetFileNameWithoutExtension(f), f)) : [];
@@ -112,7 +130,7 @@ public sealed class DockWindow : FloatingWindow
     {
         if (closed) return;
         rebuildPending = false;
-        row.Children.Clear(); items.Clear();
+        row.Children.Clear(); items.Clear(); visuals.Clear();
         var handle = new TextBlock { Text = "", FontFamily = new FontFamily(IconFont), FontSize = 14, Width = 18, Opacity = .6, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center }; handle.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); MakeDragHandle(handle); row.Children.Add(handle);
         IReadOnlyList<AppWindow> available = vm.Settings.ShowRunningApps ? running : [];
         var consumed = new HashSet<nint>();
@@ -178,7 +196,7 @@ public sealed class DockWindow : FloatingWindow
         button.ContextMenu = menu;
         menu.Opened += (_, _) => menuOpen = true;
         menu.Closed += (_, _) => { menuOpen = false; awaySince = DateTime.UtcNow; Rebuild(); };
-        button.MouseEnter += (_, _) => Animate(visual, vm.Settings.Magnification); button.MouseLeave += (_, _) => Animate(visual, 1);
+        visuals[button] = visual;
         items.Add(button);
         if (path is not null) _ = LoadIconAsync(path, visual);
     }
@@ -193,9 +211,10 @@ public sealed class DockWindow : FloatingWindow
     {
         if (!vm.Settings.AnimationsEnabled || !vm.Settings.HoverAnimation || !SystemParameters.ClientAreaAnimation || SystemParameters.HighContrast) scale = 1;
         var transform = (ScaleTransform)visual.RenderTransform;
-        var duration = scale == 1 || !vm.Settings.AnimationsEnabled || !vm.Settings.HoverAnimation ? 0 : vm.Settings.AnimationDurationMs;
-        transform.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(scale, TimeSpan.FromMilliseconds(duration)));
-        transform.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(scale, TimeSpan.FromMilliseconds(duration)));
+        // Short, decelerating steps keep the wave glued to the pointer; the duration setting caps it.
+        var duration = Math.Min(160, vm.Settings.AnimationDurationMs);
+        Motion.To(transform, ScaleTransform.ScaleXProperty, scale, duration);
+        Motion.To(transform, ScaleTransform.ScaleYProperty, scale, duration);
     }
     private void Activate(AppWindow window)
     {

@@ -27,7 +27,7 @@ internal sealed class LauncherWindow : Window
     public LauncherWindow(DesktopController controller)
     {
         this.controller=controller;Title="Noxelyra · Uygulamalar";Width=760;Height=720;MinHeight=480;WindowStartupLocation=WindowStartupLocation.CenterScreen;
-        SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");
+        SetResourceReference(BackgroundProperty,"Canvas");SetResourceReference(ForegroundProperty,"Text");Glass.PrepareFramed(this);
         var root=new DockPanel{Margin=new(28)};Content=root;
         var top=new StackPanel();DockPanel.SetDock(top,Dock.Top);root.Children.Add(top);
         top.Children.Add(new TextBlock{Text="C  NOXELYRA",FontSize=25,FontWeight=FontWeights.Bold});

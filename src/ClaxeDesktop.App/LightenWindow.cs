@@ -19,7 +19,7 @@ internal sealed class LightenWindow : Window
     {
         this.controller = controller; editable = !controller.IsSafeMode && !controller.ReadOnly;
         Title = "Noxelyra · Hafifletme"; Width = 640; Height = 860; MinWidth = 520; MinHeight = 520; WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        SetResourceReference(BackgroundProperty, "Canvas"); SetResourceReference(ForegroundProperty, "Text");
+        SetResourceReference(BackgroundProperty, "Canvas"); SetResourceReference(ForegroundProperty, "Text"); Glass.PrepareFramed(this);
         var root = new StackPanel { Margin = new(28) }; Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         root.Children.Add(new TextBlock { Text = "Hafifletme", FontSize = 24, FontWeight = FontWeights.SemiBold });
         status.SetResourceReference(TextBlock.ForegroundProperty, "Muted");

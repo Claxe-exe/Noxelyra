@@ -16,12 +16,17 @@ public class FloatingWindow : Window
     protected Border Frame { get; }
     private int gridSize = 12;
     protected virtual bool CanMove => true;
-    public FloatingWindow(string kind)
+    /// <summary>True when Windows draws real acrylic glass behind this surface.</summary>
+    protected bool Backdrop { get; private set; }
+    private DesktopViewModel? model;
+    public FloatingWindow(string kind, bool glass = false)
     {
         Kind = kind; Title = "Noxelyra · " + kind; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
         AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false; ShowActivated = false;
         Frame = new Border { CornerRadius = new(16), BorderThickness = new(1), BorderBrush = (Brush)FindResource("Line"), Padding = new(16) };
         Content = Frame;
+        if (glass) Glass.Prepare(this, BackdropKind.Acrylic, true, ok => { Backdrop = ok; if (model is not null) ApplyAppearance(model); });
+        Loaded += (_, _) => Enter();
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape) Keyboard.ClearFocus();
@@ -41,14 +46,25 @@ public class FloatingWindow : Window
     }
     public virtual void ApplyAppearance(DesktopViewModel vm)
     {
+        model = vm;
         gridSize = vm.Settings.GridSize;
         var palette = ThemePresets.Resolve(vm.Settings);
         var color = (Color)ColorConverter.ConvertFromString(palette.Surface);
         color.A = vm.Settings.Material == "flat" ? (byte)255 : (byte)(vm.SurfaceOpacity * 255);
+        // Over real acrylic the surface is only a tint; Windows rounds the corners and draws the outline.
+        if (Backdrop && vm.Settings.Material != "flat") color.A = (byte)(vm.SurfaceOpacity * 120);
         Frame.Background = SystemParameters.HighContrast ? SystemColors.WindowBrush : new SolidColorBrush(color);
-        Frame.CornerRadius = new(vm.Settings.CornerRadius); Frame.BorderThickness = new(vm.Settings.BorderWidth);
+        Frame.CornerRadius = new(Backdrop ? 0 : vm.Settings.CornerRadius); Frame.BorderThickness = new(Backdrop ? 0 : vm.Settings.BorderWidth);
         Frame.SetResourceReference(Border.BorderBrushProperty, vm.Settings.Material == "neon" ? "Accent" : "Line");
-        Frame.Effect = vm.Settings.Material == "neon" && !SystemParameters.HighContrast ? new DropShadowEffect { Color = (Color)ColorConverter.ConvertFromString(palette.Accent), BlurRadius = 12, ShadowDepth = 0, Opacity = .32 } : null;
+        if (Backdrop) SystemBackdrop.Border(new WindowInteropHelper(this).Handle, vm.Settings.Material == "neon" ? palette.Accent : palette.Line);
+        Frame.Effect = !Backdrop && vm.Settings.Material == "neon" && !SystemParameters.HighContrast ? new DropShadowEffect { Color = (Color)ColorConverter.ConvertFromString(palette.Accent), BlurRadius = 12, ShadowDepth = 0, Opacity = .32 } : null;
+    }
+    /// <summary>Soft rise-and-fade when a surface appears; skipped when motion is off or reduced.</summary>
+    protected void Enter(double rise = 10)
+    {
+        if (model is null || !Motion.Enabled(model)) return;
+        var shift = new TranslateTransform(0, rise); Frame.RenderTransform = shift; Frame.Opacity = 0;
+        Motion.To(Frame, OpacityProperty, 1, 260); Motion.To(shift, TranslateTransform.YProperty, 0, 340);
     }
     public virtual void Place(Placement? placement, IReadOnlyList<MonitorInfo> monitors, bool snap)
     {
