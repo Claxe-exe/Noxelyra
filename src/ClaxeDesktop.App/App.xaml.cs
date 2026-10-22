@@ -48,7 +48,8 @@ public partial class App : Application
             var verificationMonitors = e.Args.Contains("--verify") ? new VerificationMonitorService() : null;
             IMonitorService monitorService = verificationMonitors ?? (IMonitorService)new WindowsMonitorService();
             var advancedSignals=verification&&(e.Args.Contains("--verify-noxelyra")||e.Args.Contains("--verify-release")||e.Args.Contains("--verify-advanced")||e.Args.Contains("--capture-advanced"))?new VerificationWindowService():null;
-            if (!verification && !e.Args.Contains("--verify") && !dirty && !e.Args.Contains("--safe-mode")) await IntroWindow.PlayAsync(loaded.Settings);
+            IntroWindow.Suppressed = verification || e.Args.Contains("--verify") || dirty || e.Args.Contains("--safe-mode");
+            await IntroWindow.PlayAsync(loaded.Settings);
             controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, dirty || e.Args.Contains("--safe-mode"),advancedSignals); controller.Start();
             if(!verification&&!e.Args.Contains("--verify"))commands=new(command=>{if(command=="launcher")controller.ShowLauncher();else if(command=="dock")controller.SummonDock();else if(command=="exit")controller.Exit();else controller.ShowControls();});
             if(verification&&e.Args.Contains("--verify-desktop-acceptance"))await DesktopAcceptanceVerifier.RunAsync(controller,directory);

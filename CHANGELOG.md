@@ -1,5 +1,10 @@
 # Değişiklikler
 
+## 0.24.0 · 2026-10-22 · TV gibi açılış ve kapanış
+
+- Açılış yeniden: ekranın ortasında bir ışık çizgisi, tema renginde dört nokta sırayla iki kez zıplar, merkezde birleşip hilale dönüşür, ardından NOXELYRA harf harf gelir ve üzerinden bir parıltı geçer. "masaüstün uyanıyor" yazısı kaldırıldı.
+- Kapanışta aynısı tersten oynar (harfler söner, hilal noktalara ayrılır, ışık çizgisi kapanır); Noxelyra altta kaydedip kapanır (güncelleme/kaldırma kapanışında da oynar). Güvenli modda ve doğrulama koşularında oynamaz.
+
 ## 0.23.0 · 2026-10-22 · Açılış fragmanı ve pencere geçişleri
 
 - Noxelyra açılırken yaklaşık 3 saniyelik giriş: yıldızlı gece, yükselen hilal ve hale, harf harf NOXELYRA. Tıklama/Esc/herhangi bir tuş geçer; 4,5 saniyeden uzun sürmez. "Animasyonlar → Açılış fragmanı" ile kapatılır; animasyonlar kapalıyken, azaltılmış harekette, güvenli modda ve doğrulamada oynamaz.

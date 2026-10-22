@@ -258,12 +258,14 @@ public sealed partial class DesktopController
     public async void Exit()
     {
         if (exiting) return; exiting = true;
+        // The power-off sequence covers the screen while everything below is saved and closed.
+        var outro = safe ? Task.CompletedTask : IntroWindow.PlayOutroAsync(committed);
         if (desktopSpace is not null) { committed = committed with { DesktopSpace = committed.DesktopSpace with { Icons = desktopSpace.IconPositions } }; ViewModel.SetAdvanced(committed); }
         timer.Stop(); saveTimer.Stop(); lifetime.Cancel(); await SaveCommittedAsync();
         SystemEvents.DisplaySettingsChanged -= DisplayChanged; SystemEvents.SessionSwitch -= SessionChanged; SystemEvents.PowerModeChanged -= PowerChanged;
         tray?.Dispose(); StopDesktopSpace(); StopAdvancedServices();await StopDesktopServicesAsync(); Widgets.Close(); foreach (var window in windows.ToArray()) window.Close(); settingsWindow?.Close(); icons.Dispose();
         try { recovery.Complete(); } catch (Exception ex) { Log.Write("recovery-cleanup-failed", ex); }
-        Log.Write("clean-exit"); Application.Current.Shutdown();
+        Log.Write("clean-exit"); await outro; Application.Current.Shutdown();
     }
 }
 
