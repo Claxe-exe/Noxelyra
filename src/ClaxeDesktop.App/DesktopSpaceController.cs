@@ -12,7 +12,7 @@ public sealed partial class DesktopController
     private bool desktopFollowTimerAttached;
     internal nint ForegroundWindow => windowService.Foreground;
     internal DesktopSpaceWindow? SpaceWindow => desktopSpace;
-    private void StartDesktopSpace() { _ = RestoreExternalWallpaperAsync(); ConfigureDesktopFollowing(); if (!safe && committed.DesktopSpace.Enabled) OpenDesktopSpace(!committed.DesktopSpace.FollowDesktop); }
+    private void StartDesktopSpace() { _ = RestoreExternalWallpaperAsync(); ConfigureDesktopFollowing(); ConfigureShowDesktop(); if (!safe && committed.DesktopSpace.Enabled) OpenDesktopSpace(!committed.DesktopSpace.FollowDesktop); }
     public async void ShowDesktopSpace()
     {
         if (safe || ReadOnly || exiting) { ViewModel.Status = "Güvenli/salt okunur modda masaüstü alanı açılamaz."; return; }
@@ -46,6 +46,7 @@ public sealed partial class DesktopController
             var options = change(committed.DesktopSpace); options.Validate();
             var next = committed with { DesktopSpace = options }; await store.SaveAsync(next); committed = next; ViewModel.SetAdvanced(next);
             if (!options.Enabled) desktopSpace?.Hide();
+            ConfigureShowDesktop();
             ViewModel.Status = "Masaüstü alanı tercihi kaydedildi.";
             return true;
         }
@@ -119,6 +120,33 @@ public sealed partial class DesktopController
         }
         return saved;
     }
+    private ShowDesktopHook? showDesktopHook;
+    private bool noxelyraDesktopShown;
+    internal bool ShowDesktopCaptured => showDesktopHook is not null;
+    internal Task<bool> SetCaptureShowDesktopAsync(bool enabled) => PersistDesktopSpaceAsync(options => options with { CaptureShowDesktop = enabled, Enabled = enabled || options.Enabled });
+    private void ConfigureShowDesktop()
+    {
+        var wanted = !safe && !exiting && committed.DesktopSpace.Enabled && committed.DesktopSpace.CaptureShowDesktop;
+        if (!wanted) { showDesktopHook?.Dispose(); showDesktopHook = null; return; }
+        if (showDesktopHook is not null) return;
+        try { showDesktopHook = new(() => Application.Current.Dispatcher.BeginInvoke(ToggleNoxelyraDesktop)); Log.Write("show-desktop-hook-installed"); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { Log.Write("show-desktop-hook-failed", ex); ViewModel.Status = "Win+D yakalanamadı; Windows'un kendi masaüstü davranışı sürüyor."; }
+    }
+    // Super+D like a Linux desktop: first press minimizes apps onto the Noxelyra desktop, the next press brings them back.
+    internal void ToggleNoxelyraDesktop()
+    {
+        if (exiting || locked || suspended) return;
+        dynamic? shell = null;
+        try
+        {
+            shell = Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application")!);
+            var onDesktop = WindowsDesktopMonitor.Presence() == DesktopPresence.Desktop || (desktopSpace is not null && ForegroundWindow == new System.Windows.Interop.WindowInteropHelper(desktopSpace).Handle);
+            if (noxelyraDesktopShown && onDesktop) { shell!.UndoMinimizeALL(); noxelyraDesktopShown = false; return; }
+            desktopSuppressed = false; shell!.MinimizeAll(); OpenDesktopSpace(true); noxelyraDesktopShown = true;
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or InvalidOperationException) { Log.Write("show-desktop-failed", ex); ViewModel.Status = "Masaüstü gösterilemedi: " + ex.Message; }
+        finally { if (shell is not null) System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell); }
+    }
     public void DismissDesktopSpace() { desktopSuppressed = true; desktopSpace?.Hide(); }
     private void ConfigureDesktopFollowing()
     {
@@ -154,7 +182,7 @@ public sealed partial class DesktopController
                 break;
         }
     }
-    private void StopDesktopSpace() { desktopFollowDelay.Stop(); desktopMonitor?.Dispose(); desktopMonitor = null; desktopSpace?.Close(); }
+    private void StopDesktopSpace() { showDesktopHook?.Dispose(); showDesktopHook = null; desktopFollowDelay.Stop(); desktopMonitor?.Dispose(); desktopMonitor = null; desktopSpace?.Close(); }
     internal async Task UseOriginalMascotAsync()
     {
         try

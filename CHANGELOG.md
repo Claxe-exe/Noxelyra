@@ -1,5 +1,11 @@
 # Değişiklikler
 
+## 0.17.0 · 2026-10-22 · Win+D Noxelyra masaüstünü gösterir
+
+- İsteğe bağlı (kapalı varsayılan) "Win+D Noxelyra masaüstünü göstersin": ilk basış uygulamaları küçültüp Noxelyra masaüstünü açar, ikinci basış pencereleri geri getirir. Win+M zaten Noxelyra masaüstünü gösteriyordu (ölçüldü).
+- Belgelenmiş düşük seviye klavye kancası ayrı iş parçacığında; yalnız Win+D tüketilir, Win tek başına, Win+Shift+D ve diğer kısayollar dokunulmadan geçer. Başka sürece DLL yüklenmez. Yönetici yetkili pencere öndeyken Windows'un kendi davranışı sürer.
+- Ölçüm: Win+D sonrası pencereyi öne almak Windows masaüstünü geçemedi, bu yüzden kısayolun kendisi ele alındı. Fiziksel tuş testi kullanıcıda.
+
 ## 0.16.0 · 2026-10-22 · Yönetici izinli servis kapatma
 
 - Hafifletme penceresinde Telemetri (DiagTrack), SysMain ve Windows Search dizinleme servisleri: gerçek durum, etkisi ve seçilenleri kapatma.
