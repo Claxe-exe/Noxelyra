@@ -54,7 +54,7 @@ public sealed partial class DesktopController
     {
         RefreshMonitors();
         windows.Add(new PanelWindow(ViewModel, this, icons));
-        var dock = new DockWindow(ViewModel, Launch, ShowSettings, windowService, icons, () => _ = SaveShortcutsAsync()) { SafeMode = safe };
+        var dock = new DockWindow(ViewModel, Launch, ShowSettings, windowService, icons, () => _ = SaveShortcutsAsync()) { SafeMode = safe, Pin = PinToDock, AddApps = ShowLauncher };
         dock.ActivationCompleted += succeeded => Log.Write(succeeded ? "dock-activation-succeeded" : "dock-activation-declined");
         windows.Add(dock);
         foreach (var window in windows)
@@ -178,6 +178,20 @@ public sealed partial class DesktopController
         }
         catch (Exception ex) { Log.Write("theme-save-failed", ex); ViewModel.Status = "Tema uygulanamadı: " + ex.Message; return false; }
         finally { persistenceGate.Release(); }
+    }
+    internal bool IsPinned(string target) => ViewModel.Shortcuts.Any(s => string.Equals(s.Target, target, StringComparison.OrdinalIgnoreCase));
+    internal void TogglePin(Shortcut app)
+    {
+        var existing = ViewModel.Shortcuts.FirstOrDefault(s => string.Equals(s.Target, app.Target, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null) { ViewModel.Remove(existing); _ = SaveShortcutsAsync(); ViewModel.Status = app.Name + " dock'tan kaldırıldı."; return; }
+        PinToDock(app);
+    }
+    internal bool PinToDock(Shortcut app)
+    {
+        if (!LaunchPolicy.IsAllowed(app.Target)) { ViewModel.Status = "Yalnız yerel .exe veya .lnk sabitlenebilir."; return false; }
+        if (IsPinned(app.Target)) { ViewModel.Status = app.Name + " zaten dock'ta."; return false; }
+        if (ViewModel.Shortcuts.Count >= Settings.MaxShortcuts) { ViewModel.Status = $"Dock en fazla {Settings.MaxShortcuts} uygulama tutar."; return false; }
+        ViewModel.Add(app with { Name = app.Name.Length > 80 ? app.Name[..80] : app.Name }); _ = SaveShortcutsAsync(); ViewModel.Status = app.Name + " dock'a sabitlendi."; return true;
     }
     private async Task SaveShortcutsAsync()
     {

@@ -65,6 +65,7 @@ internal sealed class LauncherWindow : Window
             var row=new StackPanel{Orientation=grid?Orientation.Vertical:Orientation.Horizontal,Margin=new(8)};
             var icon=new Image{Width=28,Height=28,Margin=new(0,0,12,0)};row.Children.Add(icon);row.Children.Add(new TextBlock{Text=app.Name,TextWrapping=TextWrapping.Wrap,VerticalAlignment=VerticalAlignment.Center,MaxWidth=grid?130:570});
             var item=new ListBoxItem{Content=row,Tag=app,ToolTip=app.Name,MinHeight=grid?100:50,HorizontalContentAlignment=HorizontalAlignment.Stretch};results.Items.Add(item);
+            var pinned=controller.IsPinned(app.Target);var pin=new MenuItem{Header=pinned?"Dock'tan kaldır":"Dock'a sabitle"};pin.Click+=(_,_)=>{controller.TogglePin(app);Render();};item.ContextMenu=new ContextMenu{Items={pin}};
             _=SetIconAsync(icon,app.Target,current);
         }
         if(results.Items.Count>0)results.SelectedIndex=0;

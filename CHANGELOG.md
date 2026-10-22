@@ -1,5 +1,10 @@
 # Değişiklikler
 
+## 0.19.0 · 2026-10-22 · Dock'a uygulama ekleme ve sayfalar
+
+- Dock'a .exe/.lnk sürükleyip bırakarak, "+" menüsünden (başlatıcı veya dosya seçici) ya da başlatıcıda sağ tık "Dock'a sabitle" ile uygulama eklenir; başlatıcıdan kaldırılabilir.
+- Dock 64 uygulamaya kadar tutar; ekrana sığmayanlar sayfalara bölünür (alttaki 1-2-3 düğmeleri veya fare tekerleği).
+
 ## 0.18.0 · 2026-10-22 · Masaüstü katmanları, dock ve görev çubukları
 
 - Masaüstüne tıklamak artık bar, dock ve widget'ları arkaya atmıyor; alan etkinleşince Noxelyra parçaları üste alınır.

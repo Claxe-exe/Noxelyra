@@ -34,7 +34,12 @@ public sealed class DockWindow : FloatingWindow
     {
         this.vm = vm; this.launch = launch; this.settings = settings; this.windowService = windowService; this.icons = icons;
         this.persistShortcuts = persistShortcuts;
-        Frame.Padding = new(8, 6, 8, 6); Frame.Child = new ScrollViewer { Content = row, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        Frame.Padding = new(8, 6, 8, 6); Frame.Child = row;
+        // Drop .exe/.lnk files from Explorer or the desktop to pin them, like the Windows taskbar.
+        AllowDrop = true;
+        DragOver += (_, e) => { e.Effects = DroppedApps(e).Any() ? DragDropEffects.Link : DragDropEffects.None; e.Handled = true; };
+        Drop += (_, e) => { foreach (var app in DroppedApps(e)) Pin?.Invoke(app); e.Handled = true; };
+        PreviewMouseWheel += (_, e) => { if (pages > 1) { ShowPage(page + (e.Delta < 0 ? 1 : -1)); e.Handled = true; } };
         vm.Shortcuts.CollectionChanged += ShortcutsChanged;
         SourceInitialized += (_, _) => attached = true;
         Closed += (_, _) => { closed = true; visibilityTimer.Stop(); vm.Shortcuts.CollectionChanged -= ShortcutsChanged; };
@@ -81,11 +86,33 @@ public sealed class DockWindow : FloatingWindow
         if (next != signature) { rebuildPending = true; }
         if (rebuildPending && !menuOpen && !IsKeyboardFocusWithin && !IsDragging && !IsMouseOver) { signature = next; Rebuild(); }
     }
+    public Func<Shortcut, bool>? Pin { get; set; }
+    public Action? AddApps { get; set; }
+    private readonly List<Button> items = [];
+    private int page, pages = 1;
+    private static IEnumerable<Shortcut> DroppedApps(DragEventArgs e) =>
+        e.Data.GetData(DataFormats.FileDrop) is string[] files ? files.Where(LaunchPolicy.IsAllowed).Take(Settings.MaxShortcuts).Select(f => new Shortcut(Path.GetFileNameWithoutExtension(f), f)) : [];
+    private int PerPage => Math.Max(4, (int)(((vm.Monitors.Count > 0 ? vm.Monitors.Min(m => m.Width / m.Scale) : 1280) * .85 - 160) / (vm.IconSize + 12)));
+    private void ShowPage(int next) { var clamped = Math.Clamp(next, 0, pages - 1); if (clamped == page) return; page = clamped; Rebuild(); }
+    private void AddMenu(Button anchor)
+    {
+        var menu = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Top };
+        Item(menu, "Başlatıcıdan uygulama ekle", () => AddApps?.Invoke(), AddApps is not null);
+        Item(menu, "Dosyadan ekle (.exe / .lnk)…", () =>
+        {
+            var picker = new Microsoft.Win32.OpenFileDialog { Filter = "Uygulama veya kısayol|*.exe;*.lnk", Multiselect = true, CheckFileExists = true, DereferenceLinks = false, InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms) };
+            if (picker.ShowDialog(this) == true) foreach (var file in picker.FileNames.Where(LaunchPolicy.IsAllowed)) Pin?.Invoke(new(Path.GetFileNameWithoutExtension(file), file));
+        }, Pin is not null);
+        menu.Items.Add(new Separator());
+        Item(menu, "Dock ayarları", settings);
+        menu.Opened += (_, _) => menuOpen = true; menu.Closed += (_, _) => { menuOpen = false; awaySince = DateTime.UtcNow; };
+        menu.IsOpen = true;
+    }
     public void Rebuild()
     {
         if (closed) return;
         rebuildPending = false;
-        row.Children.Clear();
+        row.Children.Clear(); items.Clear();
         var handle = new TextBlock { Text = "", FontFamily = new FontFamily(IconFont), FontSize = 14, Width = 18, Opacity = .6, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center }; handle.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); MakeDragHandle(handle); row.Children.Add(handle);
         IReadOnlyList<AppWindow> available = vm.Settings.ShowRunningApps ? running : [];
         var consumed = new HashSet<nint>();
@@ -102,9 +129,23 @@ public sealed class DockWindow : FloatingWindow
             var first = group.Windows[0]; AddButton(first.Title, first.Executable, group.Windows, null);
         }
         var plus = new TextBlock { Text = "", FontFamily = new FontFamily(IconFont), FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }; plus.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        var config = new Button { Content = plus, ToolTip = "Kısayollar ve ayarlar", Width = vm.IconSize + 8, Height = vm.IconSize + 8, Margin = new(2, 0, 2, 0), Style = (Style)FindResource("DockTile") };
-        System.Windows.Automation.AutomationProperties.SetName(config, "Kısayollar ve ayarlar"); config.Click += (_, _) => settings(); row.Children.Add(config);
-        var desired = 40 + (row.Children.Count - 1) * (vm.IconSize + 12);
+        var perPage = PerPage; pages = Math.Max(1, (items.Count + perPage - 1) / perPage); page = Math.Clamp(page, 0, pages - 1);
+        foreach (var item in items.Skip(page * perPage).Take(perPage)) row.Children.Add(item);
+        if (pages > 1)
+        {
+            var pager = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new(4, 0, 2, 0) };
+            for (int i = 0; i < pages; i++)
+            {
+                var number = i; var label = new TextBlock { Text = (i + 1).ToString(), FontSize = 11, FontWeight = i == page ? FontWeights.SemiBold : FontWeights.Normal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                label.SetResourceReference(TextBlock.ForegroundProperty, i == page ? "Accent" : "Muted");
+                var dot = new Button { Content = label, Width = 22, Height = 22, Margin = new(1, 0, 1, 0), Style = (Style)FindResource("DockTile"), ToolTip = $"Sayfa {i + 1} / {pages} · tekerlekle de geçebilirsin" };
+                System.Windows.Automation.AutomationProperties.SetName(dot, $"Dock sayfası {i + 1}"); dot.Click += (_, _) => ShowPage(number); pager.Children.Add(dot);
+            }
+            row.Children.Add(pager);
+        }
+        var config = new Button { Content = plus, ToolTip = "Uygulama ekle · .exe/.lnk dosyasını dock'a sürükleyebilirsin", Width = vm.IconSize + 8, Height = vm.IconSize + 8, Margin = new(2, 0, 2, 0), Style = (Style)FindResource("DockTile") };
+        System.Windows.Automation.AutomationProperties.SetName(config, "Uygulama ekle"); config.Click += (_, _) => AddMenu(config); row.Children.Add(config);
+        var desired = 40 + (Math.Min(items.Count, perPage) + 1) * (vm.IconSize + 12) + (pages > 1 ? pages * 24 + 8 : 0);
         Width = Math.Max(120, Math.Min(desired, vm.Monitors.Count > 0 ? vm.Monitors.Min(m => m.Width / m.Scale) - 48 : desired)); expandedHeight = vm.IconSize + (Width < desired ? 40 : 22); Height = collapsed ? 6 : expandedHeight;
         if (IsLoaded) Reposition();
     }
@@ -133,12 +174,12 @@ public sealed class DockWindow : FloatingWindow
             Item(menu, "Sola taşı", () => { vm.MoveShortcut(shortcut, -1); persistShortcuts(); }, vm.Shortcuts.IndexOf(shortcut) > 0);
             Item(menu, "Sağa taşı", () => { vm.MoveShortcut(shortcut, 1); persistShortcuts(); }, vm.Shortcuts.IndexOf(shortcut) < vm.Shortcuts.Count - 1);
         }
-        else if (path is not null && LaunchPolicy.IsAllowed(path)) Item(menu, "Dock'a sabitle", () => { vm.Add(new(Path.GetFileNameWithoutExtension(path), path)); persistShortcuts(); }, vm.Shortcuts.Count < 24 && !vm.Shortcuts.Any(s => string.Equals(s.Target, path, StringComparison.OrdinalIgnoreCase)));
+        else if (path is not null && LaunchPolicy.IsAllowed(path)) Item(menu, "Dock'a sabitle", () => Pin?.Invoke(new(Path.GetFileNameWithoutExtension(path), path)), Pin is not null && vm.Shortcuts.Count < Settings.MaxShortcuts && !vm.Shortcuts.Any(s => string.Equals(s.Target, path, StringComparison.OrdinalIgnoreCase)));
         button.ContextMenu = menu;
         menu.Opened += (_, _) => menuOpen = true;
         menu.Closed += (_, _) => { menuOpen = false; awaySince = DateTime.UtcNow; Rebuild(); };
         button.MouseEnter += (_, _) => Animate(visual, vm.Settings.Magnification); button.MouseLeave += (_, _) => Animate(visual, 1);
-        row.Children.Add(button);
+        items.Add(button);
         if (path is not null) _ = LoadIconAsync(path, visual);
     }
     private async Task LoadIconAsync(string path, ContentControl visual)
@@ -166,7 +207,7 @@ public sealed class DockWindow : FloatingWindow
     private string EffectiveEdge => vm.Settings.IntegratedDesktop ? "bottom" : vm.Settings.DockEdge;
     private MonitorInfo TargetMonitor => vm.Monitors.FirstOrDefault(m => !SafeMode && m.Id == vm.Settings.Dock?.MonitorId) ?? vm.Monitors.First(m => m.Primary);
     internal bool IsCollapsed => collapsed;
-    internal IReadOnlyList<Button> AppButtons => row.Children.OfType<Button>().SkipLast(1).ToArray();
+    internal IReadOnlyList<Button> AppButtons => items.ToArray();
     public bool SafeMode { get; set; }
     private void Reposition()
     {

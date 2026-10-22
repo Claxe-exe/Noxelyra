@@ -46,6 +46,7 @@ public sealed record Settings
     public Placement? Panel { get; init; }
     public Placement? Dock { get; init; }
     public Placement? Widget { get; init; }
+    public const int MaxShortcuts = 64;
     public List<Shortcut> Shortcuts { get; init; } = [];
     public void Validate()
     {
@@ -65,7 +66,7 @@ public sealed record Settings
         foreach (var p in new[] { Panel, Dock, Widget })
             if (p is not null && (string.IsNullOrWhiteSpace(p.MonitorId) || !double.IsFinite(p.X) || !double.IsFinite(p.Y) || Math.Abs(p.X) > 100000 || Math.Abs(p.Y) > 100000))
                 throw new InvalidDataException("Yerleşim geçersiz.");
-        if (Shortcuts is null || Shortcuts.Count > 24 || Shortcuts.Any(s => s is null || string.IsNullOrWhiteSpace(s.Name) || s.Name.Length > 80 || !LaunchPolicy.IsAllowed(s.Target)))
+        if (Shortcuts is null || Shortcuts.Count > MaxShortcuts || Shortcuts.Any(s => s is null || string.IsNullOrWhiteSpace(s.Name) || s.Name.Length > 80 || !LaunchPolicy.IsAllowed(s.Target)))
             throw new InvalidDataException("Kısayol geçersiz; yerel .exe veya .lnk seçin.");
     }
 }

@@ -1,2 +1,2 @@
 @echo off
-start "" "%~dp0artifacts\publish-v0.18\Noxelyra.exe"
+start "" "%~dp0artifacts\publish-v0.19\Noxelyra.exe"
