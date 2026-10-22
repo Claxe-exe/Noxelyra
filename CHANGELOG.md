@@ -1,5 +1,11 @@
 # Değişiklikler
 
+## 0.26.1 · 2026-10-23 · İlk herkese açık sürüm
+
+- GitHub'da MIT lisansıyla yayımlandı. Test çıktıları (bu makinenin masaüstü, açık uygulamaları ve medya başlıklarını içeren `artifacts/`) depodan ve geçmişten çıkarıldı; commit kimliği GitHub noreply adresine taşındı.
+- Sürüm paketi CI derlemesiyle üretilir: PDB'lerde yerel klasör yolu yerine `/_/` ve GitHub SourceLink bulunur.
+- SECURITY.md (gizli açık bildirme ve güvenlik modeli) ve vitrin README'si.
+
 ## 0.26.0 · 2026-10-22 · Kararma + TV, ayarlanabilir kararma, MP4 düzeltmesi
 
 - Üçüncü geçiş "Kararma + TV açılışı": klip seçilen sürede karanlığa iner, kısa bir karanlık an, sonra TV açılışı.

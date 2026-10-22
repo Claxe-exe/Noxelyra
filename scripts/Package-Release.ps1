@@ -5,7 +5,8 @@ $version=([xml](Get-Content -LiteralPath (Join-Path $root 'src/ClaxeDesktop.App/
 $short=($version -split '\.')[0..1] -join '.'
 $publish=Join-Path $root "artifacts/publish-v$short"
 $package=Join-Path $root "artifacts/Noxelyra-$version-win-x64"
-dotnet publish (Join-Path $root 'src/ClaxeDesktop.App') -c Release -r win-x64 --self-contained false -o $publish --nologo
+# ContinuousIntegrationBuild writes repo-relative (/_/) source paths, so published PDBs never carry the build machine's folders.
+dotnet publish (Join-Path $root 'src/ClaxeDesktop.App') -c Release -r win-x64 --self-contained false -o $publish --nologo -p:ContinuousIntegrationBuild=true
 if($LASTEXITCODE -ne 0){throw 'Publish failed'}
 if(Test-Path -LiteralPath $package){throw 'Package directory already exists; inspect before regenerating.'}
 New-Item -ItemType Directory -Force (Join-Path $package 'app')|Out-Null
