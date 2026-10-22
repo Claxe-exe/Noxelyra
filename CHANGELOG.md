@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.16.0 · 2026-10-22 · Yönetici izinli servis kapatma
+
+- Hafifletme penceresinde Telemetri (DiagTrack), SysMain ve Windows Search dizinleme servisleri: gerçek durum, etkisi ve seçilenleri kapatma.
+- Değişiklik her seferinde UAC soran kısa ömürlü yardımcı süreçle yapılır (`--services`); ana uygulama yönetici olarak çalışmaz. Yardımcı yalnız bu üç servisi ve `services.json` kaydını kabul eder, yetkisiz başlatılırsa hiçbir şey yazmadan çıkar.
+- Her servisin ilk başlangıç türü ve çalışma durumu kaydedilir; "Servisleri eski haline getir" ikisini de geri yükler, başarısız olursa kayıt korunur.
+- Doğrulama: `--desktop` 21/21, `--widgets` 12/12, uygulama kontrolleri 12/12; yetkisiz yardımcı çıkış 4 ve kayıt yok.
+
 ## 0.15.0 · 2026-10-22 · Hafifletme merkezi
 
 - Yeni "Hafifletme" penceresi (bardaki CPU/RAM düğmesi, kontrol merkezi, bildirim alanı): en çok bellek kullanan 10 uygulama; Windows açılışında başlayan programların gerçek açık/kapalı durumu.

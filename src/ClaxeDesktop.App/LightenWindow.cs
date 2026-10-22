@@ -39,6 +39,13 @@ internal sealed class LightenWindow : Window
         web.Click += (_, _) => { Say(controller.SetWebSearch(web.IsChecked == true)); web.IsChecked = controller.WebSearchInStart; };
         extras.Children.Add(phone); extras.Children.Add(web);
 
+        var services = Section(root, "Windows servisleri · yönetici izni"); services.Children.Add(serviceList);
+        var serviceActions = new WrapPanel(); services.Children.Add(serviceActions);
+        disableServices = Button(serviceActions, "Seçilenleri kapat", async () => await RunServices(() => controller.DisableServicesAsync(selected.ToList())));
+        restoreServices = Button(serviceActions, "Servisleri eski haline getir", async () => await RunServices(controller.RestoreServicesAsync));
+        services.Children.Add(Muted("Windows her seferinde yönetici izni sorar. Yalnız bu üç servise dokunulur; Defender, güncelleme ve kabuk servisleri listede yoktur."));
+        RenderServices();
+
         var updates = Section(root, "Güncellemeler");
         updates.Children.Add(Muted("Windows Update kapatılmaz; güvenlik açığı bırakır. Ayarlar'dan güncellemeleri en fazla 5 hafta duraklatabilirsin."));
         var update = Button(updates, "Windows Update'i aç", () => Try(LightenService.OpenWindowsUpdate)); update.HorizontalAlignment = HorizontalAlignment.Left;
@@ -46,6 +53,38 @@ internal sealed class LightenWindow : Window
         restore = Button(root, "Hepsini eski haline getir", () => { Say(controller.RestoreLighten()); phone.IsChecked = controller.PhoneInBackground; web.IsChecked = controller.WebSearchInStart; RenderStartup(); });
         restore.HorizontalAlignment = HorizontalAlignment.Left; restore.Margin = new(0, 24, 0, 0);
         RenderMemory(); RenderStartup(); UpdateRestore();
+    }
+    private readonly StackPanel serviceList = new();
+    private readonly HashSet<string> selected = new(StringComparer.OrdinalIgnoreCase);
+    private Button disableServices = null!, restoreServices = null!;
+    private bool runningServices;
+    private void RenderServices()
+    {
+        serviceList.Children.Clear(); selected.Clear();
+        foreach (var tweak in ServiceTweaks.All)
+        {
+            var state = controller.ReadService(tweak.Name);
+            var text = state is null ? "bu Windows'ta yok" : (state.Running ? "çalışıyor" : "durdu") + " · " + state.Start switch { ServiceStart.Disabled => "devre dışı", ServiceStart.Manual => "el ile", ServiceStart.AutomaticDelayed => "otomatik (gecikmeli)", _ => "otomatik" };
+            var label = new TextBlock(); label.Inlines.Add(new Run(tweak.Title)); label.Inlines.Add(new Run("   " + text) { Foreground = (System.Windows.Media.Brush)FindResource("Muted"), FontSize = 12 });
+            var box = new CheckBox { Content = label, IsEnabled = editable && state is { Start: not ServiceStart.Disabled }, Margin = new(0, 8, 0, 2), ToolTip = tweak.Effect };
+            System.Windows.Automation.AutomationProperties.SetName(box, tweak.Title + " kapatılsın");
+            var name = tweak.Name;
+            box.Click += (_, _) => { if (box.IsChecked == true) selected.Add(name); else selected.Remove(name); UpdateServiceButtons(); };
+            serviceList.Children.Add(box);
+            var effect = Muted(tweak.Effect); effect.Margin = new(24, 0, 0, 4); effect.FontSize = 12; serviceList.Children.Add(effect);
+        }
+        UpdateServiceButtons();
+    }
+    private void UpdateServiceButtons()
+    {
+        if (disableServices is null) return;
+        disableServices.IsEnabled = editable && !runningServices && selected.Count > 0;
+        restoreServices.IsEnabled = editable && !runningServices && controller.ServicesChanged;
+    }
+    private async Task RunServices(Func<Task<string>> action)
+    {
+        runningServices = true; UpdateServiceButtons(); Say("Yönetici izni bekleniyor…");
+        try { Say(await action()); } finally { runningServices = false; RenderServices(); }
     }
     private void Say(string message) { status.Text = message; UpdateRestore(); }
     private void UpdateRestore() => restore.IsEnabled = editable && controller.LightenChanged;

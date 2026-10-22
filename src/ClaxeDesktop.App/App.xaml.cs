@@ -15,6 +15,7 @@ public partial class App : Application
 
         SynchronizationContext.SetSynchronizationContext(new System.Windows.Threading.DispatcherSynchronizationContext(Dispatcher));
         if (e.Args.Length == 3 && e.Args[0] == "--we-query") { Shutdown(await WallpaperEngineConsole.RunHelperAsync(e.Args[1], e.Args[2])); return; }
+        if (e.Args.Length >= 3 && e.Args[0] == "--services") { Shutdown(ServiceHelper.Run(e.Args)); return; }
         if (e.Args.Contains("--shutdown-for-maintenance")) { Shutdown(await Maintenance.RunAsync()); return; }
         if(e.Args.Length==3&&(e.Args[0]=="--taskbar-guardian"||(e.Args[0]=="--taskbar-guardian-fixture"&&Environment.GetEnvironmentVariable("CLAXE_TEST_FIXTURE")=="1"))&&int.TryParse(e.Args[1],out var parentId)&&long.TryParse(e.Args[2],out var parentTicks))
         {

@@ -122,3 +122,7 @@
 
 - "Panel için Windows çalışma alanında yer ayır" açıkken (v0.14, kullanıcının 1920×1080 ekranı) Windows en üstteki 0-48 px'i ayırıyor ama panel 48-96 px'e yerleşiyor; üst şerit boş kalıyor. Tek başına bir test AppBar'ı Windows'ta doğru konuma yerleşti, yani paneli kaydıran Noxelyra'nın kendi kodu. Kullanıcı ayarı kapattı ve incelemenin şimdilik bırakılmasını istedi. Yüzen bar etkilenmiyor.
 
+## Yönetici izni sapması · 22 Ekim 2026
+
+- Plan "yönetici izni isteyen proje değil" diyordu. Kullanıcı servis kapatmayı açıkça ve geri alınabilir olarak istedi. Sapma dar tutuldu: yalnız DiagTrack, SysMain ve WSearch; her işlemde UAC; ayrı kısa ömürlü yardımcı; ana uygulama normal yetkide. Defender, Windows Update ve kabuk servisleri izin listesinde yok.
+
