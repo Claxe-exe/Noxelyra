@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.21.0 · 2026-10-22 · Cam düzeltmesi
+
+- 0.20'de Windows Acrylic'in gri tonu tema rengini bastırıyor, dock ve widget'lar gri kutulara dönüyordu. Tema rengi yeniden baskın; cam yalnız arkayı yumuşatır. Mica pencerelerde de tema tonu koyulaştırıldı.
+
 ## 0.20.0 · 2026-10-22 · Tasarım v1.0 · adım 1: gerçek cam ve hareket
 
 - Dock ve widget'lar Windows 11 Acrylic arka planı kullanır (belgelenmiş DWM öznitelikleri): gerçek bulanık cam, Windows'un yumuşak yuvarlak köşeleri ve tema renginde ince kenar. Kontrol merkezi, ayarlar, hafifletme ve başlatıcı Mica kullanır. Windows 11 22H2 öncesinde veya yüksek kontrastta eski boyalı yüzeyler kalır.

@@ -51,8 +51,8 @@ public class FloatingWindow : Window
         var palette = ThemePresets.Resolve(vm.Settings);
         var color = (Color)ColorConverter.ConvertFromString(palette.Surface);
         color.A = vm.Settings.Material == "flat" ? (byte)255 : (byte)(vm.SurfaceOpacity * 255);
-        // Over real acrylic the surface is only a tint; Windows rounds the corners and draws the outline.
-        if (Backdrop && vm.Settings.Material != "flat") color.A = (byte)(vm.SurfaceOpacity * 120);
+        // The theme colour stays dominant over acrylic (Windows' own grey tint must not show through); the glass only softens what is behind.
+        if (Backdrop && vm.Settings.Material != "flat") color.A = (byte)(vm.SurfaceOpacity * 235);
         Frame.Background = SystemParameters.HighContrast ? SystemColors.WindowBrush : new SolidColorBrush(color);
         Frame.CornerRadius = new(Backdrop ? 0 : vm.Settings.CornerRadius); Frame.BorderThickness = new(Backdrop ? 0 : vm.Settings.BorderWidth);
         Frame.SetResourceReference(Border.BorderBrushProperty, vm.Settings.Material == "neon" ? "Accent" : "Line");

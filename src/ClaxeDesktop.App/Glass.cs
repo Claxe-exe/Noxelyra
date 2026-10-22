@@ -31,7 +31,7 @@ internal static class Glass
         Prepare(window, BackdropKind.Mica, false, ok =>
         {
             if (!ok) return;
-            var canvas = (window.TryFindResource("Canvas") as SolidColorBrush)?.Color ?? Colors.Black; canvas.A = 0x80;
+            var canvas = (window.TryFindResource("Canvas") as SolidColorBrush)?.Color ?? Colors.Black; canvas.A = 0xD8;
             window.Background = new SolidColorBrush(canvas);
         });
     }

@@ -1,10 +1,10 @@
-# Noxelyra · v0.20
+# Noxelyra · v0.21
 
 Windows 11 üzerinde panel, dock, widget ve kişisel masaüstü alanı. Önceki adı Claxe Desktop idi; mevcut ayarlar korunur.
 
 ## Hızlı kullanım
 
-- **Noxelyra.cmd** veya `artifacts/publish-v0.20/Noxelyra.exe` aç.
+- **Noxelyra.cmd** veya `artifacts/publish-v0.21/Noxelyra.exe` aç.
 - **Alt+K** her basışta dock'u mevcut uygulamanın önüne getirir. **Esc**, dock'tan uygulama seçimi veya etkileşimsiz 15 saniye normal davranışı geri getirir. Genel Ctrl+Alt kısayol ayarından bağımsızdır. Çakışmada bildirim alanı menüsündeki **Dock'u öne getir** kullanılabilir.
 - Kontrol merkezinden veya bildirim alanından **Noxelyra masaüstü alanını aç**. Gerçek Desktop dosyalarını ara, çift tık/Enter ile aç, sürükle veya Alt+yön ile yerleştir. **Esc** Windows masaüstüne döner. Alanın oturumla açılması kapalı varsayılandır.
 - **Windows masaüstüne dönünce Noxelyra alanını göster** seçeneği, alanı görev çubuğunda ayrı uygulama yapmadan masaüstünde tutar. Diğer uygulamalar önde kalır; otomatik gösterim odağını çalmaz. Esc/Alt+F4 geçici olarak Windows'a döner. Bu mod yeni kurulumda kapalıdır.
@@ -33,7 +33,7 @@ Noxelyra'nın video/ikon alanı bağımsız bir penceredir. Windows masaüstü i
 
 ## Kurulum ve geliştirme
 
-`artifacts/Noxelyra-0.20.0-win-x64.zip` dosyasının tamamını çıkar. PowerShell'de `Install.ps1`; kaldırmak için kurulum kökündeki `Uninstall.ps1`. Yönetici, ağdan indirme veya gizli otomatik başlatma yoktur. Varsayılan kurulum `%LOCALAPPDATA%/Programs/Noxelyra`; kişisel veriler uyumluluk için `%LOCALAPPDATA%/ClaxeDesktop` altında kalır. Kaldırma önce Windows durumunu kurtarır, kişisel verileri korur. Başlangıç zaten açıksa eski sahip olunan Claxe kısayolu yeni Noxelyra EXE'ye güncellenir. Yeni kurulum isteğe bağlı olarak ilk açılışta sorulur.
+`artifacts/Noxelyra-0.21.0-win-x64.zip` dosyasının tamamını çıkar. PowerShell'de `Install.ps1`; kaldırmak için kurulum kökündeki `Uninstall.ps1`. Yönetici, ağdan indirme veya gizli otomatik başlatma yoktur. Varsayılan kurulum `%LOCALAPPDATA%/Programs/Noxelyra`; kişisel veriler uyumluluk için `%LOCALAPPDATA%/ClaxeDesktop` altında kalır. Kaldırma önce Windows durumunu kurtarır, kişisel verileri korur. Başlangıç zaten açıksa eski sahip olunan Claxe kısayolu yeni Noxelyra EXE'ye güncellenir. Yeni kurulum isteğe bağlı olarak ilk açılışta sorulur.
 
 .NET 10 Desktop Runtime x64 gerekir; yerel web widget'ları için WebView2 Runtime gerekir. Windows betik politikası değiştirilmez; taşınabilir `app/Noxelyra.exe` alternatifi vardır.
 
