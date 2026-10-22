@@ -40,7 +40,7 @@ internal sealed class ControlCenterWindow : Window
         taskbar.Click+=async(_,_)=>{taskbar.IsEnabled=false;await controller.ConfigureWindowsTaskbarAsync(taskbar.IsChecked==true);taskbar.IsChecked=controller.ViewModel.Settings.HideWindowsTaskbar;taskbar.IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly;};
         desktop.Children.Add(new TextBlock{Text="Görev çubuğu ekran kenarına gelince açılır. Çıkışta eski tercih geri gelir; çökmede ayrı yerel yardımcı geri yüklemeyi dener.",TextWrapping=TextWrapping.Wrap,Opacity=.65});
         var actions=new WrapPanel();desktop.Children.Add(actions);
-        Button(actions,"Uygulamalar",()=>controller.ShowLauncher());Button(actions,"Widget atölyesi",()=>controller.Widgets.ShowEditor());Button(actions,"Rafı göster / gizle",controller.Widgets.ToggleShelf);Button(actions,"Görünüm ayarları",controller.ShowSettings);
+        Button(actions,"Uygulamalar",()=>controller.ShowLauncher());Button(actions,"Widget atölyesi",()=>controller.Widgets.ShowEditor());Button(actions,"Rafı göster / gizle",controller.Widgets.ToggleShelf);Button(actions,"Görünüm ayarları",controller.ShowSettings);Button(actions,"Hafifletme",controller.ShowLighten);
         Button(actions,"Profiller ve kurallar",()=>controller.ShowAdvanced());Button(actions,"Pencere düzenleri",()=>controller.ShowAdvanced(2));Button(actions,"Yerel maskot",()=>controller.ShowAdvanced(3));
         var look=Section(root,"Windows görünümü");
         var lookStatus=new TextBlock{Text="Windows'un kendi pencereleri, menüleri ve Ayarlar uygulaması. Değişiklikler senin Windows tercihindir; Noxelyra kapanınca da kalır.",TextWrapping=TextWrapping.Wrap,Opacity=.7};

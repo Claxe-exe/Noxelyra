@@ -75,10 +75,11 @@ public sealed class PanelWindow : FloatingWindow
         volumeButton.PreviewKeyDown += (_, e) => { if (e.Key is Key.Up or Key.Right) { ChangeVolume(.02f); e.Handled = true; } else if (e.Key is Key.Down or Key.Left) { ChangeVolume(-.02f); e.Handled = true; } };
         volumeIsland = Island(volumeButton); right.Children.Add(volumeIsland);
 
-        var system = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(14, 0, 14, 0) };
+        var system = new StackPanel { Orientation = Orientation.Horizontal };
         system.Children.Add(Label("CPU")); var cpu = Figure(""); cpu.Margin = new(6, 0, 14, 0); cpu.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.CpuText))); system.Children.Add(cpu);
         system.Children.Add(Label("RAM")); var ram = Figure(""); ram.Margin = new(6, 0, 0, 0); ram.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.MemoryText))); system.Children.Add(ram);
-        var systemIsland = Island(system); systemIsland.SetBinding(ToolTipProperty, new Binding(nameof(DesktopViewModel.MemoryDetail))); right.Children.Add(systemIsland);
+        var systemButton = IconButton(system, "Hafifletme: bellek ve açılışta başlayanlar", controller.ShowLighten); systemButton.Padding = new(12, 0, 12, 0);
+        var systemIsland = Island(systemButton); right.Children.Add(systemIsland);
 
         var themeButton = IconButton(Glyph(""), "Renk paleti", null);
         themeButton.Click += (_, _) => { var menu = ThemeMenu(); menu.PlacementTarget = themeButton; menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom; menu.IsOpen = true; };

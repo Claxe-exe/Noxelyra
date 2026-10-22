@@ -1,5 +1,13 @@
 # Değişiklikler
 
+## 0.15.0 · 2026-10-22 · Hafifletme merkezi
+
+- Yeni "Hafifletme" penceresi (bardaki CPU/RAM düğmesi, kontrol merkezi, bildirim alanı): en çok bellek kullanan 10 uygulama; Windows açılışında başlayan programların gerçek açık/kapalı durumu.
+- Kullanıcı kapsamındaki başlangıç girdileri Görev Yöneticisi'nin kullandığı StartupApproved değerleriyle açılıp kapatılır; yönetici gerektirenler salt okunur, Görev Yöneticisi bağlantısı var.
+- Telefon Bağlantısı / Cross Device arka plan izni ve Başlat aramasındaki web önerileri. Windows Update kapatılmaz; Ayarlar'daki duraklatma sayfası açılır.
+- Her değişikliğin önceki hali kaydedilir; "Hepsini eski haline getir" geri yükler. Yönetici izni gerektiren servis değişiklikleri bu sürümde yok.
+- Doğrulama: `--desktop` 18/18, `--widgets` 12/12, uygulama kontrolleri 12/12.
+
 ## 0.14.0 · 2026-10-22 · Windows görünümü
 
 - Kontrol merkezinde "Windows görünümü": Windows koyu modu, saydamlık efektleri ve vurgu rengini aktif palete eşleme (deneysel). Yalnız kullanıcının kendi HKCU kişiselleştirme değerleri yazılır; Ayarlar uygulamasının gönderdiği bildirimle anında uygulanır.

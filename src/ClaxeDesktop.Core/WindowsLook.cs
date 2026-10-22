@@ -64,13 +64,13 @@ public static class WindowsLook
 }
 
 /// <summary>Remembers each value's state before Noxelyra first changed it, so "restore" returns to the user's own Windows look.</summary>
-public sealed class WindowsLookSession(IWindowsLookService service, string journal)
+public class WindowsLookSession(IWindowsLookService service, string journal, IReadOnlySet<string>? allowed = null)
 {
-    private static readonly HashSet<string> Allowed = [WindowsLook.Personalize, WindowsLook.Accent, WindowsLook.Dwm];
+    private readonly IReadOnlySet<string> Allowed = allowed ?? new HashSet<string> { WindowsLook.Personalize, WindowsLook.Accent, WindowsLook.Dwm };
     public bool HasChanges => Load().Count > 0;
     public void Apply(IReadOnlyList<LookValue> values)
     {
-        if (values.Any(v => !Allowed.Contains(v.Key) || !v.Exists)) throw new InvalidOperationException("Yalnız Noxelyra'nın tanıdığı görünüm değerleri yazılabilir.");
+        if (values.Any(v => !Allowed.Contains(v.Key) || !v.Exists)) throw new InvalidOperationException("Yalnız Noxelyra'nın tanıdığı Windows değerleri yazılabilir.");
         var originals = Load();
         foreach (var value in values) if (!originals.Any(o => o.Id == value.Id)) originals.Add(service.Read(value.Key, value.Name));
         Save(originals);

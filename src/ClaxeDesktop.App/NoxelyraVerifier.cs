@@ -79,6 +79,7 @@ internal static class NoxelyraVerifier
             OriginalArt.Save(OriginalArt.Mascot(), Path.Combine(directory, "Nox.png"), 256, 256);
             // Visual QA only (not a check): the bar over the night art in every palette.
             foreach (var palette in ThemePresets.All) { await controller.SetThemeAsync(palette.Id); panel.UpdateLayout(); ExportOver(panel, Path.Combine(directory, $"Noxelyra-panel-{palette.Id}.png")); }
+            var lighten = new LightenWindow(controller) { Height = 1400 }; lighten.Show(); lighten.UpdateLayout(); Export(lighten, Path.Combine(directory, "Noxelyra-lighten.png")); lighten.Close();
             await controller.SetThemeAsync("midnight-claxe"); var floatingWidth = panel.Width; panel.Width = 1920; panel.UpdateLayout(); ExportOver(panel, Path.Combine(directory, "Noxelyra-panel-wide.png")); panel.Width = floatingWidth;
         }
         catch (Exception ex) { error = ex.ToString(); }
