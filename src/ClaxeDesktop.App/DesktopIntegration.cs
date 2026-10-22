@@ -144,15 +144,23 @@ public sealed partial class DesktopController
     }
     private async Task StopDesktopServicesAsync()
     {
+        TaskbarWindows.SetVisible(true);
         try{await taskbarSession.RestoreAsync(taskbarOwner);}catch(Exception ex){Log.Write("taskbar-exit-restore-pending",ex);}
         try { await externalWallpaper.RestoreAsync(); } catch (Exception ex) { Log.Write("engine-exit-recovery-pending", ex); }
         desktopBindings?.Dispose();launcherWindow?.Close();controlWindow?.Close();
         try{wallpaperSession.Restore();}catch(Exception ex){Log.Write("wallpaper-exit-restore-pending",ex);}
     }
+    private Task? guardianLaunch;
+    // Taskbar auto-hide and full hiding can both ask for the guardian at startup; share one launch.
     private async Task EnsureTaskbarGuardianAsync()
     {
+        if(guardianStarted&&File.Exists(TaskbarGuardian.ReadyPath(desktopData,taskbarOwner)))return;
+        if(guardianLaunch is {IsCompleted:false}){await guardianLaunch;return;}
+        guardianLaunch=LaunchTaskbarGuardianAsync();await guardianLaunch;
+    }
+    private async Task LaunchTaskbarGuardianAsync()
+    {
         var ready=TaskbarGuardian.ReadyPath(desktopData,taskbarOwner);
-        if(guardianStarted&&File.Exists(ready))return;
         var info=new ProcessStartInfo(Environment.ProcessPath!){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden};
         info.Environment["CLAXE_DATA_DIR"]=desktopData;info.ArgumentList.Add("--taskbar-guardian");info.ArgumentList.Add(taskbarOwner.ProcessId.ToString());info.ArgumentList.Add(taskbarOwner.StartedUtcTicks.ToString());
         using var helper=Process.Start(info)??throw new InvalidOperationException("Görev çubuğu kurtarma yardımcısı başlatılamadı.");

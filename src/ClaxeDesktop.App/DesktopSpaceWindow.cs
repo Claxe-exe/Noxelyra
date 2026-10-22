@@ -14,7 +14,7 @@ namespace ClaxeDesktop.App;
 
 internal sealed class DesktopSpaceWindow : Window
 {
-    private const double CellWidth = 96, CellHeight = 104, TileWidth = 88, TileHeight = 98, HeaderInset = 92, Gutter = 28;
+    private const double CellWidth = 96, CellHeight = 104, TileWidth = 88, TileHeight = 98, Gutter = 28;
     private const string Hint = "Çift tık / Enter: aç   ·   Sürükle veya Alt+yön: taşı   ·   Sağ tık: menü   ·   Alt+K: dock   ·   Esc: Windows";
     private readonly DesktopController controller;
     private readonly Canvas icons = new() { Background = Brushes.Transparent };
@@ -30,6 +30,8 @@ internal sealed class DesktopSpaceWindow : Window
     private readonly DispatcherTimer refreshDelay = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private readonly Dictionary<string, DesktopIconPosition> positions = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<DesktopFile> files = [];
+    private Grid? header;
+    private double headerInset = 92;
     private Task refreshPending = Task.CompletedTask;
     private bool closed, mediaReady, playing, manualPause;
     private string? loadedVideo, loadedImage = "";
@@ -65,7 +67,7 @@ internal sealed class DesktopSpaceWindow : Window
         video.MediaFailed += (_, _) => { mediaReady = false; playing = false; video.Close(); video.Visibility = Visibility.Hidden; status.Text = "Video açılamadı. Windows codec desteğini kontrol et veya başka MP4/WMV seç; arka plan korunuyor."; };
         IsVisibleChanged += (_, _) => { if (!IsVisible) { video.Pause(); playing = false; } else { Place(); _ = RefreshFilesAsync(); UpdateActivity(false); } };
         saveLayout.Tick += async (_, _) => { saveLayout.Stop(); await controller.SaveDesktopIconsAsync(positions.Values.ToList()); };
-        reflow.Tick += (_, _) => { reflow.Stop(); RenderIcons(); };
+        reflow.Tick += (_, _) => { reflow.Stop(); Place(); };
         refreshDelay.Tick += async (_, _) => { refreshDelay.Stop(); if (IsVisible) await RefreshFilesAsync(); };
         foreach (var rootPath in DesktopFiles.Roots)
         {
@@ -79,11 +81,13 @@ internal sealed class DesktopSpaceWindow : Window
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { status.Text = "Otomatik dosya yenileme açılamadı; F5 kullanabilirsin."; }
         }
         Closing += (_, e) => { if (!controller.IsExiting) { e.Cancel = true; controller.DismissDesktopSpace(); return; } foreach (var watcher in watchers) watcher.Dispose(); refreshDelay.Stop(); saveLayout.Stop(); reflow.Stop(); video.Close(); shellIcons.Dispose(); closed = true; };
+        // Clicking the desktop activates this window; keep the bar, dock and widgets above it like a real desktop.
+        Activated += (_, _) => controller.RaiseDesktopParts();
         LoadOptions();
     }
     private Grid Header()
     {
-        var header = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = new(Gutter, 18, Gutter, 0) };
+        header = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = new(Gutter, 18, Gutter, 0) };
         header.ColumnDefinitions.Add(new() { Width = new(1, GridUnitType.Star) }); header.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         var title = new StackPanel { ToolTip = Hint, VerticalAlignment = VerticalAlignment.Center };
         var line = new StackPanel { Orientation = Orientation.Horizontal };
@@ -192,6 +196,15 @@ internal sealed class DesktopSpaceWindow : Window
         var m = CurrentMonitor();
         Width = m.Width / m.Scale; Height = m.Height / m.Scale;
         WindowPlacement.Move(new WindowInteropHelper(this).EnsureHandle(), m.X, m.Y);
+        // A floating top bar on this monitor pushes the header down so the two never overlap.
+        var top = 0.0;
+        foreach (var panel in controller.Windows.OfType<PanelWindow>().Where(p => p.IsVisible))
+        {
+            try { var p = WindowPlacement.Position(new WindowInteropHelper(panel).Handle); var y = (p.Y - m.Y) / m.Scale; var x = (p.X - m.X) / m.Scale; if (y < 160 && y + panel.ActualHeight > 0 && x < Width && x + panel.ActualWidth > 0) top = Math.Max(top, y + panel.ActualHeight); }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
+        if (header is not null) header.Margin = new(Gutter, 18 + top, Gutter, 0);
+        headerInset = 92 + top;
         RenderIcons();
     }
     internal void ScheduleReflow() { if (closed || !IsVisible) return; reflow.Stop(); reflow.Start(); }
@@ -247,10 +260,10 @@ internal sealed class DesktopSpaceWindow : Window
         var visible = controller.ViewModel.Settings.DesktopSpace.ShowIcons || search.Text.Length > 0;
         var filtered = visible ? files.Where(f => f.Name.Contains(search.Text, StringComparison.CurrentCultureIgnoreCase)).ToArray() : [];
         count.Text = search.Text.Length > 0 ? $"{filtered.Length} / {files.Count} öğe" : visible ? $"{files.Count} öğe" : $"{files.Count} öğe · simgeler gizli";
-        double maxX = Math.Max(0, Width - CellWidth), height = Math.Max(HeaderInset + CellHeight, Height - Gutter);
+        double maxX = Math.Max(0, Width - CellWidth), height = Math.Max(headerInset + CellHeight, Height - Gutter);
         var saved = filtered.Where(f => positions.ContainsKey(f.Path)).ToDictionary(f => f.Path, f => positions[f.Path], StringComparer.OrdinalIgnoreCase);
-        var occupied = saved.Values.Select(p => new LayoutRect(Math.Clamp(p.X, 0, maxX), Math.Max(HeaderInset, p.Y), CellWidth, CellHeight)).ToList();
-        var flow = DesktopIconFlow.Arrange(filtered.Length - saved.Count, Width, Height, new(Gutter, HeaderInset, Math.Max(CellWidth, Width - Gutter * 2), height - HeaderInset), CellWidth, CellHeight, ReservedAreas(), occupied);
+        var occupied = saved.Values.Select(p => new LayoutRect(Math.Clamp(p.X, 0, maxX), Math.Max(headerInset, p.Y), CellWidth, CellHeight)).ToList();
+        var flow = DesktopIconFlow.Arrange(filtered.Length - saved.Count, Width, Height, new(Gutter, headerInset, Math.Max(CellWidth, Width - Gutter * 2), height - headerInset), CellWidth, CellHeight, ReservedAreas(), occupied);
         int cell = 0;
         foreach (var file in filtered)
         {
@@ -260,9 +273,9 @@ internal sealed class DesktopSpaceWindow : Window
             var button = new Button { Content = stack, Width = TileWidth, Height = TileHeight, Padding = new(4, 6, 4, 4), ToolTip = file.Path, Style = (Style)FindResource("DesktopTile") };
             System.Windows.Automation.AutomationProperties.SetName(button, file.Name);
             double x, y;
-            if (saved.TryGetValue(file.Path, out var p)) { x = Math.Clamp(p.X, 0, maxX); y = Math.Max(HeaderInset, p.Y); }
+            if (saved.TryGetValue(file.Path, out var p)) { x = Math.Clamp(p.X, 0, maxX); y = Math.Max(headerInset, p.Y); }
             else if (cell < flow.Count) { x = flow[cell].X + (CellWidth - TileWidth) / 2; y = flow[cell].Y; cell++; }
-            else { x = Gutter; y = HeaderInset; }
+            else { x = Gutter; y = headerInset; }
             Canvas.SetLeft(button, x); Canvas.SetTop(button, y); icons.Children.Add(button);
             async Task Icon() { try { var icon = await shellIcons.GetAsync(file.Path); if (!closed && icon.Icon is not null) image.Source = icon.Icon; } catch { /* Filename remains accessible if the OS cannot provide an icon. */ } }
             _ = Icon();
@@ -281,7 +294,7 @@ internal sealed class DesktopSpaceWindow : Window
                 {
                     var nx = Canvas.GetLeft(button) + (e.SystemKey == Key.Left ? -12 : e.SystemKey == Key.Right ? 12 : 0);
                     var ny = Canvas.GetTop(button) + (e.SystemKey == Key.Up ? -12 : e.SystemKey == Key.Down ? 12 : 0);
-                    Canvas.SetLeft(button, Math.Clamp(nx, 0, maxX)); Canvas.SetTop(button, Math.Clamp(ny, HeaderInset, 10000));
+                    Canvas.SetLeft(button, Math.Clamp(nx, 0, maxX)); Canvas.SetTop(button, Math.Clamp(ny, headerInset, 10000));
                     Remember(); e.Handled = true;
                 }
             };
@@ -292,7 +305,7 @@ internal sealed class DesktopSpaceWindow : Window
                 if (!dragging || e.LeftButton != MouseButtonState.Pressed) return;
                 var delta = e.GetPosition(icons) - origin;
                 if (delta.Length < 5 && !button.IsMouseCaptured) return;
-                button.CaptureMouse(); Canvas.SetLeft(button, Math.Clamp(start.X + delta.X, 0, maxX)); Canvas.SetTop(button, Math.Clamp(start.Y + delta.Y, HeaderInset, 10000));
+                button.CaptureMouse(); Canvas.SetLeft(button, Math.Clamp(start.X + delta.X, 0, maxX)); Canvas.SetTop(button, Math.Clamp(start.Y + delta.Y, headerInset, 10000));
             };
             button.PreviewMouseLeftButtonUp += (_, e) =>
             {

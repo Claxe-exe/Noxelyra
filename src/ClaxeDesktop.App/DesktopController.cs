@@ -86,7 +86,7 @@ public sealed partial class DesktopController
     }
     private void Tick()
     {
-        _ = AdvanceProfilesAsync();MascotActivity(); DesktopSpaceActivity();
+        _ = AdvanceProfilesAsync();MascotActivity(); DesktopSpaceActivity(); KeepTaskbarHidden();
         _ = AdvanceWallpaperRotationsAsync();
         Widgets.UpdateActivity();
         if (locked || suspended || !windows.Any(w => w.IsVisible && w.WindowState != WindowState.Minimized)) return;

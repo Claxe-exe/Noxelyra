@@ -23,6 +23,7 @@ internal static class TaskbarGuardian
         {
             if (platform is null)
             {
+                try { TaskbarWindows.SetVisible(true); } catch (Exception ex) { log.Write("taskbar-guardian-show-failed", ex); }
                 try { await new ExternalWallpaperSession(new WindowsExternalWallpaperService(), Path.Combine(directory, "engine-recovery.json")).RestoreAsync(expectedOwner: owner); log.Write("engine-guardian-finished"); }
                 catch (Exception ex) { log.Write("engine-guardian-restore-pending", ex); }
             }

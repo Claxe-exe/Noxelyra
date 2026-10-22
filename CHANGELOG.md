@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.18.0 · 2026-10-22 · Masaüstü katmanları, dock ve görev çubukları
+
+- Masaüstüne tıklamak artık bar, dock ve widget'ları arkaya atmıyor; alan etkinleşince Noxelyra parçaları üste alınır.
+- Yüzen bar aynı ekrandaysa masaüstü başlığı ve simgeler barın altından başlar.
+- Dock yeniden tasarlandı: kutusuz simgeler, yumuşak üzerine gelme vurgusu, çalışan uygulama için altta vurgu çizgisi, vektör tutamak ve ekle simgeleri.
+- İsteğe bağlı "Görev çubuklarını tamamen gizle (tüm ekranlar)": otomatik gizlemenin 2. ekranda takılı kalmasına karşı Explorer görev çubuğu pencereleri gizlenir; Win tuşu Başlat'ı açmaya devam eder (ölçüldü). Çıkış, bakım ve çökme yardımcısı görev çubuklarını geri gösterir; yardımcı hazır değilse gizleme yapılmaz.
+
 ## 0.17.0 · 2026-10-22 · Win+D Noxelyra masaüstünü gösterir
 
 - İsteğe bağlı (kapalı varsayılan) "Win+D Noxelyra masaüstünü göstersin": ilk basış uygulamaları küçültüp Noxelyra masaüstünü açar, ikinci basış pencereleri geri getirir. Win+M zaten Noxelyra masaüstünü gösteriyordu (ölçüldü).

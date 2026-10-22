@@ -21,6 +21,7 @@ internal static class Maintenance
                 if (!owned) await Task.Delay(100);
             }
             if (!owned) throw new IOException("Noxelyra açık kaldı. Bildirim alanından çıkış yapıp yeniden dene.");
+            TaskbarWindows.SetVisible(true);
             await new TaskbarSession(new WindowsTaskbarService(), Path.Combine(data, "taskbar-recovery.json"), TaskbarGuardian.CurrentOwner()).RestoreAsync();
             new WallpaperSession(new WindowsWallpaperService(), Path.Combine(data, "wallpaper-recovery.json")).Restore();
             await new ExternalWallpaperSession(new WindowsExternalWallpaperService(), Path.Combine(data, "engine-recovery.json")).RestoreAsync();

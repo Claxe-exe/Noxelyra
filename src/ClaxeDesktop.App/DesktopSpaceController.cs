@@ -11,6 +11,7 @@ public sealed partial class DesktopController
     private bool desktopSuppressed;
     private bool desktopFollowTimerAttached;
     internal nint ForegroundWindow => windowService.Foreground;
+    internal void RaiseDesktopParts() { foreach (var window in windows.Where(w => w.IsVisible)) RaiseDesktopPart(new System.Windows.Interop.WindowInteropHelper(window).Handle, 0, 0, 0, 0, 0, 0x0013); }
     internal DesktopSpaceWindow? SpaceWindow => desktopSpace;
     private void StartDesktopSpace() { _ = RestoreExternalWallpaperAsync(); ConfigureDesktopFollowing(); ConfigureShowDesktop(); if (!safe && committed.DesktopSpace.Enabled) OpenDesktopSpace(!committed.DesktopSpace.FollowDesktop); }
     public async void ShowDesktopSpace()
@@ -118,6 +119,37 @@ public sealed partial class DesktopController
             desktopSuppressed = false; ConfigureDesktopFollowing(); desktopSpace?.LoadOptions();
             if (enabled) OpenDesktopSpace();
         }
+        return saved;
+    }
+    private bool taskbarHiddenByUs;
+    // Explorer re-shows its taskbars after restarts and display changes; the 1 s tick hides them again while the option is on.
+    private void KeepTaskbarHidden()
+    {
+        var wanted = !safe && !exiting && committed.HideWindowsTaskbar && committed.DesktopSpace.HideTaskbarCompletely;
+        // Never hide without a live guardian that shows the taskbars again if Noxelyra dies.
+        if (wanted && !guardianStarted) { if (!guardianStarting && DateTime.UtcNow - guardianFailedAt > TimeSpan.FromMinutes(1)) _ = StartGuardianForHidingAsync(); return; }
+        try
+        {
+            if (wanted && TaskbarWindows.AnyVisible()) { TaskbarWindows.SetVisible(false); taskbarHiddenByUs = true; }
+            else if (!wanted && taskbarHiddenByUs) { TaskbarWindows.SetVisible(true); taskbarHiddenByUs = false; }
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { Log.Write("taskbar-hide-failed", ex); }
+    }
+    private bool guardianStarting;
+    private DateTime guardianFailedAt = DateTime.MinValue;
+    private async Task StartGuardianForHidingAsync()
+    {
+        guardianStarting = true;
+        try { await EnsureTaskbarGuardianAsync(); }
+        catch (Exception ex) { guardianFailedAt = DateTime.UtcNow; Log.Write("taskbar-hide-guardian-failed", ex); ViewModel.Status = "Kurtarma yardımcısı hazır değil; görev çubukları gizlenmedi."; }
+        finally { guardianStarting = false; }
+    }
+    internal async Task<bool> SetHideTaskbarCompletelyAsync(bool hidden)
+    {
+        if (hidden && !committed.HideWindowsTaskbar && !await ConfigureWindowsTaskbarAsync(true)) return false;
+        var saved = await PersistDesktopSpaceAsync(options => options with { HideTaskbarCompletely = hidden });
+        KeepTaskbarHidden();
+        if (saved) ViewModel.Status = hidden ? "Windows görev çubukları Noxelyra açıkken tamamen gizli. Win tuşu Başlat'ı açmaya devam eder." : "Windows görev çubukları yeniden görünür.";
         return saved;
     }
     private ShowDesktopHook? showDesktopHook;

@@ -7,6 +7,7 @@ using ClaxeDesktop.Core;
 namespace ClaxeDesktop.App;
 public sealed class DockWindow : FloatingWindow
 {
+    private const string IconFont = "Segoe Fluent Icons, Segoe MDL2 Assets";
     public event Action<bool>? ActivationCompleted;
     private readonly StackPanel row = new() { Orientation = Orientation.Horizontal };
     private readonly DesktopViewModel vm;
@@ -33,7 +34,7 @@ public sealed class DockWindow : FloatingWindow
     {
         this.vm = vm; this.launch = launch; this.settings = settings; this.windowService = windowService; this.icons = icons;
         this.persistShortcuts = persistShortcuts;
-        Frame.Padding = new(10, 8, 10, 8); Frame.Child = new ScrollViewer { Content = row, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        Frame.Padding = new(8, 6, 8, 6); Frame.Child = new ScrollViewer { Content = row, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled };
         vm.Shortcuts.CollectionChanged += ShortcutsChanged;
         SourceInitialized += (_, _) => attached = true;
         Closed += (_, _) => { closed = true; visibilityTimer.Stop(); vm.Shortcuts.CollectionChanged -= ShortcutsChanged; };
@@ -70,7 +71,7 @@ public sealed class DockWindow : FloatingWindow
     private void SetCollapsed(bool hide)
     {
         collapsed = hide; row.Visibility = hide ? Visibility.Hidden : Visibility.Visible;
-        Frame.Padding = hide ? new(0) : new(10, 8, 10, 8); Height = hide ? 6 : expandedHeight; Reposition();
+        Frame.Padding = hide ? new(0) : new(8, 6, 8, 6); Height = hide ? 6 : expandedHeight; Reposition();
     }
     private void ShortcutsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => Rebuild();
     public void UpdateWindows(IReadOnlyList<AppWindow> windows)
@@ -85,7 +86,7 @@ public sealed class DockWindow : FloatingWindow
         if (closed) return;
         rebuildPending = false;
         row.Children.Clear();
-        var handle = new TextBlock { Text = "⠿", FontSize = 20, Width = 22, VerticalAlignment = VerticalAlignment.Center, Foreground = (Brush)FindResource("Muted") }; MakeDragHandle(handle); row.Children.Add(handle);
+        var handle = new TextBlock { Text = "", FontFamily = new FontFamily(IconFont), FontSize = 14, Width = 18, Opacity = .6, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center }; handle.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); MakeDragHandle(handle); row.Children.Add(handle);
         IReadOnlyList<AppWindow> available = vm.Settings.ShowRunningApps ? running : [];
         var consumed = new HashSet<nint>();
         foreach (var shortcut in vm.Shortcuts)
@@ -100,17 +101,20 @@ public sealed class DockWindow : FloatingWindow
         {
             var first = group.Windows[0]; AddButton(first.Title, first.Executable, group.Windows, null);
         }
-        var config = new Button { Content = "+", ToolTip = "Kısayollar ve ayarlar", Width = vm.IconSize, Height = vm.IconSize, Padding = new(0), FontSize = 26, Foreground = (Brush)FindResource("Accent") }; config.Click += (_, _) => settings(); row.Children.Add(config);
-        var desired = 46 + (row.Children.Count - 1) * (vm.IconSize + 6);
-        Width = Math.Max(120, Math.Min(desired, vm.Monitors.Count > 0 ? vm.Monitors.Min(m => m.Width / m.Scale) - 48 : desired)); expandedHeight = vm.IconSize + (Width < desired ? 44 : 26); Height = collapsed ? 6 : expandedHeight;
+        var plus = new TextBlock { Text = "", FontFamily = new FontFamily(IconFont), FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }; plus.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        var config = new Button { Content = plus, ToolTip = "Kısayollar ve ayarlar", Width = vm.IconSize + 8, Height = vm.IconSize + 8, Margin = new(2, 0, 2, 0), Style = (Style)FindResource("DockTile") };
+        System.Windows.Automation.AutomationProperties.SetName(config, "Kısayollar ve ayarlar"); config.Click += (_, _) => settings(); row.Children.Add(config);
+        var desired = 40 + (row.Children.Count - 1) * (vm.IconSize + 12);
+        Width = Math.Max(120, Math.Min(desired, vm.Monitors.Count > 0 ? vm.Monitors.Min(m => m.Width / m.Scale) - 48 : desired)); expandedHeight = vm.IconSize + (Width < desired ? 40 : 22); Height = collapsed ? 6 : expandedHeight;
         if (IsLoaded) Reposition();
     }
     private void AddButton(string name, string? path, IReadOnlyList<AppWindow> windows, Shortcut? shortcut)
     {
         var grid = new Grid();
         var visual = new ContentControl { Content = name[..1].ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, RenderTransformOrigin = new(.5, .5), RenderTransform = new ScaleTransform(1, 1) }; grid.Children.Add(visual);
-        if (windows.Count > 0) grid.Children.Add(new TextBlock { Text = windows.Count > 1 ? windows.Count.ToString() : "•", FontSize = 11, Foreground = (Brush)FindResource("Accent"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom });
-        var button = new Button { Content = grid, ToolTip = windows.Count > 0 ? string.Join("\n", windows.Select(w => w.Title)) : name, Width = vm.IconSize, Height = vm.IconSize, Padding = new(5), FontSize = 20 };
+        // Running apps get a short accent bar under the icon, longer for several windows, like a Linux dock.
+        if (windows.Count > 0) { var marker = new Border { Height = 3, Width = windows.Count > 1 ? 16 : 6, CornerRadius = new(2), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, -3) }; marker.SetResourceReference(Border.BackgroundProperty, "Accent"); grid.Children.Add(marker); }
+        var button = new Button { Content = grid, ToolTip = windows.Count > 0 ? string.Join("\n", windows.Select(w => w.Title)) : name, Width = vm.IconSize + 8, Height = vm.IconSize + 8, Padding = new(4), Margin = new(2, 0, 2, 0), FontSize = 20, Style = (Style)FindResource("DockTile") };
         System.Windows.Automation.AutomationProperties.SetName(button, windows.Count > 0 ? $"{name}, {windows.Count} açık pencere" : name + " uygulamasını aç");
         button.Click += (_, _) =>
         {

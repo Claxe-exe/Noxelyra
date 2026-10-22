@@ -10,6 +10,7 @@ public sealed record DesktopSpaceOptions
     public string? ImagePath { get; init; }
     public bool ShowIcons { get; init; } = true;
     public bool CaptureShowDesktop { get; init; }
+    public bool HideTaskbarCompletely { get; init; }
     public string? EnginePath { get; init; }
     public List<DesktopIconPosition> Icons { get; init; } = [];
     public void Validate()
