@@ -68,6 +68,9 @@ internal static class NoxelyraVerifier
             var qa = new List<string>();
             qa.Add("mp4 length: " + await IntroMedia.VideoDurationAsync(file.Path));
             await controller.SetIntroMediaAsync(file.Path); qa.Add("mp4 import: " + ((await store.LoadAsync()).Settings.DesktopSpace.IntroMediaPath is { } introMp4 && IntroWindow.CustomClip((await store.LoadAsync()).Settings, directory) == introMp4));
+            var hashName = Path.Combine(directory, "klip #1 %20.mp4"); File.Copy(file.Path, hashName, true);
+            await controller.SetIntroMediaAsync(hashName); qa.Add("name with # and %: " + ((await store.LoadAsync()).Settings.DesktopSpace.IntroMediaPath is not null) + " / " + controller.ViewModel.Status);
+            var convertedClip = await IntroMedia.ConvertAsync(file.Path, directory); qa.Add("convert to H.264: " + (await IntroMedia.ProbeAsync(convertedClip))); File.Delete(convertedClip);
             var gifPath = Path.Combine(directory, "fixture.gif");
             using (var gifStream = File.Create(gifPath))
             {

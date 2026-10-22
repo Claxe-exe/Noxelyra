@@ -143,7 +143,7 @@ internal sealed class IntroWindow : Window
         stage.BeginAnimation(OpacityProperty, fade);
     }
     /// <summary>The user's own clip (MP4/GIF, at most ten seconds), then either a fade or the TV power-on reveal.</summary>
-    private void PlayCustom(string path, string transition)
+    private void PlayCustom(string path, string transition, int fadeMs)
     {
         foreach (UIElement child in stage.Children) child.Visibility = Visibility.Collapsed;
         stage.Background = Brushes.Black;
@@ -154,8 +154,20 @@ internal sealed class IntroWindow : Window
         {
             if (ended || leaving) return; ended = true;
             gif?.Stop(); video?.Pause();
-            if (transition == "fade") { Finish(700); return; }
-            Reveal(layer, () => { video?.Close(); });
+            switch (transition)
+            {
+                // Kararma: the picture sinks to black at the chosen pace, then the black lifts off the desktop.
+                case "fade":
+                    layer.BeginAnimation(OpacityProperty, A(0, fadeMs, 0, easing: new SineEase { EasingMode = EasingMode.EaseInOut }));
+                    After(fadeMs + 250, () => { video?.Close(); Finish(Math.Clamp(fadeMs / 2, 400, 1500)); });
+                    break;
+                // Kararma + TV: sink to black, a short dark beat, then the TV power-on reveal.
+                case "fade-tv":
+                    layer.BeginAnimation(OpacityProperty, A(0, fadeMs, 0, easing: new SineEase { EasingMode = EasingMode.EaseInOut }));
+                    After(fadeMs + 350, () => Reveal(layer, () => video?.Close(), false));
+                    break;
+                default: Reveal(layer, () => video?.Close(), true); break;
+            }
         }
         void Fallback() { if (ended) return; ended = true; stage.Children.Remove(layer); foreach (UIElement child in stage.Children) child.Visibility = Visibility.Visible; Boot(); }
         try
@@ -177,9 +189,15 @@ internal sealed class IntroWindow : Window
         After((int)(DesktopSpaceOptions.IntroMaxSeconds * 1000) + 300, End);
     }
     // CRT-style power on: the picture collapses to a bright line, then the screen opens from that line to reveal the desktop.
-    private void Reveal(Grid layer, Action release)
+    private void Reveal(Grid layer, Action release, bool collapsePicture)
     {
-        layer.BeginAnimation(OpacityProperty, A(0, 220, 0));
+        // Straight from the picture the image first shrinks into the line; after a fade the screen is already dark.
+        if (collapsePicture)
+        {
+            layer.RenderTransformOrigin = new(.5, .5); layer.RenderTransform = new ScaleTransform(1, 1);
+            layer.RenderTransform.BeginAnimation(ScaleTransform.ScaleYProperty, A(.004, 420, 0, easing: new QuadraticEase { EasingMode = EasingMode.EaseIn }));
+            layer.BeginAnimation(OpacityProperty, A(0, 200, 380));
+        }
         var half = Height / 2;
         var top = new Rectangle { Fill = Brushes.Black, Height = half, VerticalAlignment = VerticalAlignment.Top, RenderTransform = new TranslateTransform() };
         var bottom = new Rectangle { Fill = Brushes.Black, Height = half, VerticalAlignment = VerticalAlignment.Bottom, RenderTransform = new TranslateTransform() };
@@ -187,11 +205,12 @@ internal sealed class IntroWindow : Window
         stage.Children.Add(top); stage.Children.Add(bottom); stage.Children.Remove(beam); stage.Children.Add(beam);
         stage.Background = Brushes.Transparent;
         var open = new CubicEase { EasingMode = EasingMode.EaseInOut };
-        beam.BeginAnimation(WidthProperty, A(Width, 380, 200));
-        top.RenderTransform.BeginAnimation(TranslateTransform.YProperty, A(-half, 650, 560, easing: open));
-        bottom.RenderTransform.BeginAnimation(TranslateTransform.YProperty, A(half, 650, 560, easing: open));
-        beam.BeginAnimation(OpacityProperty, A(0, 450, 700));
-        After(1300, () => { release(); leaving = true; Close(); done.TrySetResult(); });
+        var start = collapsePicture ? 420 : 0;
+        beam.BeginAnimation(WidthProperty, A(Width, 650, start));
+        beam.BeginAnimation(OpacityProperty, new DoubleAnimationUsingKeyFrames { BeginTime = TimeSpan.FromMilliseconds(start), KeyFrames = { new LinearDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(700))), new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1500)), ease) } });
+        top.RenderTransform.BeginAnimation(TranslateTransform.YProperty, A(-half, 1150, start + 650, easing: open));
+        bottom.RenderTransform.BeginAnimation(TranslateTransform.YProperty, A(half, 1150, start + 650, easing: open));
+        After(start + 1900, () => { release(); leaving = true; Close(); done.TrySetResult(); });
     }
     private static bool Allowed(Settings settings) => !Suppressed && settings.IntroSequence && settings.AnimationsEnabled && SystemParameters.ClientAreaAnimation && !SystemParameters.HighContrast;
     /// <summary>The managed copy of the user's clip, or null when unset, missing or outside Noxelyra's data folder.</summary>
@@ -205,9 +224,9 @@ internal sealed class IntroWindow : Window
     {
         if (!force && !Allowed(settings)) return;
         var window = new IntroWindow(settings);
-        window.Loaded += (_, _) => { if (!boot) window.PowerOff(); else if (clip is not null) window.PlayCustom(clip, settings.DesktopSpace.IntroTransition); else window.Boot(); };
+        window.Loaded += (_, _) => { if (!boot) window.PowerOff(); else if (clip is not null) window.PlayCustom(clip, settings.DesktopSpace.IntroTransition, settings.DesktopSpace.IntroFadeMs); else window.Boot(); };
         window.Show(); window.Activate();
-        await Task.WhenAny(window.done.Task, Task.Delay(boot ? (clip is null ? 5000 : 13500) : 3000));
+        await Task.WhenAny(window.done.Task, Task.Delay(boot ? (clip is null ? 5000 : 13000 + settings.DesktopSpace.IntroFadeMs + 3000) : 3000));
         if (!window.done.Task.IsCompleted) window.Close();
     }
     internal static Task PlayAsync(Settings settings, string dataDirectory) => PlayAsync(settings, true, CustomClip(settings, dataDirectory));

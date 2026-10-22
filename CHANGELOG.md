@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.26.0 · 2026-10-22 · Kararma + TV, ayarlanabilir kararma, MP4 düzeltmesi
+
+- Üçüncü geçiş "Kararma + TV açılışı": klip seçilen sürede karanlığa iner, kısa bir karanlık an, sonra TV açılışı.
+- Kararma süresi kontrol merkezinden 0,3-6 sn (varsayılan 1,5 sn). "Kararma" artık önce siyaha iner, sonra siyah masaüstünden kalkar. TV açılışı yavaşladı: görüntü çizgiye çöker, çizgi ekran boyu uzar, ekran ~1,2 sn'de açılır.
+- MP4 düzeltmesi: süre artık GUID adlı kopyadan ölçülür (adında # veya % olan dosyalar açılmıyordu). WPF'in açamadığı, 1080p'den büyük ya da 10 sn'den uzun videolar Windows'un kendi kodlayıcısıyla H.264 MP4'e (en fazla 1920×1080, ilk 10 sn) dönüştürülür. Windows'un çözemediği biçimde açık bir hata ve çözüm yolu gösterilir. Değiştirilen eski klip kopyası silinir.
+- QA: "klip #1 %20.mp4" içe aktarıldı; gerçek dönüştürme 800×480 2 sn H.264 üretti.
+
 ## 0.25.0 · 2026-10-22 · Kendi açılış klibin
 
 - Kontrol merkezi → Açılış: en fazla 10 saniyelik yerel MP4/M4V/WMV veya GIF seçilebilir. Süre kopyalamadan önce ölçülür; uzun klip, çözülemeyen video veya 200 MB üstü video / 40 MB üstü GIF reddedilir. Klip Noxelyra veri klasörüne kopyalanır.

@@ -59,8 +59,14 @@ internal sealed class ControlCenterWindow : Window
         restoreLook=Button(lookActions,"Windows görünümünü eski haline getir",()=>Refresh(controller.RestoreWindowsLook()));restoreLook.IsEnabled=dark.IsEnabled&&controller.WindowsLookChanged;
         var intro=Section(root,"Açılış");
         var introStatus=new TextBlock{TextWrapping=TextWrapping.Wrap,Opacity=.7};void IntroText(){introStatus.Text=controller.ViewModel.Settings.DesktopSpace.IntroMediaPath is null?"Varsayılan Noxelyra açılışı. En fazla 10 saniyelik kendi MP4 veya GIF klibini koyabilirsin.":"Kendi klibin oynuyor; bitince seçtiğin geçişle masaüstü açılır.";}IntroText();intro.Children.Add(introStatus);
-        var transition=new ComboBox{ItemsSource=new[]{"TV açılışı","Kararma"},SelectedIndex=controller.ViewModel.Settings.DesktopSpace.IntroTransition=="fade"?1:0,Margin=new(0,8,0,8),IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};System.Windows.Automation.AutomationProperties.SetName(transition,"Klip bitince geçiş");intro.Children.Add(transition);
-        transition.SelectionChanged+=async(_,_)=>await controller.SetIntroTransitionAsync(transition.SelectedIndex==1?"fade":"tv");
+        var modes=new[]{"tv","fade","fade-tv"};
+        var transition=new ComboBox{ItemsSource=new[]{"TV açılışı","Kararma","Kararma + TV açılışı"},SelectedIndex=Math.Max(0,Array.IndexOf(modes,controller.ViewModel.Settings.DesktopSpace.IntroTransition)),Margin=new(0,8,0,8),IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};System.Windows.Automation.AutomationProperties.SetName(transition,"Klip bitince geçiş");intro.Children.Add(transition);
+        var fadeLabel=new TextBlock{Margin=new(0,6,0,0)};var fade=new Slider{Minimum=.3,Maximum=6,TickFrequency=.1,IsSnapToTickEnabled=true,Value=controller.ViewModel.Settings.DesktopSpace.IntroFadeMs/1000.0,IsEnabled=transition.IsEnabled,Margin=new(0,4,0,8)};
+        System.Windows.Automation.AutomationProperties.SetName(fade,"Kararma süresi, saniye");
+        void FadeText(){fadeLabel.Text=$"Kararma süresi: {fade.Value:0.0} sn";fadeLabel.Opacity=fade.Opacity=transition.SelectedIndex==0?.45:1;}FadeText();intro.Children.Add(fadeLabel);intro.Children.Add(fade);
+        var fadeSave=new DispatcherTimer{Interval=TimeSpan.FromMilliseconds(450)};fadeSave.Tick+=async(_,_)=>{fadeSave.Stop();await controller.SetIntroFadeAsync((int)Math.Round(fade.Value*1000));};
+        fade.ValueChanged+=(_,_)=>{FadeText();fadeSave.Stop();fadeSave.Start();};
+        transition.SelectionChanged+=async(_,_)=>{FadeText();await controller.SetIntroTransitionAsync(modes[Math.Max(0,transition.SelectedIndex)]);};
         var introActions=new WrapPanel();intro.Children.Add(introActions);
         Button(introActions,"Klip seç (MP4 / GIF, en fazla 10 sn)…",async()=>{var picker=new OpenFileDialog{Filter="Açılış klibi|*.mp4;*.m4v;*.wmv;*.gif",CheckFileExists=true};if(picker.ShowDialog(this)==true){introStatus.Text="Klip kontrol ediliyor…";await controller.SetIntroMediaAsync(picker.FileName);IntroText();introStatus.Text=controller.ViewModel.Status;}});
         Button(introActions,"Varsayılana dön",async()=>{await controller.SetIntroMediaAsync(null);IntroText();});

@@ -13,6 +13,7 @@ public sealed record DesktopSpaceOptions
     public bool HideTaskbarCompletely { get; init; }
     public string? IntroMediaPath { get; init; }
     public string IntroTransition { get; init; } = "tv";
+    public int IntroFadeMs { get; init; } = 1500;
     public string? EnginePath { get; init; }
     public List<DesktopIconPosition> Icons { get; init; } = [];
     public void Validate()
@@ -22,7 +23,8 @@ public sealed record DesktopSpaceOptions
         if (VideoPath is not null && (!Local(VideoPath) || !new[] { ".mp4", ".wmv", ".m4v" }.Contains(Path.GetExtension(VideoPath), StringComparer.OrdinalIgnoreCase))) throw new InvalidDataException("Yerel MP4, M4V veya WMV seç.");
         if (ImagePath is not null && (!Local(ImagePath) || !ImageExtensions.Contains(Path.GetExtension(ImagePath), StringComparer.OrdinalIgnoreCase))) throw new InvalidDataException("Yerel PNG, JPG veya BMP görsel seç.");
         if (IntroMediaPath is not null && (!Local(IntroMediaPath) || !IntroExtensions.Contains(Path.GetExtension(IntroMediaPath), StringComparer.OrdinalIgnoreCase))) throw new InvalidDataException("Açılış için yerel MP4, M4V, WMV veya GIF seç.");
-        if (IntroTransition is not ("tv" or "fade")) throw new InvalidDataException("Açılış geçişi geçersiz.");
+        if (IntroTransition is not ("tv" or "fade" or "fade-tv")) throw new InvalidDataException("Açılış geçişi geçersiz.");
+        if (IntroFadeMs is < 300 or > 6000) throw new InvalidDataException("Kararma süresi 0,3 ile 6 saniye arasında olmalı.");
         if (EnginePath is not null && (!Local(EnginePath) || Path.GetFileName(EnginePath).ToLowerInvariant() is not ("wallpaper32.exe" or "wallpaper64.exe"))) throw new InvalidDataException("Wallpaper Engine'in wallpaper32.exe veya wallpaper64.exe dosyasını seç.");
     }
     public static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".bmp"];

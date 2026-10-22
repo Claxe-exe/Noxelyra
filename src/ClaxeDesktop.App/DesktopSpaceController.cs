@@ -98,21 +98,39 @@ public sealed partial class DesktopController
     internal async Task SetIntroMediaAsync(string? file)
     {
         if (safe || ReadOnly || exiting) return;
+        string? asset = null;
         try
         {
-            string? asset = null;
             if (file is not null)
             {
                 new DesktopSpaceOptions { IntroMediaPath = file }.Validate();
-                // Check the length before copying so a long film is refused without filling the disk.
-                var length = IntroMedia.IsGif(file) ? IntroMedia.LoadGif(file).Duration : await IntroMedia.VideoDurationAsync(file) ?? throw new InvalidDataException("Windows bu videoyu açamadı; başka bir MP4 dene.");
-                if (length.TotalSeconds > DesktopSpaceOptions.IntroMaxSeconds + .5) throw new InvalidDataException($"Açılış en fazla {DesktopSpaceOptions.IntroMaxSeconds:0} saniye olabilir; seçilen {length.TotalSeconds:0.0} saniye.");
-                asset = await ImportDesktopAssetAsync(file, "intro-assets", IntroMedia.IsGif(file) ? 41943040 : 209715200, "En fazla 200 MB video veya 40 MB GIF seç.");
+                if (IntroMedia.IsGif(file)) { _ = IntroMedia.LoadGif(file); asset = await ImportDesktopAssetAsync(file, "intro-assets", 41943040, "En fazla 40 MB GIF seç."); }
+                else
+                {
+                    // Probe the managed copy (its GUID name avoids '#' or '%' in the user's file name breaking the media URI).
+                    asset = await ImportDesktopAssetAsync(file, "intro-assets", 1073741824, "En fazla 1 GB video seç.");
+                    var info = await IntroMedia.ProbeAsync(asset);
+                    if (info is null || info.Width > 1920 || info.Height > 1080 || info.Duration.TotalSeconds > DesktopSpaceOptions.IntroMaxSeconds + .5)
+                    {
+                        ViewModel.Status = "Klip açılışa uygun hale getiriliyor (H.264, en fazla 1080p, ilk 10 saniye)…";
+                        var converted = await IntroMedia.ConvertAsync(asset, Path.GetDirectoryName(asset)!);
+                        File.Delete(asset); asset = converted;
+                        if (await IntroMedia.ProbeAsync(asset) is null) throw new InvalidDataException("Dönüştürülen video da açılamadı; başka bir klip dene.");
+                    }
+                }
             }
-            if (await PersistDesktopSpaceAsync(options => options with { IntroMediaPath = asset })) ViewModel.Status = asset is null ? "Varsayılan açılış animasyonu kullanılacak." : "Açılış klibi kaydedildi; Önizle ile deneyebilirsin.";
+            var previous = committed.DesktopSpace.IntroMediaPath;
+            if (await PersistDesktopSpaceAsync(options => options with { IntroMediaPath = asset }))
+            {
+                ViewModel.Status = asset is null ? "Varsayılan açılış animasyonu kullanılacak." : "Açılış klibi kaydedildi; Önizle ile deneyebilirsin.";
+                if (previous is not null && previous != asset && IntroWindow.CustomClip(committed with { DesktopSpace = committed.DesktopSpace with { IntroMediaPath = previous } }, desktopData) is { } old) try { File.Delete(old); } catch (IOException) { }
+                asset = null;
+            }
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException or FileFormatException) { Log.Write("intro-import-failed", ex); ViewModel.Status = "Açılış klibi eklenemedi: " + ex.Message; }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException or FileFormatException or System.Runtime.InteropServices.COMException) { Log.Write("intro-import-failed", ex); ViewModel.Status = "Açılış klibi eklenemedi: " + ex.Message; }
+        finally { if (asset is not null && File.Exists(asset)) try { File.Delete(asset); } catch (IOException) { } }
     }
+    internal Task<bool> SetIntroFadeAsync(int milliseconds) => PersistDesktopSpaceAsync(options => options with { IntroFadeMs = Math.Clamp(milliseconds, 300, 6000) });
     internal Task<bool> SetIntroTransitionAsync(string transition) => PersistDesktopSpaceAsync(options => options with { IntroTransition = transition });
     internal Task PreviewIntroAsync() => IntroWindow.PreviewAsync(committed, desktopData);
     internal void ValidateDesktopVideo(string file) => ValidateDesktopAsset(file, "video-assets", "Kayıtlı yerel video bulunamadı veya geçersiz.");

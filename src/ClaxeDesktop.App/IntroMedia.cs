@@ -32,16 +32,42 @@ internal static class IntroMedia
         }).ToList();
         return new(width, height, frames);
     }
-    /// <summary>Opens a video just long enough to read its length; null when Windows cannot decode it.</summary>
-    internal static async Task<TimeSpan?> VideoDurationAsync(string path)
+    internal sealed record VideoInfo(TimeSpan Duration, int Width, int Height);
+    /// <summary>Opens a video the way the intro will (WPF media) just long enough to read it; null when that cannot decode it.</summary>
+    internal static async Task<VideoInfo?> ProbeAsync(string path)
     {
-        var player = new MediaPlayer { IsMuted = true }; var result = new TaskCompletionSource<TimeSpan?>();
-        player.MediaOpened += (_, _) => result.TrySetResult(player.NaturalDuration.HasTimeSpan ? player.NaturalDuration.TimeSpan : null);
+        var player = new MediaPlayer { IsMuted = true }; var result = new TaskCompletionSource<VideoInfo?>();
+        player.MediaOpened += (_, _) => result.TrySetResult(player.NaturalDuration.HasTimeSpan && player.NaturalVideoWidth > 0 ? new(player.NaturalDuration.TimeSpan, player.NaturalVideoWidth, player.NaturalVideoHeight) : null);
         player.MediaFailed += (_, _) => result.TrySetResult(null);
-        player.Open(new Uri(path));
+        player.Open(new Uri(path, UriKind.Absolute));
         var finished = await Task.WhenAny(result.Task, Task.Delay(8000));
         player.Close();
         return finished == result.Task ? result.Task.Result : null;
+    }
+    internal static async Task<TimeSpan?> VideoDurationAsync(string path) => (await ProbeAsync(path))?.Duration;
+    /// <summary>
+    /// Re-encodes a clip WPF cannot play well (HEVC/4K/high-profile phone video) to H.264 MP4 at most 1920×1080,
+    /// keeping the first ten seconds, with Windows' own Media Foundation encoder. Throws when Windows lacks the decoder.
+    /// </summary>
+    internal static async Task<string> ConvertAsync(string source, string folder)
+    {
+        Windows.Media.Editing.MediaClip clip;
+        try { clip = await Windows.Media.Editing.MediaClip.CreateFromFileAsync(await Windows.Storage.StorageFile.GetFileFromPathAsync(source)); }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { throw new InvalidDataException("Windows bu videonun biçimini çözemiyor (çoğunlukla HEVC/H.265, VP9 veya AV1). Videoyu H.264 MP4 olarak dışa aktar ya da Microsoft Store'dan HEVC Video Uzantısı'nı yükle."); }
+        var limit = TimeSpan.FromSeconds(ClaxeDesktop.Core.DesktopSpaceOptions.IntroMaxSeconds);
+        if (clip.OriginalDuration > limit) clip.TrimTimeFromEnd = clip.OriginalDuration - limit;
+        var composition = new Windows.Media.Editing.MediaComposition(); composition.Clips.Add(clip);
+        var profile = Windows.Media.MediaProperties.MediaEncodingProfile.CreateMp4(Windows.Media.MediaProperties.VideoEncodingQuality.HD1080p);
+        var original = clip.GetVideoEncodingProperties();
+        if (original.Width > 0 && original.Height > 0)
+        {
+            var scale = Math.Min(1, Math.Min(1920.0 / original.Width, 1080.0 / original.Height));
+            profile.Video.Width = (uint)Math.Max(2, Math.Round(original.Width * scale / 2) * 2); profile.Video.Height = (uint)Math.Max(2, Math.Round(original.Height * scale / 2) * 2);
+        }
+        var target = await (await Windows.Storage.StorageFolder.GetFolderFromPathAsync(folder)).CreateFileAsync(Guid.NewGuid().ToString("N") + ".mp4", Windows.Storage.CreationCollisionOption.GenerateUniqueName);
+        var outcome = await composition.RenderToFileAsync(target, Windows.Media.Editing.MediaTrimmingPreference.Precise, profile);
+        if (outcome != Windows.Media.Transcoding.TranscodeFailureReason.None) { await target.DeleteAsync(); throw new InvalidDataException("Video dönüştürülemedi: " + outcome); }
+        return target.Path;
     }
     /// <summary>Composites GIF frames onto one surface, honouring frame offsets and "restore to background".</summary>
     internal sealed class GifPlayer
