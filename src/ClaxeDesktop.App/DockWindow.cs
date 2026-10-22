@@ -30,7 +30,7 @@ public sealed class DockWindow : FloatingWindow
     private DateTime awaySince = DateTime.UtcNow;
     private double expandedHeight;
     private readonly DispatcherTimer visibilityTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
-    public DockWindow(DesktopViewModel vm, Action<Shortcut> launch, Action settings, IWindowService windowService, ShellIconService icons, Action persistShortcuts) : base("Dock", true)
+    public DockWindow(DesktopViewModel vm, Action<Shortcut> launch, Action settings, IWindowService windowService, ShellIconService icons, Action persistShortcuts) : base("Dock", Glass.Wanted(vm.Settings))
     {
         this.vm = vm; this.launch = launch; this.settings = settings; this.windowService = windowService; this.icons = icons;
         this.persistShortcuts = persistShortcuts;

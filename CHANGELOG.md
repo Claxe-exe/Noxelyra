@@ -1,5 +1,10 @@
 # Değişiklikler
 
+## 0.22.0 · 2026-10-22 · Önceki görünüm geri, gerçek cam isteğe bağlı
+
+- Kullanıcı 0.20 öncesi görünümü daha güzel buldu. Varsayılan yeniden boyalı cam (16 px köşe, tema yüzeyi). Animasyonlar (yükselerek belirme, dock dalgası) kaldı.
+- Windows 11 Acrylic/Mica artık "Panel stili → Gerçek cam (deneysel)" seçeneği; Windows köşeleri 8 px'e zorlar ve kendi tonunu ekler. Seçim yeniden başlatınca uygulanır.
+
 ## 0.21.0 · 2026-10-22 · Cam düzeltmesi
 
 - 0.20'de Windows Acrylic'in gri tonu tema rengini bastırıyor, dock ve widget'lar gri kutulara dönüyordu. Tema rengi yeniden baskın; cam yalnız arkayı yumuşatır. Mica pencerelerde de tema tonu koyulaştırıldı.

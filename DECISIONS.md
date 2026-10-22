@@ -126,3 +126,7 @@
 
 - Plan "yönetici izni isteyen proje değil" diyordu. Kullanıcı servis kapatmayı açıkça ve geri alınabilir olarak istedi. Sapma dar tutuldu: yalnız DiagTrack, SysMain ve WSearch; her işlemde UAC; ayrı kısa ömürlü yardımcı; ana uygulama normal yetkide. Defender, Windows Update ve kabuk servisleri izin listesinde yok.
 
+## Gerçek cam isteğe bağlı · 22 Ekim 2026
+
+- DWM Acrylic/Mica köşe yarıçapını 8 px'e sabitler ve Windows'un gri tonunu ekler; kullanıcı önceki boyalı görünümü tercih etti. Gerçek cam "acrylic" panel stili olarak kapalı varsayılanla kaldı.
+

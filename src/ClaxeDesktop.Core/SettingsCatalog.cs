@@ -49,7 +49,7 @@ public static class SettingsCatalog
         return new[]
         {
             From("themes.activeTheme", "Görünüm", "choice", choices: ThemePresets.All.Select(t => new SettingChoice(t.Id, t.Name)).ToArray()),
-            From("themes.panelStyle", "Görünüm", "choice", choices: [new("glass", "Glass · saydam"), new("flat", "Flat · opak"), new("neon", "Neon · vurgulu kenar")]),
+            From("themes.panelStyle", "Görünüm", "choice", choices: [new("glass", "Glass · saydam"), new("flat", "Flat · opak"), new("acrylic", "Gerçek cam · Windows 11, deneysel; yeniden başlatınca"), new("neon", "Neon · vurgulu kenar")]),
             From("appearance.accentPrimary", "Görünüm", "color"), From("appearance.accentSecondary", "Görünüm", "color"),
             From("appearance.surfaceOpacity", "Görünüm", "number", .35, 1, .05),
             From("appearance.cornerRadius", "Görünüm", "number", 0, 32), From("appearance.borderWidth", "Görünüm", "number", 0, 4, .5),

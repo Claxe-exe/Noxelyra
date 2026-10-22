@@ -18,7 +18,7 @@ public partial class WidgetWindow : FloatingWindow
     private DateTime calendarDay = DateTime.Today;
     public WidgetInstance Model { get; private set; }
     protected override bool CanMove => workspace.Editing && !Model.Locked;
-    public WidgetWindow(DesktopViewModel vm, WidgetWorkspace workspace, WidgetInstance model) : base("Widget", true)
+    public WidgetWindow(DesktopViewModel vm, WidgetWorkspace workspace, WidgetInstance model) : base("Widget", Glass.Wanted(vm.Settings))
     {
         this.vm = vm; this.workspace = workspace; Model = model;
         InitializeComponent(); DataContext = vm; Frame.Padding = new(16);

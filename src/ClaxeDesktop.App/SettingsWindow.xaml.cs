@@ -10,7 +10,7 @@ public partial class SettingsWindow : Window
     internal SettingsEditorViewModel Editor { get; }
     public SettingsWindow(DesktopController controller)
     {
-        this.controller = controller; Editor = new(controller); InitializeComponent(); Glass.PrepareFramed(this); DataContext = Editor;
+        this.controller = controller; Editor = new(controller); InitializeComponent(); Glass.PrepareFramed(this, controller.ViewModel.Settings); DataContext = Editor;
         StartupCheck.IsChecked = controller.Startup.Enabled;
         Closing += (_, _) => { Editor.ClearErrors(); controller.RevertPreview(); };
         Closed += (_, _) => Editor.Dispose();

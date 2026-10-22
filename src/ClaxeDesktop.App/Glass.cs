@@ -9,6 +9,8 @@ namespace ClaxeDesktop.App;
 internal static class Glass
 {
     internal static bool Available => SystemBackdrop.Supported && !SystemParameters.HighContrast;
+    /// <summary>Real Windows glass is an opt-in panel style: it forces 8 px corners and Windows' own tint.</summary>
+    internal static bool Wanted(ClaxeDesktop.Core.Settings settings) => settings.Material == "acrylic";
     /// <summary>Chromeless surfaces (dock, widgets) use Acrylic; framed app windows use Mica behind their own title bar.</summary>
     internal static bool Prepare(Window window, BackdropKind kind, bool chromeless, Action<bool>? applied = null)
     {
@@ -26,8 +28,9 @@ internal static class Glass
         return true;
     }
     /// <summary>Framed windows: keep the theme's canvas as a light tint so text stays readable over Mica.</summary>
-    internal static void PrepareFramed(Window window)
+    internal static void PrepareFramed(Window window, ClaxeDesktop.Core.Settings settings)
     {
+        if (!Wanted(settings)) return;
         Prepare(window, BackdropKind.Mica, false, ok =>
         {
             if (!ok) return;
