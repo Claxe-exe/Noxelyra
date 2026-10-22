@@ -77,6 +77,9 @@ internal static class NoxelyraVerifier
             Check("WE command allowlist missing-install fallback and owned-file restore preserve external changes", blocked && WallpaperEngineService.Arguments("pause").SequenceEqual(new[] { "-control", "pause" }) && absent.Contains("seç") && restoredPrior && fake.Current.EndsWith("user-choice.json") && !File.Exists(journal));
             space.UpdateLayout(); Export(space, Path.Combine(directory, "Noxelyra-desktop.png"));
             OriginalArt.Save(OriginalArt.Mascot(), Path.Combine(directory, "Nox.png"), 256, 256);
+            // Visual QA only (not a check): the bar over the night art in every palette.
+            foreach (var palette in ThemePresets.All) { await controller.SetThemeAsync(palette.Id); panel.UpdateLayout(); ExportOver(panel, Path.Combine(directory, $"Noxelyra-panel-{palette.Id}.png")); }
+            await controller.SetThemeAsync("midnight-claxe"); var floatingWidth = panel.Width; panel.Width = 1920; panel.UpdateLayout(); ExportOver(panel, Path.Combine(directory, "Noxelyra-panel-wide.png")); panel.Width = floatingWidth;
         }
         catch (Exception ex) { error = ex.ToString(); }
         finally
@@ -85,6 +88,18 @@ internal static class NoxelyraVerifier
             await File.WriteAllTextAsync(Path.Combine(directory, "noxelyra-results.json"), JsonSerializer.Serialize(new { success = error is null, checks, error }, new JsonSerializerOptions { WriteIndented = true }));
             controller.Exit();
         }
+    }
+    private static void ExportOver(Window window, string file)
+    {
+        int width = (int)Math.Ceiling(window.ActualWidth), height = (int)Math.Ceiling(window.ActualHeight) + 24;
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawImage(OriginalArt.Wallpaper(), new Rect(-width * .1, -height * 4, width * 1.2, width * 1.2 * 900 / 1600));
+            dc.DrawRectangle(new VisualBrush((Visual)window.Content) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top }, null, new Rect(0, 12, window.ActualWidth, window.ActualHeight));
+        }
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual);
+        var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap)); using var stream = File.Create(file); png.Save(stream);
     }
     private static void Export(Window window, string file)
     {

@@ -98,6 +98,12 @@ Test("Desktop background image accepts local images and rejects other files", ()
 tests.Add(("Desktop background image path roundtrips with existing settings",async()=>{var store=new SettingsStore(Path.Combine(root,"desktop-image"));var options=new DesktopSpaceOptions { Enabled=true,ImagePath=@"C:\Data\image-assets\a.png",Icons=[new(@"C:\Users\u\Desktop\a.txt",40,120)] };await store.SaveAsync(new() { DesktopSpace=options });var loaded=(await store.LoadAsync()).Settings.DesktopSpace;Check(loaded.ImagePath==options.ImagePath&&loaded.Icons.Single()==options.Icons[0]);}));
 tests.Add(("Settings saved before background images still load without one",async()=>{var store=new SettingsStore(Path.Combine(root,"desktop-legacy"));Directory.CreateDirectory(Path.GetDirectoryName(store.FilePath)!);await File.WriteAllTextAsync(store.FilePath,"{\"SchemaVersion\":3,\"DesktopSpace\":{\"Enabled\":true,\"VideoPath\":null}}");var loaded=(await store.LoadAsync()).Settings.DesktopSpace;Check(loaded.Enabled&&loaded.ImagePath is null&&loaded.ShowIcons);}));
 
+Test("Every palette keeps text and muted text at 4.5:1 and accent at 3:1", () => { foreach (var p in ThemePresets.All) { foreach (var (fg, bg, min, what) in new[] { (p.Text, p.Surface, 4.5, "text/surface"), (p.Text, p.Card, 4.5, "text/card"), (p.Muted, p.Surface, 4.5, "muted/surface"), (p.Accent, p.Surface, 3.0, "accent/surface") }) Check(ThemePresets.Contrast(fg, bg) >= min, $"{p.Id} {what} {ThemePresets.Contrast(fg, bg):0.00}"); } });
+Test("Rice palettes are selectable validated and survive theme export", () => { foreach (var id in new[] { "catppuccin-mocha", "tokyo-night", "nord", "rose-pine" }) { var s = SettingsCatalog.Apply(new() { PrimaryAccent = "#123456" }, "themes.activeTheme", id); s.Validate(); Check(s.ThemeId == id && s.PrimaryAccent is null); Check(ThemeFiles.Parse(ThemeFiles.Serialize(s)).ThemeId == id); } });
+Test("Contrast helper matches WCAG reference values", () => { Check(Math.Abs(ThemePresets.Contrast("#FFFFFF", "#000000") - 21) < .01); Check(Math.Abs(ThemePresets.Contrast("#777777", "#FFFFFF") - 4.48) < .01); Throws(() => { try { ThemePresets.Contrast("red", "#000000"); } catch (ArgumentException) { throw new InvalidDataException(); } }); });
+Test("Windows colour helpers use ABGR and an eight-shade light-to-dark palette", () => { Check(WindowsLook.Abgr("#A884FF") == 0xFFFF84A8u); var p = WindowsLook.Palette("#A884FF"); Check(p.Length == 32 && p[12] == 0xA8 && p[13] == 0x84 && p[14] == 0xFF); for (int i = 4; i < 32; i += 4) Check(p[i] + p[i + 1] + p[i + 2] <= p[i - 4] + p[i - 3] + p[i - 2]); Check(WindowsLook.Dark(true).All(v => v.Dword == 0) && WindowsLook.Dark(false).All(v => v.Dword == 1)); });
+Test("Windows look restore returns each value to its state before the first change", () => { var fake = new FakeLook(); fake.Set(new(WindowsLook.Personalize, "AppsUseLightTheme", true, 1)); var journal = Path.Combine(root, "look", "windows-look.json"); var session = new WindowsLookSession(fake, journal); session.Apply(WindowsLook.Dark(true)); session.Apply(WindowsLook.Dark(false)); session.Apply(WindowsLook.Dark(true)); Check(fake.Get(WindowsLook.Personalize, "AppsUseLightTheme").Dword == 0 && session.HasChanges && fake.Broadcasts == 3); session.Restore(); Check(fake.Get(WindowsLook.Personalize, "AppsUseLightTheme") is { Exists: true, Dword: 1 }); Check(!fake.Get(WindowsLook.Personalize, "SystemUsesLightTheme").Exists, "absent value must be deleted again"); Check(!session.HasChanges && !File.Exists(journal)); });
+Test("Windows look session refuses unknown keys and corrupt journals", () => { var fake = new FakeLook(); var journal = Path.Combine(root, "look-bad", "windows-look.json"); var session = new WindowsLookSession(fake, journal); try { session.Apply([new(@"Software\Microsoft\Windows NT\CurrentVersion\Winlogon", "Shell", true, 1)]); throw new Exception("shell key accepted"); } catch (InvalidOperationException) { } Check(fake.Writes == 0); Directory.CreateDirectory(Path.GetDirectoryName(journal)!); File.WriteAllText(journal, "[{\"Key\":\"Software/Other\",\"Name\":\"X\",\"Exists\":true}]"); Throws(() => session.Restore()); });
 var selectedTests = args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }
@@ -107,6 +113,14 @@ if (!string.Equals(Path.GetDirectoryName(Path.GetFullPath(root)), Path.GetFullPa
 Directory.Delete(root, true);
 return failed == 0 ? 0 : 1;
 
-
-
+sealed class FakeLook : IWindowsLookService
+{
+    private readonly Dictionary<string, LookValue> values = [];
+    public int Broadcasts, Writes;
+    public void Set(LookValue value) => values[value.Id] = value;
+    public LookValue Get(string key, string name) => Read(key, name);
+    public LookValue Read(string key, string name) => values.GetValueOrDefault(key + "\\" + name) ?? new(key, name, false);
+    public void Write(LookValue value) { Writes++; if (value.Exists) values[value.Id] = value; else values.Remove(value.Id); }
+    public void Broadcast() => Broadcasts++;
+}
 

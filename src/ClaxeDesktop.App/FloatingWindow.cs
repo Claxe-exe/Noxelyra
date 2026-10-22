@@ -39,7 +39,7 @@ public class FloatingWindow : Window
         element.MouseLeftButtonDown += (_, e) => { if (CanMove && e.ClickCount == 1) { IsDragging = true; try { DragMove(); Moved?.Invoke(this); } finally { IsDragging = false; } e.Handled = true; } };
         if (element is FrameworkElement fe) { fe.Focusable = true; fe.Cursor = Cursors.SizeAll; fe.ToolTip = "Sürükle veya odaklandıktan sonra Alt + yön tuşlarıyla taşı"; }
     }
-    public void ApplyAppearance(DesktopViewModel vm)
+    public virtual void ApplyAppearance(DesktopViewModel vm)
     {
         gridSize = vm.Settings.GridSize;
         var palette = ThemePresets.Resolve(vm.Settings);

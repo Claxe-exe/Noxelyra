@@ -53,7 +53,7 @@ public sealed partial class DesktopController
     public void Start()
     {
         RefreshMonitors();
-        windows.Add(new PanelWindow(ViewModel, ShowSettings, Exit, ShowLauncher, ShowControls));
+        windows.Add(new PanelWindow(ViewModel, this, icons));
         var dock = new DockWindow(ViewModel, Launch, ShowSettings, windowService, icons, () => _ = SaveShortcutsAsync()) { SafeMode = safe };
         dock.ActivationCompleted += succeeded => Log.Write(succeeded ? "dock-activation-succeeded" : "dock-activation-declined");
         windows.Add(dock);
@@ -100,7 +100,7 @@ public sealed partial class DesktopController
         try
         {
             var snapshot = await Task.Run(windowService.Snapshot, lifetime.Token);
-            if (!exiting) {lastWindowSnapshot=snapshot;windows.OfType<DockWindow>().Single().UpdateWindows(snapshot);}
+            if (!exiting) {lastWindowSnapshot=snapshot;windows.OfType<DockWindow>().Single().UpdateWindows(snapshot);windows.OfType<PanelWindow>().Single().UpdateWindows(snapshot, windowService.Foreground);}
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) { Log.Write("window-snapshot-failed", ex); ViewModel.Status = "Açık pencereler şu anda okunamıyor."; }
@@ -163,6 +163,20 @@ public sealed partial class DesktopController
             await store.SaveAsync(candidate); committed = candidate; if (ViewModel.Settings == candidate) ViewModel.AcceptChanges(); ViewModel.Status = "Ayarlar kaydedildi."; Log.Write("settings-saved");
         }
         catch (Exception ex) { Log.Write("save-failed", ex); ViewModel.Status = "Ayarlar kaydedilemedi. Son kayıt korunuyor; yeniden deneyebilirsin."; }
+        finally { persistenceGate.Release(); }
+    }
+    // Applies and persists only the palette, so unrelated previews in an open settings window stay unsaved.
+    internal async Task<bool> SetThemeAsync(string id)
+    {
+        if (ReadOnly || safe) { ViewModel.Status = "Güvenli/salt okunur modda tema kaydedilmez."; return false; }
+        await persistenceGate.WaitAsync();
+        try
+        {
+            var next = SettingsCatalog.Apply(committed, "themes.activeTheme", id); await store.SaveAsync(next); committed = next;
+            ViewModel.Edit(SettingsCatalog.Apply(ViewModel.Settings, "themes.activeTheme", id));
+            ViewModel.Status = ViewModel.ThemeName + " uygulandı."; return true;
+        }
+        catch (Exception ex) { Log.Write("theme-save-failed", ex); ViewModel.Status = "Tema uygulanamadı: " + ex.Message; return false; }
         finally { persistenceGate.Release(); }
     }
     private async Task SaveShortcutsAsync()

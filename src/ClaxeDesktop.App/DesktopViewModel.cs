@@ -35,6 +35,7 @@ public sealed class DesktopViewModel : INotifyPropertyChanged
     public bool ClockOnLeft { get => settings.ClockOnLeft; set { settings = settings with { ClockOnLeft = value }; Changed(); } }
     public string Time { get; private set; } = "";
     public string Date { get; private set; } = "";
+    public string ShortDate { get; private set; } = "";
     public string Greeting { get; private set; } = "";
     public string CpuText { get; private set; } = "Ölçülüyor…";
     public string MemoryText { get; private set; } = "Ölçülüyor…";
@@ -47,12 +48,13 @@ public sealed class DesktopViewModel : INotifyPropertyChanged
         var format = settings.ClockFormat == "12h" ? (ShowSeconds ? "hh:mm:ss tt" : "hh:mm tt") : (ShowSeconds ? "HH:mm:ss" : "HH:mm");
         Time = now.ToString(format, CultureInfo.GetCultureInfo("tr-TR"));
         Date = now.ToString("dddd · d MMMM", CultureInfo.GetCultureInfo("tr-TR")).ToUpper(CultureInfo.GetCultureInfo("tr-TR"));
+        ShortDate = now.ToString("dddd d MMMM", CultureInfo.GetCultureInfo("tr-TR"));
         Greeting = now.Hour is >= 6 and < 12 ? "Günaydın." : now.Hour is >= 12 and < 18 ? "İyi günler." : "İyi akşamlar.";
         CpuText = sample.Cpu is { } cpu ? $"%{cpu:0}" : "Ölçülüyor / erişilemiyor";
         MemoryText = sample.Memory is { } memory ? $"%{memory:0}" : "Erişilemiyor";
         MemoryDetail = sample.TotalGb is { } total ? $"{sample.UsedGb:0.0} / {total:0.0} GB kullanımda" : "Bellek bilgisi alınamadı";
         CpuValue = sample.Cpu ?? 0; MemoryValue = sample.Memory ?? 0;
-        foreach (var name in new[] { nameof(Time), nameof(Date), nameof(Greeting), nameof(CpuText), nameof(MemoryText), nameof(MemoryDetail), nameof(CpuValue), nameof(MemoryValue) }) Notify(name);
+        foreach (var name in new[] { nameof(Time), nameof(Date), nameof(ShortDate), nameof(Greeting), nameof(CpuText), nameof(MemoryText), nameof(MemoryDetail), nameof(CpuValue), nameof(MemoryValue) }) Notify(name);
     }
     public void Replace(Settings value) { history.Clear(); Set(value); }
     internal void SetAdvanced(Settings value){settings=settings with{DesktopSpace=value.DesktopSpace,ActiveProfileId=value.ActiveProfileId,ProfileManualUntil=value.ProfileManualUntil,LayoutShortcut=value.LayoutShortcut,Mascot=value.Mascot};Notify(nameof(Settings));}

@@ -42,6 +42,19 @@ internal sealed class ControlCenterWindow : Window
         var actions=new WrapPanel();desktop.Children.Add(actions);
         Button(actions,"Uygulamalar",()=>controller.ShowLauncher());Button(actions,"Widget atölyesi",()=>controller.Widgets.ShowEditor());Button(actions,"Rafı göster / gizle",controller.Widgets.ToggleShelf);Button(actions,"Görünüm ayarları",controller.ShowSettings);
         Button(actions,"Profiller ve kurallar",()=>controller.ShowAdvanced());Button(actions,"Pencere düzenleri",()=>controller.ShowAdvanced(2));Button(actions,"Yerel maskot",()=>controller.ShowAdvanced(3));
+        var look=Section(root,"Windows görünümü");
+        var lookStatus=new TextBlock{Text="Windows'un kendi pencereleri, menüleri ve Ayarlar uygulaması. Değişiklikler senin Windows tercihindir; Noxelyra kapanınca da kalır.",TextWrapping=TextWrapping.Wrap,Opacity=.7};
+        var dark=new CheckBox{Content="Windows'u koyu moda al",IsChecked=controller.WindowsDark,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};
+        var transparency=new CheckBox{Content="Windows saydamlık efektleri",IsChecked=controller.WindowsTransparency,IsEnabled=dark.IsEnabled};
+        look.Children.Add(dark);look.Children.Add(transparency);look.Children.Add(lookStatus);
+        var lookActions=new WrapPanel();look.Children.Add(lookActions);
+        Button? restoreLook=null;
+        void Refresh(string message){lookStatus.Text=message;dark.IsChecked=controller.WindowsDark;transparency.IsChecked=controller.WindowsTransparency;restoreLook!.IsEnabled=dark.IsEnabled&&controller.WindowsLookChanged;}
+        dark.Click+=(_,_)=>Refresh(controller.SetWindowsDark(dark.IsChecked==true));
+        transparency.Click+=(_,_)=>Refresh(controller.SetWindowsTransparency(transparency.IsChecked==true));
+        var accent=Button(lookActions,"Vurgu rengini palete eşle · deneysel",()=>Refresh(controller.MatchWindowsAccent()));accent.IsEnabled=dark.IsEnabled;
+        accent.ToolTip="Belgelenmiş bir API değildir. Windows Ayarları'nda 'vurgu rengini otomatik seç' açıksa Windows rengi yeniden değiştirebilir.";
+        restoreLook=Button(lookActions,"Windows görünümünü eski haline getir",()=>Refresh(controller.RestoreWindowsLook()));restoreLook.IsEnabled=dark.IsEnabled&&controller.WindowsLookChanged;
         var space=Section(root,"Noxelyra masaüstü alanı");
         space.Children.Add(new TextBlock{Text="Gerçek masaüstü dosyaların, sürüklenebilir ikonlar, özgün gece görünümü ve yerel video. Esc ile Windows masaüstüne dönersin. Bu bağımsız alan Explorer ikon ayarlarını değiştirmez.",TextWrapping=TextWrapping.Wrap,Opacity=.75});
         var spaceStartup=new CheckBox{Content="Noxelyra açılınca masaüstü alanını aç",IsChecked=controller.ViewModel.Settings.DesktopSpace.Enabled,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};space.Children.Add(spaceStartup);

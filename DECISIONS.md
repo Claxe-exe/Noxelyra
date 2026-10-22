@@ -109,3 +109,16 @@
 - Referanstaki saat/sistem kartları masaüstü alanına kopyalanmadı; zaten var olan bağımsız widget pencereleri kullanılır ve alan simgeleri bu pencerelerin etrafından dizer. Böylece aynı bilgi iki kez gösterilmez.
 - Yerleşim hesabı test edilebilir olsun diye Core'daki `DesktopIconFlow` içindedir. Ayrılmış alanlar yalnız ilk sayfada uygulanır; taşma kaydırılır, simge düşürülmez.
 - Arka plan görseli video ile aynı yönetilen kopya modelini kullanır (yerel, 64 MB, reparse reddi). Windows'un kendi arka planı değiştirilmez.
+
+## Üst bar ve tasarım skill'leri · 22 Ekim 2026
+
+- Kullanıcı tasarım için `ui-ux-pro-max` ve `design-taste-frontend` skill'lerini kurdurdu ve kullanılmasını istedi. ui-ux-pro-max'ın `--design-system` önerisi landing page kalıbı ve altın vurgu döndürdü; ürüne uymadığı için kullanılmadı. WPF stack kuralları (resource dictionary, merkezi fırçalar) ve erişilebilirlik kuralları uygulandı.
+- Taste skill mor/indigo vurguyu, cam/bulanıklığı ve yüzen hap navigasyonu "üretilmiş görünüm" sayar. Bunlar kullanıcının `docs/01_VIZYON_KARARLAR.md` seçimleridir (Midnight mor, cam, Hyprland barı) ve AGENTS.md gereği genel kuralların önüne geçer. Skill'den alınanlar: emoji yerine tek vektör simge seti, parlama olmaması (neon malzemesi hariç), süs amaçlı "·" etiketlerinin kaldırılması, sabit genişlikli rakamlar, en fazla birkaç yazı boyutu, vurgu renginin veri ve aktif durumla sınırlı kalması, her modülün gerçek veri taşıması.
+- Çalışma alanları modülü eklenmedi: Windows sanal masaüstleri için kararlı, belgelenmiş genel API yok (`docs/11_ACIK_KONULAR.md` #7). Yerine odaktaki pencere gösterilir.
+- Rice paletlerinin renk değerleri her projenin yayımladığı paletten eşlendi; yazılım bağımlılığı eklenmedi.
+- Kullanıcı ayrıca Windows'un arka plan uygulamalarının RAM'i ve görüntüyü bozmasından şikâyetçi. Ölçüm: RAM'in çoğu kullanıcı uygulamalarında, Windows tarafı kabaca 1 GB. Hafifletme merkezi bir sonraki adımdır; yönetici izni gereken servis değişiklikleri ayrı onaya tabidir.
+
+## Bilinen hata · 22 Ekim 2026
+
+- "Panel için Windows çalışma alanında yer ayır" açıkken (v0.14, kullanıcının 1920×1080 ekranı) Windows en üstteki 0-48 px'i ayırıyor ama panel 48-96 px'e yerleşiyor; üst şerit boş kalıyor. Tek başına bir test AppBar'ı Windows'ta doğru konuma yerleşti, yani paneli kaydıran Noxelyra'nın kendi kodu. Kullanıcı ayarı kapattı ve incelemenin şimdilik bırakılmasını istedi. Yüzen bar etkilenmiyor.
+

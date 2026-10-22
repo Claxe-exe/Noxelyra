@@ -1,5 +1,23 @@
 # Değişiklikler
 
+## 0.14.0 · 2026-10-22 · Windows görünümü
+
+- Kontrol merkezinde "Windows görünümü": Windows koyu modu, saydamlık efektleri ve vurgu rengini aktif palete eşleme (deneysel). Yalnız kullanıcının kendi HKCU kişiselleştirme değerleri yazılır; Ayarlar uygulamasının gönderdiği bildirimle anında uygulanır.
+- İlk değişiklikten önceki değerler kaydedilir; "eski haline getir" her değeri (yoksa silinerek) geri yükler. Kabuk/Winlogon gibi bilinmeyen anahtarlar reddedilir.
+- Doğrulama: `--desktop` 14/14, `--widgets` 12/12.
+
+## 0.13.0 · 2026-10-22 · Waybar tarzı üst bar ve rice paletleri
+
+- Üst panel ayrı cam adacıklara bölündü (Hyprland/Waybar düzeni). Adacıkların arasındaki boşluklar tıklamayı geçirir.
+  - Solda: uygulama başlatıcı ve odaktaki pencerenin simgesi ve başlığı.
+  - Ortada: gün, tarih ve saat.
+  - Sağda: medya (yalnız bir oturum varken; önceki/oynat/sonraki), ses (tıkla sustur, tekerlek veya ok tuşlarıyla ±%2), CPU/RAM, palet menüsü, kontrol merkezi ve Noxelyra menüsü.
+- Simgeler Windows'un vektör simge fontundan (Segoe Fluent Icons; yoksa MDL2) gelir; karakter/emoji simge kaldırıldı. Saat ve yüzdeler sabit genişlikli rakamlarla çizilir.
+- Dar yüzen barda modüller üst üste binmez; yer yetmezse önce tarih gizlenir.
+- Yeni paletler: Catppuccin Mocha, Tokyo Night, Nord, Rosé Pine. Bardaki palet menüsünden tek tıkla uygulanıp kaydedilir; açık ayar penceresindeki diğer önizlemeler kaydedilmez.
+- WCAG kontrast yardımcısı; bütün paletlerde metin ve soluk metin en az 4,5:1, vurgu en az 3:1 olarak test edilir.
+- Doğrulama: `--desktop` 11/11, `--widgets` 12/12, Noxelyra uygulama kontrolleri 12/12. Bar önizlemeleri `artifacts/panel-previews`.
+
 ## 0.12.0 · 2026-10-22 · Masaüstü alanı görünümü
 
 - Masaüstü alanı referans görünüme yaklaştırıldı: düğme sırası yerine "Masaüstü · N öğe" başlığı, cam arama/menü kapsülü ve tek "Görünüm" menüsü.
