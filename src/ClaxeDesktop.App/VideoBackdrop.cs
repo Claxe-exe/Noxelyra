@@ -25,6 +25,8 @@ internal sealed class VideoBackdrop : Window
             hwnd = new WindowInteropHelper(this).Handle;
             // No activation, not in Alt+Tab, clicks pass through to the card above.
             SetWindowLongPtr(hwnd, -20, GetWindowLongPtr(hwnd, -20) | 0x08000000 | 0x80 | 0x20);
+            // DWM rounding clips the thumbnail too; the window region below may not.
+            SystemBackdrop.Round(hwnd);
         };
         Closed += (_, _) => Release();
     }
@@ -33,7 +35,8 @@ internal sealed class VideoBackdrop : Window
     {
         if (!IsVisible) Show();
         SetWindowPos(hwnd, card, x, y, w, h, 0x0010);
-        if (w != width || h != height) { SetWindowRgn(hwnd, CreateRoundRectRgn(0, 0, w + 1, h + 1, radius * 2, radius * 2), true); width = w; height = h; }
+        // Re-applied on every call: the region can be reset when the window is resized or shown again.
+        SetWindowRgn(hwnd, CreateRoundRectRgn(0, 0, w + 1, h + 1, radius * 2, radius * 2), w != width || h != height); width = w; height = h;
         if (player != source) { Release(); source = player; thumbnail = DwmThumbnail.Register(hwnd, player); }
         crop = video; Fit();
     }

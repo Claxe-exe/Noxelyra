@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.38.1 · 2026-10-26 · Ada videosu köşeleri
+
+- Video oynarken kartın köşelerinde görünen küçük kutular giderildi: video kartın biraz içinden başlıyor ve ince koyu bir kenarla çevrili, köşeleri Windows da yuvarlıyor. Test edilmeden kuruldu.
+
 ## 0.38.0 · 2026-10-26 · Gizli simgeler ve widget taşıma
 
 - Bardaki ˄ düğmesi artık Windows'un "gizli simgeler" panelini doğrudan açıyor (UI Automation ile); olmazsa eskisi gibi Win+B. Başka uygulamaların tepsi simgeleri Noxelyra'nın kendi paneline kopyalanamaz, Windows bunun için bir arayüz sunmuyor.

@@ -73,6 +73,9 @@ internal sealed class IslandCard : Window
     // The track's video (or blurred cover) behind page 1.
     private readonly Image blurArt = new() { Stretch = Stretch.UniformToFill, Opacity = .5, Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 28 }, Visibility = Visibility.Collapsed };
     private readonly Border shade = new() { Visibility = Visibility.Collapsed, IsHitTestVisible = false };
+    // A thin solid rim over the video edge, so the video's corners always sit inside the card's rounded shape.
+    private const double VideoInset = 6;
+    private readonly Border videoRim = new() { BorderThickness = new(VideoInset + 1), CornerRadius = new(27), Visibility = Visibility.Collapsed, IsHitTestVisible = false };
     private SolidColorBrush opaqueBrush = new(Colors.Black), glassBrush = new(Colors.Black);
     private VideoBackdrop? backdrop;
     private (int Left, int Top, int Right, int Bottom)? videoCrop;
@@ -112,7 +115,7 @@ internal sealed class IslandCard : Window
         // Background layer (blurred cover or the video showing through) under the pages, clipped to the card's corners.
         var host = new Grid { Clip = new RectangleGeometry(new Rect(0, 0, CardWidth - 2, CardHeight - 2), 27, 27) };
         shade.Background = new LinearGradientBrush(Color.FromArgb(0xC8, 0, 0, 0), Color.FromArgb(0x50, 0, 0, 0), 0);
-        host.Children.Add(blurArt); host.Children.Add(shade);
+        host.Children.Add(blurArt); host.Children.Add(shade); host.Children.Add(videoRim);
         layout.Margin = new(16, 16, 16, 8); host.Children.Add(layout); card.Child = host;
         // A Canvas, not a StackPanel: a panel narrower than its content clips it, which would hide page 2 after the slide.
         var strip = new Canvas { RenderTransform = slide };
@@ -432,11 +435,13 @@ internal sealed class IslandCard : Window
         {
             var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
             backdrop ??= new VideoBackdrop();
-            backdrop.Present(hwnd, playerWindow, videoCrop!.Value, (int)Math.Round(b.X + Shadow * scale), (int)Math.Round(b.Y + Shadow * scale), (int)Math.Round(CardWidth * scale), (int)Math.Round(CardHeight * scale), (int)(28 * scale));
+            var inset = Shadow + VideoInset;
+            backdrop.Present(hwnd, playerWindow, videoCrop!.Value, (int)Math.Round(b.X + inset * scale), (int)Math.Round(b.Y + inset * scale), (int)Math.Round((CardWidth - 2 * VideoInset) * scale), (int)Math.Round((CardHeight - 2 * VideoInset) * scale), (int)((28 - VideoInset) * scale));
             card.Background = glassBrush; blurArt.Visibility = Visibility.Collapsed; shade.Visibility = Visibility.Visible;
+            videoRim.BorderBrush = opaqueBrush; videoRim.Visibility = Visibility.Visible;
             return;
         }
-        backdrop?.Leave();
+        backdrop?.Leave(); videoRim.Visibility = Visibility.Collapsed;
         var art = front && videoOn && artShown is not null && nowPlaying.Visibility == Visibility.Visible;
         blurArt.Source = art ? artShown : null; blurArt.Visibility = art ? Visibility.Visible : Visibility.Collapsed;
         shade.Visibility = art ? Visibility.Visible : Visibility.Collapsed; card.Background = opaqueBrush;
