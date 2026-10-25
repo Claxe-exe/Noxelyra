@@ -80,6 +80,8 @@ internal sealed class IslandCard : Window
     private (double Width, double Height) videoWindowSize;
     private CancellationTokenSource? videoScan;
     private DateTime videoScanned;
+    // Video areas already found, per player window and size, so a reopened card shows the video at once.
+    private readonly Dictionary<(nint Window, double Width, double Height), (int Left, int Top, int Right, int Bottom)> knownCrops = [];
     private bool videoOn = true;
     private nint playerWindow;
     private PerformanceSampler? sampler;
@@ -406,12 +408,15 @@ internal sealed class IslandCard : Window
         var key = track.AppId + "|" + track.Title + "|" + playerWindow;
         // Not found yet (paused, loading, ad): look again every 15 s.
         if (key == videoKey && size == videoWindowSize && (videoCrop is not null || DateTime.UtcNow - videoScanned < TimeSpan.FromSeconds(15))) { ApplyBackground(); return; }
-        videoKey = key; videoWindowSize = size; videoCrop = null; videoScanned = DateTime.UtcNow; ApplyBackground();
+        videoKey = key; videoWindowSize = size; videoScanned = DateTime.UtcNow;
+        videoCrop = knownCrops.TryGetValue((playerWindow, size.Item1, size.Item2), out var known) ? known : null; ApplyBackground();
         videoScan?.Cancel(); var scan = videoScan = new CancellationTokenSource(); var window = playerWindow;
         var found = await VideoRegion.FindAsync(window, scan.Token, line => controller.Log.Write("island-video " + line));
         controller.Log.Write(found is null ? "island-video none" : "island-video found");
         if (scan.IsCancellationRequested || key != videoKey) return;
-        videoCrop = found; ApplyBackground();
+        // A rescan that sees no motion (paused, a still frame) keeps the remembered area.
+        if (found is { } area) { videoCrop = area; knownCrops[(window, size.Item1, size.Item2)] = area; }
+        ApplyBackground();
     }
     private void ApplyBackground()
     {

@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.36.5 · 2026-10-26 · Ada videosu anında
+
+- Bulunan video alanı pencere ve boyut başına hatırlanıyor; kart yeniden açılınca video hemen geliyor, alan arka planda yine denetleniyor. Hareket görülmeyen bir yeniden tarama (duraklatma, sabit kare) hatırlanan alanı silmiyor. Test edilmeden kuruldu.
+
 ## 0.36.4 · 2026-10-26 · Ada videosu gerçek düzeltme
 
 - Asıl sebep bulundu: Windows 11'de yakalama çerçevesini gizleyen çağrı .NET'in desteklemediği bir COM tanımı kullanıyordu ve her video aramasını en başta düşürüyordu; hata sessizce yutulduğu için yalnız kapak görünüyordu. Tanım düzeltildi, aramadaki her hata artık yalnız "video yok" sayılıp kayda yazılıyor. `Noxelyra.exe --probe-video <pencere>` görünmez tanı modu eklendi.
