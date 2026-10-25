@@ -45,6 +45,16 @@ public class FloatingWindow : Window
         element.MouseLeftButtonDown += (_, e) => { if (CanMove && e.ClickCount == 1) { IsDragging = true; try { DragMove(); Moved?.Invoke(this); } finally { IsDragging = false; } e.Handled = true; } };
         if (element is FrameworkElement fe) { fe.Focusable = true; fe.Cursor = Cursors.SizeAll; fe.ToolTip = "Sürükle veya odaklandıktan sonra Alt + yön tuşlarıyla taşı"; }
     }
+    /// <summary>Drags the window with the pressed mouse button. Returns false for a plain click (no movement) so the element can act on it.</summary>
+    protected bool TryDrag()
+    {
+        if (!CanMove) return false;
+        var hwnd = new WindowInteropHelper(this).Handle; var before = WindowPlacement.Position(hwnd);
+        IsDragging = true;
+        try { DragMove(); } finally { IsDragging = false; }
+        if (WindowPlacement.Position(hwnd) == before) return false;
+        Moved?.Invoke(this); return true;
+    }
     public virtual void ApplyAppearance(DesktopViewModel vm)
     {
         model = vm;

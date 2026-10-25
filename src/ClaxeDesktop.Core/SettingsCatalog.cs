@@ -62,6 +62,7 @@ public static class SettingsCatalog
             From("panels.clockFormat", "Paneller", "choice", choices: [new("24h", "24 saat"), new("12h", "12 saat")]),
             From("system.clockSeconds", "Paneller", "bool"),
             new SettingDefinition("panels.clockOnLeft", "Saati solda göster", "Paneller", "Panel saatini sol veya sağ alana taşır.", "bool"),
+            new SettingDefinition("panels.dynamicIsland", "Dinamik ada", "Paneller", "Saat adası çalan müziği, ses değişimini, Noxelyra bildirimlerini ve zamanlayıcıyı gösterir. Kapalıyken yalnız saat ve tarih görünür.", "bool"),
             From("animations.enabled", "Animasyonlar", "bool"), From("animations.introSequence", "Animasyonlar", "bool"), From("animations.durationMs", "Animasyonlar", "number", 0, 1200, 10), From("animations.hoverEffects", "Animasyonlar", "bool"),
             From("editor.snapToGrid", "Yerleşim", "bool"), From("editor.gridSizeDip", "Yerleşim", "number", 4, 64, 2)
         };
@@ -75,7 +76,7 @@ public static class SettingsCatalog
         "dock.showRunningApps" => s.ShowRunningApps, "dock.groupWindows" => s.GroupWindows, "dock.autoHide" => s.DockAutoHide,
         "dock.hideDelayMs" => s.DockHideDelayMs, "dock.alwaysOnTop" => s.DockOnTop,
         "panels.widthDip" => s.PanelWidth, "panels.heightDip" => s.PanelHeight, "panels.clockFormat" => s.ClockFormat,
-        "system.clockSeconds" => s.ShowSeconds, "panels.clockOnLeft" => s.ClockOnLeft,
+        "system.clockSeconds" => s.ShowSeconds, "panels.clockOnLeft" => s.ClockOnLeft, "panels.dynamicIsland" => s.DynamicIsland,
         "animations.enabled" => s.AnimationsEnabled, "animations.introSequence" => s.IntroSequence, "animations.durationMs" => s.AnimationDurationMs, "animations.hoverEffects" => s.HoverAnimation,
         "editor.snapToGrid" => s.SnapToGrid, "editor.gridSizeDip" => s.GridSize,
         _ => throw new InvalidDataException("Bu ayar henüz desteklenmiyor.")
@@ -104,7 +105,7 @@ public static class SettingsCatalog
             "dock.showRunningApps" => settings with { ShowRunningApps = Flag() }, "dock.groupWindows" => settings with { GroupWindows = Flag() }, "dock.autoHide" => settings with { DockAutoHide = Flag() },
             "dock.hideDelayMs" => settings with { DockHideDelayMs = Whole() }, "dock.alwaysOnTop" => settings with { DockOnTop = Flag() },
             "panels.widthDip" => settings with { PanelWidth = Whole() }, "panels.heightDip" => settings with { PanelHeight = Whole() }, "panels.clockFormat" => settings with { ClockFormat = Text() },
-            "system.clockSeconds" => settings with { ShowSeconds = Flag() }, "panels.clockOnLeft" => settings with { ClockOnLeft = Flag() },
+            "system.clockSeconds" => settings with { ShowSeconds = Flag() }, "panels.clockOnLeft" => settings with { ClockOnLeft = Flag() }, "panels.dynamicIsland" => settings with { DynamicIsland = Flag() },
             "animations.enabled" => settings with { AnimationsEnabled = Flag() }, "animations.introSequence" => settings with { IntroSequence = Flag() }, "animations.durationMs" => settings with { AnimationDurationMs = Whole() }, "animations.hoverEffects" => settings with { HoverAnimation = Flag() },
             "editor.snapToGrid" => settings with { SnapToGrid = Flag() }, "editor.gridSizeDip" => settings with { GridSize = Whole() },
             _ => throw new InvalidDataException("Ayar desteklenmiyor.")

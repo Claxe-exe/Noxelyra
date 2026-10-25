@@ -15,6 +15,14 @@ public static class Program
                 try { new StartupService().SetEnabled(false); } catch (Exception ex) when (ex is IOException or InvalidOperationException or System.Runtime.InteropServices.COMException) { }
             })
             .Run();
+        // The taskbar guardian lives as long as Noxelyra. It needs no UI, so it runs here without WPF and costs a few MB instead of a full app.
+        if (args.Length == 3 && (args[0] == "--taskbar-guardian" || (args[0] == "--taskbar-guardian-fixture" && Environment.GetEnvironmentVariable("CLAXE_TEST_FIXTURE") == "1"))
+            && int.TryParse(args[1], out var parentId) && long.TryParse(args[2], out var parentTicks))
+        {
+            var data = Environment.GetEnvironmentVariable("CLAXE_DATA_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ClaxeDesktop");
+            TaskbarGuardian.RunAsync(data, new(parentId, parentTicks), args[0] == "--taskbar-guardian-fixture" ? new TaskbarFileFixture(data) : null).GetAwaiter().GetResult();
+            return;
+        }
         var app = new App(); app.InitializeComponent(); app.Run();
     }
 }

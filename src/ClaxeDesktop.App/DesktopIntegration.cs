@@ -23,6 +23,7 @@ public sealed partial class DesktopController
     public WindowsWallpaperService WallpaperPlatform { get; }=new();
     public ObservableCollection<string> Activity { get; }=[];
     internal bool HasReservedPanel=>desktopBindings?.Registered==true;
+    internal int? ReservedPanelTop=>desktopBindings?.ReservedTop;
     private void InitializeDesktopServices()
     {
         desktopData=Environment.GetEnvironmentVariable("CLAXE_DATA_DIR")??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"ClaxeDesktop");
@@ -33,11 +34,11 @@ public sealed partial class DesktopController
     }
     private void StartDesktopServices()
     {
-        var panel=windows.OfType<PanelWindow>().Single();desktopBindings=new(panel,ShowLauncher,ShowControls);
+        var panel=windows.OfType<PanelWindow>().Single();desktopBindings=new(panel,ShowLauncher,ShowControls,e=>Log.Write(e));
         try{wallpaperSession.Restore();}catch(Exception ex){Log.Write("wallpaper-recovery-pending",ex);ViewModel.Status="Önceki arka planın kurtarılması bekliyor. Kontrol merkezinden yeniden dene.";}
         _ = StartTaskbarAsync();
         if(safe)return;
-        try{desktopBindings.Configure(committed.IntegratedDesktop,committed.GlobalShortcuts,ViewModel.PanelHeight);RefreshMonitors();}
+        try{desktopBindings.Configure(committed.IntegratedDesktop,committed.GlobalShortcuts,ViewModel.PanelHeight,Gesture("launcher"),Gesture("controls"));RefreshMonitors();}
         catch(Exception ex){desktopBindings.Configure(false,false,ViewModel.PanelHeight);ViewModel.SetDesktopSettings(committed with{IntegratedDesktop=false,GlobalShortcuts=false});Log.Write("desktop-bindings-failed",ex);ViewModel.Status="Masaüstü entegrasyonu etkinleştirilemedi. Kontrol merkezinden yeniden deneyebilirsin.";}
         if(committed.WallpaperEnabled)
         {
@@ -48,9 +49,19 @@ public sealed partial class DesktopController
     {
         if(exiting)return;
         if(launcherWindow is null){launcherWindow=new(this);launcherWindow.Closed+=(_,_)=>launcherWindow=null;}
-        launcherWindow.Show();launcherWindow.WindowState=System.Windows.WindowState.Normal;launcherWindow.Render();launcherWindow.Activate();
+        launcherWindow.ShowOverlay();
     }
-    public void ShowControls()
+    /// <summary>Win tap / launcher shortcut: open, or close when already open.</summary>
+    internal void ToggleLauncher(){if(launcherWindow is {IsVisible:true})launcherWindow.Leave();else ShowLauncher();}
+    /// <summary>The monitor under the mouse pointer, for overlays that open where the user is looking.</summary>
+    internal MonitorInfo MonitorUnderPointer()
+    {
+        var p=System.Windows.Forms.Cursor.Position;
+        return ViewModel.Monitors.FirstOrDefault(m=>p.X>=m.X&&p.X<m.X+m.Width&&p.Y>=m.Y&&p.Y<m.Y+m.Height)??ViewModel.Monitors.First(m=>m.Primary);
+    }
+    /// <summary>Bar button, launcher entry and the controls shortcut: the quick settings panel. The full control center stays one click away.</summary>
+    public void ShowControls() => ShowQuickSettings();
+    public void ShowFullControls()
     {
         if(exiting)return;
         if(controlWindow is null){controlWindow=new(this);controlWindow.Closed+=(_,_)=>controlWindow=null;}
@@ -69,13 +80,13 @@ public sealed partial class DesktopController
         await persistenceGate.WaitAsync();
         try
         {
-            desktopBindings.Configure(integrated,shortcuts,ViewModel.PanelHeight);
+            desktopBindings.Configure(integrated,shortcuts,ViewModel.PanelHeight,Gesture("launcher"),Gesture("controls"));
             var next=committed with{IntegratedDesktop=integrated,GlobalShortcuts=shortcuts};await store.SaveAsync(next);committed=next;ViewModel.SetDesktopSettings(next);
             RefreshMonitors();ViewModel.Status=integrated?"Panel Windows çalışma alanına yerleşti. Uygulamalar Noxelyra düğmesinde, kontroller sağda.":"Serbest masaüstü görünümüne dönüldü.";Log.Write("desktop-integration-saved");return true;
         }
         catch(Exception ex)
         {
-            try{desktopBindings.Configure(committed.IntegratedDesktop,committed.GlobalShortcuts,ViewModel.PanelHeight);}catch{desktopBindings.Configure(false,false,ViewModel.PanelHeight);}
+            try{desktopBindings.Configure(committed.IntegratedDesktop,committed.GlobalShortcuts,ViewModel.PanelHeight,Gesture("launcher"),Gesture("controls"));}catch{desktopBindings.Configure(false,false,ViewModel.PanelHeight);}
             RefreshMonitors();Log.Write("desktop-integration-failed",ex);ViewModel.Status=ex is InvalidOperationException?ex.Message:"Entegrasyon tercihi kaydedilemedi; önceki durum korundu.";return false;
         }
         finally{persistenceGate.Release();}
@@ -147,7 +158,7 @@ public sealed partial class DesktopController
         TaskbarWindows.SetVisible(true);
         try{await taskbarSession.RestoreAsync(taskbarOwner);}catch(Exception ex){Log.Write("taskbar-exit-restore-pending",ex);}
         try { await externalWallpaper.RestoreAsync(); } catch (Exception ex) { Log.Write("engine-exit-recovery-pending", ex); }
-        desktopBindings?.Dispose();launcherWindow?.Close();controlWindow?.Close();
+        desktopBindings?.Dispose();launcherWindow?.Close();controlWindow?.Close();quickSettings?.Close();
         try{wallpaperSession.Restore();}catch(Exception ex){Log.Write("wallpaper-exit-restore-pending",ex);}
     }
     private Task? guardianLaunch;

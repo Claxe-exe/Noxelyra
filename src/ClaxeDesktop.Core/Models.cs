@@ -11,6 +11,7 @@ public sealed record Settings
     public DateTimeOffset ProfileManualUntil {get;init;}
     public bool LayoutShortcut {get;init;}
     public MascotOptions Mascot {get;init;}=new();
+    public KeyboardOptions Keyboard { get; init; } = new();
     public bool HideWindowsTaskbar { get; init; }
     public bool GlobalShortcuts { get; init; }
     public bool WallpaperEnabled { get; init; }
@@ -44,6 +45,9 @@ public sealed record Settings
     public bool DockOnTop { get; init; }
     public bool HoverAnimation { get; init; } = true;
     public bool ClockOnLeft { get; init; }
+    public bool DynamicIsland { get; init; } = true;
+    /// <summary>Colours generated from a wallpaper, used while <see cref="ThemeId"/> is "wallpaper".</summary>
+    public ThemePalette? CustomPalette { get; init; }
     public Placement? Panel { get; init; }
     public Placement? Dock { get; init; }
     public Placement? Widget { get; init; }
@@ -56,9 +60,11 @@ public sealed record Settings
         if (DesktopSpace is null) throw new InvalidDataException("Masaüstü alanı tercihi geçersiz."); DesktopSpace.Validate();
         if(ActiveProfileId is not null&&!Guid.TryParseExact(ActiveProfileId,"N",out _))throw new InvalidDataException("Profil kimliği geçersiz.");
         if(Mascot is null)throw new InvalidDataException("Maskot tercihi geçersiz.");Mascot.Validate();
+        if (Keyboard is null) throw new InvalidDataException("Klavye tercihi geçersiz."); Keyboard.Validate();
         if(WallpaperRotations is null||WallpaperRotations.Count>32||WallpaperRotations.Any(r=>r is null||string.IsNullOrWhiteSpace(r.MonitorId)||r.IntervalSeconds is <30 or >3600||r.AssetPaths is null||r.AssetPaths.Count is <2 or >20||r.AssetPaths.Any(p=>string.IsNullOrWhiteSpace(p)||!Path.IsPathFullyQualified(p)||p.StartsWith(@"\\")))||WallpaperRotations.Select(r=>r.MonitorId).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=WallpaperRotations.Count)throw new InvalidDataException("Arka plan listesi geçersiz.");
         if(Wallpapers is null || Wallpapers.Count>32 || Wallpapers.Any(w=>w is null || string.IsNullOrWhiteSpace(w.MonitorId) || string.IsNullOrWhiteSpace(w.AssetPath) || !Path.IsPathFullyQualified(w.AssetPath) || w.AssetPath.StartsWith(@"\\")) || Wallpapers.Select(w=>w.MonitorId).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=Wallpapers.Count) throw new InvalidDataException("Arka plan atamaları geçersiz.");
-        if (!ThemePresets.All.Any(t => t.Id == ThemeId) || Material is not ("glass" or "flat" or "neon" or "acrylic")) throw new InvalidDataException("Tema veya yüzey stili geçersiz.");
+        if (ThemeId == ThemePresets.WallpaperId) { if (CustomPalette is null) throw new InvalidDataException("Duvar kâğıdı paleti eksik."); ThemePresets.ValidateCustom(CustomPalette); }
+        if (!ThemePresets.Known(ThemeId) || Material is not ("glass" or "flat" or "neon" or "acrylic")) throw new InvalidDataException("Tema veya yüzey stili geçersiz.");
         if ((PrimaryAccent is not null && !ThemePresets.IsColor(PrimaryAccent)) || (SecondaryAccent is not null && !ThemePresets.IsColor(SecondaryAccent))) throw new InvalidDataException("Renk #RRGGBB biçiminde olmalı.");
         if (CornerRadius is < 0 or > 32 || !double.IsFinite(BorderWidth) || BorderWidth is < 0 or > 4 || GridSize is < 4 or > 64 || DockHideDelayMs is < 0 or > 2500 || !double.IsFinite(Magnification) || Magnification is < 1 or > 2 || AnimationDurationMs is < 0 or > 1200 || ClockFormat is not ("24h" or "12h")) throw new InvalidDataException("Görünüm veya davranış değeri izin verilen aralığın dışında.");
         if (DockEdge is not ("floating" or "top" or "bottom")) throw new InvalidDataException("Dock kenarı geçersiz.");

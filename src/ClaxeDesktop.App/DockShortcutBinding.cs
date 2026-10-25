@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using ClaxeDesktop.Core;
 namespace ClaxeDesktop.App;
 
 internal sealed class DockShortcutBinding : IDisposable
@@ -16,11 +17,13 @@ internal sealed class DockShortcutBinding : IDisposable
         source = HwndSource.FromHwnd(hwnd)!;
         source.AddHook(Hook);
     }
-    internal void Register()
+    /// <summary>Registers the dock shortcut (Alt+K unless the user chose another) under the fixed WM_HOTKEY id 754.</summary>
+    internal void Register(HotkeyGesture? gesture = null)
     {
-        if (Enabled) return;
-        if (!RegisterHotKey(hwnd, 754, 0x4001, 0x4b))
-            throw new InvalidOperationException("Alt+K başka bir uygulama tarafından kullanılıyor. Bildirim alanındaki Noxelyra menüsünden ‘Dock'u öne getir’ seçeneğini kullanabilirsin.");
+        var key = gesture ?? HotkeyGesture.Parse(KeyboardOptions.Defaults["dock"]);
+        if (Enabled) { UnregisterHotKey(hwnd, 754); Enabled = false; }
+        if (!RegisterHotKey(hwnd, 754, HotkeyText.Modifiers(key), (uint)key.Key))
+            throw new InvalidOperationException(HotkeyText.Format(key) + " başka bir uygulama tarafından kullanılıyor. Bildirim alanındaki Noxelyra menüsünden ‘Dock'u öne getir’ seçeneğini kullanabilir ya da kısayolu değiştirebilirsin.");
         Enabled = true;
     }
     private nint Hook(nint window, int message, nint w, nint l, ref bool handled)

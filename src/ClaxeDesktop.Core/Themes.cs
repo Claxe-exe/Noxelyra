@@ -29,9 +29,20 @@ public static class ThemePresets
         return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
     public static bool IsColor(string value) => value.Length == 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);
+    /// <summary>The palette generated from a wallpaper; its colours live in <see cref="Settings.CustomPalette"/>.</summary>
+    public const string WallpaperId = "wallpaper";
+    public static bool Known(string id) => id == WallpaperId || All.Any(t => t.Id == id);
+    /// <summary>A custom palette must be well-formed and as readable as the presets (text 7:1, secondary text and accent 4.5:1).</summary>
+    public static void ValidateCustom(ThemePalette palette)
+    {
+        if (palette is null || palette.Id != WallpaperId || string.IsNullOrWhiteSpace(palette.Name) || palette.Name.Length > 40) throw new InvalidDataException("Özel palet geçersiz.");
+        var colors = new[] { palette.Canvas, palette.Surface, palette.Card, palette.Accent, palette.Secondary, palette.Text, palette.Muted, palette.Line, palette.Hover, palette.Selection };
+        if (colors.Any(c => c is null || !IsColor(c))) throw new InvalidDataException("Özel palette renkler #RRGGBB olmalı.");
+        if (Contrast(palette.Text, palette.Surface) < 7 || Contrast(palette.Muted, palette.Surface) < 4.5 || Contrast(palette.Accent, palette.Canvas) < 4.5) throw new InvalidDataException("Özel palet yeterince okunaklı değil.");
+    }
     public static ThemePalette Resolve(Settings settings)
     {
-        var palette = All.Single(t => t.Id == settings.ThemeId);
+        var palette = settings.ThemeId == WallpaperId && settings.CustomPalette is { } custom ? custom : All.Single(t => t.Id == settings.ThemeId);
         return palette with { Accent = settings.PrimaryAccent ?? palette.Accent, Secondary = settings.SecondaryAccent ?? palette.Secondary };
     }
 }
@@ -43,14 +54,15 @@ public sealed record ThemeConfiguration
     public string Material { get; init; } = "glass";
     public string? PrimaryAccent { get; init; }
     public string? SecondaryAccent { get; init; }
+    public ThemePalette? CustomPalette { get; init; }
     public double Opacity { get; init; } = .82;
     public int CornerRadius { get; init; } = 16;
     public double BorderWidth { get; init; } = 1;
-    public static ThemeConfiguration From(Settings s) => new() { ThemeId = s.ThemeId, Material = s.Material, PrimaryAccent = s.PrimaryAccent, SecondaryAccent = s.SecondaryAccent, Opacity = s.Opacity, CornerRadius = s.CornerRadius, BorderWidth = s.BorderWidth };
+    public static ThemeConfiguration From(Settings s) => new() { ThemeId = s.ThemeId, Material = s.Material, PrimaryAccent = s.PrimaryAccent, SecondaryAccent = s.SecondaryAccent, CustomPalette = s.ThemeId == ThemePresets.WallpaperId ? s.CustomPalette : null, Opacity = s.Opacity, CornerRadius = s.CornerRadius, BorderWidth = s.BorderWidth };
     public Settings ApplyTo(Settings current)
     {
         if (Kind != "ClaxeDesktop.Theme" || SchemaVersion != 1) throw new InvalidDataException("Bu dosya desteklenen bir Noxelyra teması değil.");
-        var result = current with { ThemeId = ThemeId, Material = Material, PrimaryAccent = PrimaryAccent, SecondaryAccent = SecondaryAccent, Opacity = Opacity, CornerRadius = CornerRadius, BorderWidth = BorderWidth };
+        var result = current with { ThemeId = ThemeId, Material = Material, PrimaryAccent = PrimaryAccent, SecondaryAccent = SecondaryAccent, CustomPalette = CustomPalette ?? current.CustomPalette, Opacity = Opacity, CornerRadius = CornerRadius, BorderWidth = BorderWidth };
         result.Validate(); return result;
     }
 }

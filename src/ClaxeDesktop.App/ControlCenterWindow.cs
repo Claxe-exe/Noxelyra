@@ -57,6 +57,33 @@ internal sealed class ControlCenterWindow : Window
         var accent=Button(lookActions,"Vurgu rengini palete eşle · deneysel",()=>Refresh(controller.MatchWindowsAccent()));accent.IsEnabled=dark.IsEnabled;
         accent.ToolTip="Belgelenmiş bir API değildir. Windows Ayarları'nda 'vurgu rengini otomatik seç' açıksa Windows rengi yeniden değiştirebilir.";
         restoreLook=Button(lookActions,"Windows görünümünü eski haline getir",()=>Refresh(controller.RestoreWindowsLook()));restoreLook.IsEnabled=dark.IsEnabled&&controller.WindowsLookChanged;
+        var rice=Section(root,"Rice: renkler ve görünüm paylaşımı");
+        var riceStatus=new TextBlock{Text="Duvar kâğıdından okunaklı bir palet üret ya da tüm görünümü (tema, bar, dock, widget düzeni) tek .noxrice dosyası olarak paylaş. Not metinleri, hava durumu şehri, kısayollar ve Windows ayarları dosyaya girmez.",TextWrapping=TextWrapping.Wrap,Opacity=.7};
+        rice.Children.Add(riceStatus);var riceActions=new WrapPanel();rice.Children.Add(riceActions);var riceEditable=!controller.IsSafeMode&&!controller.ReadOnly;
+        Button? restoreRice=null;
+        Button(riceActions,"Duvar kâğıdından renk al",async()=>{await controller.UseWallpaperPaletteAsync();riceStatus.Text=controller.ViewModel.Status;}).IsEnabled=riceEditable;
+        Button(riceActions,"Görselden renk al…",async()=>{var picker=new OpenFileDialog{Title="Renkleri alınacak görsel",Filter="Resimler|*.png;*.jpg;*.jpeg;*.bmp",CheckFileExists=true};if(picker.ShowDialog(this)==true){await controller.UseWallpaperPaletteAsync(picker.FileName);riceStatus.Text=controller.ViewModel.Status;}}).IsEnabled=riceEditable;
+        Button(riceActions,"Rice'ı dışa aktar…",async()=>
+        {
+            var picker=new SaveFileDialog{Title="Rice'ı kaydet",Filter="Noxelyra rice|*.noxrice",FileName="noxelyra-rice.noxrice",AddExtension=true,DefaultExt=".noxrice"};
+            if(picker.ShowDialog(this)!=true)return;
+            var withWallpaper=controller.RiceWallpaper is not null&&MessageBox.Show(this,"Noxelyra masaüstü görselini de ekleyeyim mi?\n\nBaşkasıyla paylaşacaksan görseli paylaşma hakkın olduğundan emin ol.","Rice",MessageBoxButton.YesNo,MessageBoxImage.Question,MessageBoxResult.No)==MessageBoxResult.Yes;
+            var withIntro=controller.RiceIntro is not null&&MessageBox.Show(this,"Kendi açılış klibini de ekleyeyim mi?","Rice",MessageBoxButton.YesNo,MessageBoxImage.Question,MessageBoxResult.No)==MessageBoxResult.Yes;
+            riceStatus.Text="Kaydediliyor…";riceStatus.Text=await controller.ExportRiceAsync(picker.FileName,withWallpaper,withIntro);
+        });
+        Button(riceActions,"Rice içe aktar…",async()=>
+        {
+            var picker=new OpenFileDialog{Title="Noxelyra rice seç",Filter="Noxelyra rice|*.noxrice",CheckFileExists=true};
+            if(picker.ShowDialog(this)!=true)return;
+            (ClaxeDesktop.Core.RiceManifest Rice,string? Wallpaper,string? Intro,string Folder) read;
+            try{read=controller.ReadRice(picker.FileName);}catch(Exception ex)when(ex is IOException or InvalidDataException or UnauthorizedAccessException){riceStatus.Text="Rice okunamadı: "+ex.Message;return;}
+            var media=(read.Wallpaper is null?"":", masaüstü görseli eklenir")+(read.Intro is null?"":", açılış klibi değişir");
+            var summary=$"\"{read.Rice.Name}\" uygulanacak.\n\nTema, bar ve dock görünümü değişir{media}. Önceki görünümün yedeklenir.\n\nWidget düzenin de rice'takiyle ({read.Rice.Widgets.Count} widget) değiştirilsin mi?\nEvet: değiştir · Hayır: kendi widget'larımı koru · İptal: vazgeç";
+            var answer=MessageBox.Show(this,summary,"Rice içe aktar",MessageBoxButton.YesNoCancel,MessageBoxImage.Question,MessageBoxResult.No);
+            if(answer==MessageBoxResult.Cancel){try{Directory.Delete(read.Folder,true);}catch(IOException){}riceStatus.Text="Vazgeçildi.";return;}
+            riceStatus.Text="Uygulanıyor…";riceStatus.Text=await controller.ApplyRiceAsync(read.Rice,read.Wallpaper,read.Intro,read.Folder,answer==MessageBoxResult.Yes);restoreRice!.IsEnabled=riceEditable&&controller.HasRiceBackup;
+        }).IsEnabled=riceEditable;
+        restoreRice=Button(riceActions,"Önceki görünüme dön",async()=>{riceStatus.Text=await controller.RestoreRiceBackupAsync();restoreRice!.IsEnabled=riceEditable&&controller.HasRiceBackup;});restoreRice.IsEnabled=riceEditable&&controller.HasRiceBackup;
         var updates=Section(root,"Güncellemeler");
         var updateStatus=new TextBlock{TextWrapping=TextWrapping.Wrap,Opacity=.7,Text=controller.Updates.Installed?$"Noxelyra {controller.Updates.Version}. Yeni sürümler GitHub'daki Claxe-exe/Noxelyra sürümlerinden indirilir; senden bir bilgi gönderilmez.":"Bu kopya Setup ile kurulmadığı için kendini güncelleyemez. GitHub'daki Setup.exe ile kurarsan güncellemeler otomatik gelir."};updates.Children.Add(updateStatus);
         var autoUpdate=new CheckBox{Content="Açılışta yeni sürümü denetle ve indir (kapanışta kurulur)",IsChecked=controller.ViewModel.Settings.DesktopSpace.CheckForUpdates,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};updates.Children.Add(autoUpdate);

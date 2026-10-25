@@ -27,12 +27,15 @@ internal static class IntegrationVerifier
             try{audio=new WindowsAudioService().Read();}catch(Exception ex)when(ex is COMException or InvalidOperationException){unavailable=true;}
             Check("Core Audio reads native output or reports unavailable",audio is{Level:>=0 and <=1}||unavailable);
             var displays=controller.WallpaperPlatform.Displays();
-            Check("Windows wallpaper API enumerates and reads real monitors",displays.Count>0&&displays.All(d=>controller.WallpaperPlatform.Read(d.Id) is not null));
+            var unreadable=displays.Count(d=>{try{return controller.WallpaperPlatform.Read(d.Id) is null;}catch(COMException){return true;}});
+            Check($"Windows wallpaper API enumerates and reads real monitors ({displays.Count-unreadable}/{displays.Count} readable; an inactive display entry may refuse)",displays.Count>0&&unreadable<displays.Count);
             var before=new WindowsMonitorService().GetMonitors().First(m=>m.Primary);
             var theme=controller.ViewModel.Settings.PrimaryAccent;controller.ViewModel.Edit(controller.ViewModel.Settings with{PrimaryAccent="#123456"});
             var enabled=await controller.ConfigureDesktopAsync(true,false);await Task.Delay(200);
             var reserved=new WindowsMonitorService().GetMonitors().First(m=>m.Id==before.Id);
             Check("Native AppBar reserves Windows work area",enabled&&controller.HasReservedPanel&&reserved.Y>before.Y&&reserved.Height<before.Height);
+            var barTop=WindowPlacement.Position(new System.Windows.Interop.WindowInteropHelper(controller.Windows.OfType<PanelWindow>().Single()).Handle).Y;
+            Check("Reserved bar sits in its own strip at the top of the work area (no 48 px drop)",controller.ReservedPanelTop is int top&&barTop==top&&top==before.Y);
             var saved=(await store.LoadAsync()).Settings;
             Check("Desktop integration persists independently from theme preview",saved.IntegratedDesktop&&saved.PrimaryAccent==theme);
             await controller.ConfigureDesktopAsync(false,false);await Task.Delay(200);
@@ -50,7 +53,7 @@ internal static class IntegrationVerifier
             finally{Environment.SetEnvironmentVariable("CLAXE_LAUNCH_PROBE",null);}
             controller.ViewModel.Remove(controller.ViewModel.Shortcuts.Single(s=>s.Name=="Noxelyra integration launch probe"));
             launcher.Search.Text="";launcher.Show();launcher.Render();await Task.Delay(300);Export(launcher,Path.Combine(output,"Launcher.png"));
-            controller.ShowControls();var controls=Application.Current.Windows.OfType<ControlCenterWindow>().Single();await controls.RefreshAsync();await Task.Delay(200);
+            controller.ShowFullControls();var controls=Application.Current.Windows.OfType<ControlCenterWindow>().Single();await controls.RefreshAsync();await Task.Delay(200);
             Check("Control center reflects real audio capability",audio is null?!controls.Volume.IsEnabled:controls.Volume.IsEnabled&&Math.Abs(controls.Volume.Value-new WindowsAudioService().Read().Level*100)<2);
             Export(controls,Path.Combine(output,"Control-Center.png"));
             await File.WriteAllTextAsync(Path.Combine(output,"results.json"),JsonSerializer.Serialize(new{success=true,checks,audioSupported=audio is not null,monitors=displays.Count},new JsonSerializerOptions{WriteIndented=true}));

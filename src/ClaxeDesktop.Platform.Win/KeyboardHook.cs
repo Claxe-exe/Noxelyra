@@ -5,22 +5,23 @@ namespace ClaxeDesktop.Platform.Win;
 
 /// <summary>
 /// Documented low-level keyboard hook (WH_KEYBOARD_LL) on its own thread, so a busy UI thread never delays typing.
-/// No DLL is loaded into other processes. Only Win+D is consumed; the trigger runs on the caller's dispatcher.
+/// No DLL is loaded into other processes. Only keystrokes the <see cref="KeyRouter"/> claims are consumed; actions run on the caller's dispatcher.
+/// Windows skips low-level hooks for elevated foreground windows, so Windows' own shortcuts keep working there.
 /// </summary>
-public sealed class ShowDesktopHook : IDisposable
+public sealed class KeyboardHook : IDisposable
 {
-    private readonly Action trigger;
-    private readonly ShowDesktopKeys keys = new();
+    private readonly Action<string> trigger;
     private readonly Thread thread;
     private readonly ManualResetEventSlim ready = new();
     private HookProc? callback;
     private nint hook;
     private uint threadId;
     private Exception? failure;
-    public ShowDesktopHook(Action trigger)
+    public KeyRouter Router { get; } = new();
+    public KeyboardHook(Action<string> trigger)
     {
         this.trigger = trigger;
-        thread = new Thread(Run) { IsBackground = true, Name = "Noxelyra Win+D" }; thread.Start();
+        thread = new Thread(Run) { IsBackground = true, Name = "Noxelyra keyboard" }; thread.Start();
         ready.Wait(5000);
         if (failure is not null) throw failure;
         if (hook == 0) throw new InvalidOperationException("Klavye kancası zamanında kurulamadı.");
@@ -42,22 +43,26 @@ public sealed class ShowDesktopHook : IDisposable
         {
             var info = Marshal.PtrToStructure<KeyInfo>(data);
             var down = message is 0x0100 or 0x0104;
-            var others = GetAsyncKeyState(0x10) < 0 || GetAsyncKeyState(0x11) < 0 || GetAsyncKeyState(0x12) < 0;
-            switch (keys.Handle((int)info.Key, down, (info.Flags & 0x10) != 0, others))
-            {
-                case KeyDecision.Trigger: MaskStartMenu(); ThreadPool.QueueUserWorkItem(_ => trigger()); return 1;
-                case KeyDecision.Swallow: return 1;
-            }
+            KeyRoute route;
+            lock (Router) route = Router.Route((int)info.Key, down, (info.Flags & 0x10) != 0, Pressed(0x11), Pressed(0x12), Pressed(0x10));
+            if (route.MaskStart) Mask();
+            if (route.ReplayWinUp) { Mask(); Send((ushort)info.Key, true); }
+            if (route.Action is { } action) ThreadPool.QueueUserWorkItem(_ => trigger(action));
+            if (route.Decision != KeyDecision.Pass) return 1;
         }
         return CallNextHookEx(0, code, message, data);
     }
-    // Releasing Win after a swallowed key would open Start; an unassigned key in between tells Windows a combination happened.
-    private static void MaskStartMenu()
+    private static bool Pressed(int key) => GetAsyncKeyState(key) < 0;
+    // An unassigned key (0xE8) between modifier down and up tells Windows a combination happened: Start / menu bars stay shut.
+    private static void Mask() { Send(0xE8, false); Send(0xE8, true); }
+    /// <summary>Presses the keys in order and releases them in reverse (for example Win+B, which focuses the notification area).</summary>
+    public static void Chord(params ushort[] keys) { foreach (var key in keys) Send(key, false); foreach (var key in keys.Reverse()) Send(key, true); }
+    private static void Send(ushort key, bool up)
     {
-        var inputs = new Input[2];
-        inputs[0].Type = 1; inputs[0].Key.Key = 0xE8;
-        inputs[1].Type = 1; inputs[1].Key.Key = 0xE8; inputs[1].Key.Flags = 0x0002;
-        SendInput(2, inputs, Marshal.SizeOf<Input>());
+        var inputs = new Input[1];
+        inputs[0].Type = 1; inputs[0].Key.Key = key; inputs[0].Key.Flags = up ? 0x0002u : 0u;
+        if (key is 0x5B or 0x5C) inputs[0].Key.Flags |= 0x0001; // Win keys are extended keys
+        SendInput(1, inputs, Marshal.SizeOf<Input>());
     }
     public void Dispose() { if (threadId != 0) PostThreadMessage(threadId, 0x0012, 0, 0); thread.Join(2000); ready.Dispose(); }
 

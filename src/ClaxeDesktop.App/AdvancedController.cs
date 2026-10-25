@@ -28,9 +28,8 @@ public sealed partial class DesktopController
     {
         profileStore=new(desktopData);automation=new(ManualUntil:committed.ProfileManualUntil);
         layoutShortcut=new(windows.OfType<PanelWindow>().Single(),()=>ShowAdvanced(2));
-        try{layoutShortcut.Configure(!safe&&committed.LayoutShortcut);}catch(Exception ex){Log.Write("layout-shortcut-failed",ex);ViewModel.Status=ex.Message;}
         dockShortcut = new(windows.OfType<PanelWindow>().Single(), SummonDock);
-        try { dockShortcut.Register(); } catch (InvalidOperationException ex) { Log.Write("dock-shortcut-conflict", ex); ViewModel.Status = ex.Message; }
+        ApplyHotkeys();
         advancedLoad=LoadAdvancedAsync();UpdateMascot();
     }
     private async Task LoadAdvancedAsync()
@@ -108,8 +107,8 @@ public sealed partial class DesktopController
     internal async Task ConfigureLayoutShortcutAsync(bool enabled)
     {
         if(safe||ReadOnly)return;await persistenceGate.WaitAsync();
-        try{layoutShortcut!.Configure(enabled);var next=committed with{LayoutShortcut=enabled};await store.SaveAsync(next);committed=next;ViewModel.SetAdvanced(next);}
-        catch{layoutShortcut!.Configure(committed.LayoutShortcut);throw;}finally{persistenceGate.Release();}
+        try{layoutShortcut!.Configure(enabled,Gesture("layout"));var next=committed with{LayoutShortcut=enabled};await store.SaveAsync(next);committed=next;ViewModel.SetAdvanced(next);}
+        catch{layoutShortcut!.Configure(committed.LayoutShortcut,Gesture("layout"));throw;}finally{persistenceGate.Release();}
     }
     private string ImportMascot(string file)
     {
@@ -155,6 +154,6 @@ public sealed partial class DesktopController
     {
         if(safe||ReadOnly)return;var placement=window.Capture(ViewModel.Monitors);await persistenceGate.WaitAsync();try{var next=committed with{Mascot=committed.Mascot with{Placement=placement}};await store.SaveAsync(next);committed=next;ViewModel.SetAdvanced(next);}catch(Exception ex){Log.Write("mascot-placement-failed",ex);ViewModel.Status="Maskot konumu kaydedilemedi.";}finally{persistenceGate.Release();}
     }
-    private void StopAdvancedServices(){dockShortcut?.Dispose();layoutShortcut?.Dispose();advancedWindow?.Close();}
+    private void StopAdvancedServices(){StopKeyboard();dockShortcut?.Dispose();layoutShortcut?.Dispose();advancedWindow?.Close();}
 }
 

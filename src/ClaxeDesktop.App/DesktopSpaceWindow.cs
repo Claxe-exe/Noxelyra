@@ -31,6 +31,7 @@ internal sealed class DesktopSpaceWindow : Window
     private readonly Dictionary<string, DesktopIconPosition> positions = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<DesktopFile> files = [];
     private Grid? header;
+    private readonly TextBlock emergencyHint = new() { FontSize = 11, Opacity = .75, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(Gutter, 0, 0, 12), IsHitTestVisible = false };
     private double headerInset = 92;
     private Task refreshPending = Task.CompletedTask;
     private bool closed, mediaReady, playing, manualPause;
@@ -55,6 +56,8 @@ internal sealed class DesktopSpaceWindow : Window
         icons.MouseLeftButtonDown += (_, _) => Keyboard.ClearFocus();
         root.Children.Add(new ScrollViewer { Content = icons, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false });
         root.Children.Add(Header());
+        // Always-visible escape hatch on the desktop itself: the emergency shortcut closes Noxelyra and restores Windows.
+        emergencyHint.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); root.Children.Add(emergencyHint);
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape && search.IsKeyboardFocused && search.Text.Length > 0) { search.Clear(); e.Handled = true; }
@@ -145,7 +148,7 @@ internal sealed class DesktopSpaceWindow : Window
         Item(menu, "Simgeleri otomatik diz", () => { positions.Clear(); saveLayout.Stop(); saveLayout.Start(); RenderIcons(); status.Text = "Simgeler widget ve dock alanlarının etrafına yeniden dizildi."; }, positions.Count > 0);
         menu.Items.Add(new Separator());
         Item(menu, "Widget atölyesi", controller.Widgets.ShowEditor);
-        Item(menu, "Kontrol merkezi", controller.ShowControls);
+        Item(menu, "Kontrol merkezi", controller.ShowFullControls);
         Item(menu, "Ayarlar", controller.ShowSettings);
         return menu;
     }
@@ -182,6 +185,7 @@ internal sealed class DesktopSpaceWindow : Window
     internal void Reveal(bool activate)
     {
         LoadOptions();
+        emergencyHint.Text = "Acil çıkış: " + controller.GestureText("emergency");
         if (activate) WindowState = WindowState.Normal;
         if (!IsVisible) Show();
         if (activate) Activate();

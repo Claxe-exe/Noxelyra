@@ -136,7 +136,7 @@ public sealed partial class DesktopController
     internal async Task<string> CheckUpdatesAsync()
     {
         var status = await Updates.CheckAsync(lifetime.Token); ViewModel.Status = status;
-        if (Updates.ReadyVersion is { } version) tray?.ShowBalloonTip(6000, "Noxelyra " + version + " hazır", "Kapanışta kurulur. Kontrol merkezinden hemen yeniden başlatabilirsin.", System.Windows.Forms.ToolTipIcon.Info);
+        if (Updates.ReadyVersion is { } version) Notify("Noxelyra " + version + " hazır", "Kapanışta kurulur. Kontrol merkezinden hemen yeniden başlatabilirsin.", "update");
         return status;
     }
     // Quiet background check a little after start, only for installed copies with the option on.
@@ -185,6 +185,7 @@ public sealed partial class DesktopController
         if (wanted && !guardianStarted) { if (!guardianStarting && DateTime.UtcNow - guardianFailedAt > TimeSpan.FromMinutes(1)) _ = StartGuardianForHidingAsync(); return; }
         try
         {
+            if (wanted && TrayPeeking()) return;
             if (wanted && TaskbarWindows.AnyVisible()) { TaskbarWindows.SetVisible(false); taskbarHiddenByUs = true; }
             else if (!wanted && taskbarHiddenByUs) { TaskbarWindows.SetVisible(true); taskbarHiddenByUs = false; }
         }
@@ -207,18 +208,10 @@ public sealed partial class DesktopController
         if (saved) ViewModel.Status = hidden ? "Windows görev çubukları Noxelyra açıkken tamamen gizli. Win tuşu Başlat'ı açmaya devam eder." : "Windows görev çubukları yeniden görünür.";
         return saved;
     }
-    private ShowDesktopHook? showDesktopHook;
     private bool noxelyraDesktopShown;
-    internal bool ShowDesktopCaptured => showDesktopHook is not null;
+    internal bool ShowDesktopCaptured => keyboardHook is not null && committed.DesktopSpace.CaptureShowDesktop;
     internal Task<bool> SetCaptureShowDesktopAsync(bool enabled) => PersistDesktopSpaceAsync(options => options with { CaptureShowDesktop = enabled, Enabled = enabled || options.Enabled });
-    private void ConfigureShowDesktop()
-    {
-        var wanted = !safe && !exiting && committed.DesktopSpace.Enabled && committed.DesktopSpace.CaptureShowDesktop;
-        if (!wanted) { showDesktopHook?.Dispose(); showDesktopHook = null; return; }
-        if (showDesktopHook is not null) return;
-        try { showDesktopHook = new(() => Application.Current.Dispatcher.BeginInvoke(ToggleNoxelyraDesktop)); Log.Write("show-desktop-hook-installed"); }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { Log.Write("show-desktop-hook-failed", ex); ViewModel.Status = "Win+D yakalanamadı; Windows'un kendi masaüstü davranışı sürüyor."; }
-    }
+    private void ConfigureShowDesktop() => ConfigureKeyboard();
     // Super+D like a Linux desktop: first press minimizes apps onto the Noxelyra desktop, the next press brings them back.
     internal void ToggleNoxelyraDesktop()
     {
@@ -269,7 +262,7 @@ public sealed partial class DesktopController
                 break;
         }
     }
-    private void StopDesktopSpace() { showDesktopHook?.Dispose(); showDesktopHook = null; desktopFollowDelay.Stop(); desktopMonitor?.Dispose(); desktopMonitor = null; desktopSpace?.Close(); }
+    private void StopDesktopSpace() { desktopFollowDelay.Stop(); desktopMonitor?.Dispose(); desktopMonitor = null; desktopSpace?.Close(); }
     internal async Task UseOriginalMascotAsync()
     {
         try

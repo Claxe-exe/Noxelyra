@@ -136,3 +136,14 @@
 - Güncelleme denetimi projenin "gizli ağ isteği yok" kuralına karşı görünür ve kapatılabilir bir ayardır; kullanıcının isteğiyle varsayılan açıktır. Yeni sürüm arka planda indirilir, kapanışta kurulur; "Güncelle ve yeniden başlat" normal kapanış (Windows durumunu geri yükleme) sonrasında uygular.
 - Velopack kancaları özel `Program.Main` içinde, WPF ve tek-örnek mutex'inden önce çalışır. Kaldırma kancası çalışan Noxelyra'yı kapatır, görev çubuğunu/arka planı/WE'yi geri yükler ve başlangıç kısayolunu siler.
 
+## 0.28-0.33 klavye ve kabuk hissi · 25 Ekim 2026
+
+- Win tuşu, Alt+Tab ve döşeme için tek bir belgelenmiş düşük seviye klavye kancası (WH_KEYBOARD_LL) kullanılır; yalnız açık olan özelliklerin tuşlarını işler, tuş kaydetmez. Win veya Alt'ı tek başına yutmak Başlat'ı/menü çubuğunu açtığından araya atanmamış 0xE8 tuşu gönderilir (Windows'un da kullandığı "maske" yöntemi). Kendi ürettiğimiz tuşlar her zaman geçer.
+- Win+B (tepsiye odaklan) belgelenmiş bir Windows kısayoludur; tepsi düğmesi bunu SendInput ile gönderir, görev çubuğu yalnız Noxelyra gizlediyse kısa süre gösterilir.
+- Acil çıkış Ctrl+Shift+Ü: RegisterHotKey kendi iş parçacığında; arayüz donarsa 2,5 sn sonra geri yükleme o iş parçacığından yapılır. Ü tuşu klavye düzeninden çözülür, düzende Ü yoksa kaydedilen sanal tuş kullanılır.
+- Döşeme yalnız yeniden boyutlanabilen, büyütülmemiş, en az 320×240 ve ekranı kaplamayan pencerelere uygulanır; konumlanamayan pencere "taşınamaz" olarak bırakılır. Varsayılan kapalı.
+- Dinamik adada sürekli animasyon yoktur: bar katmanlı (AllowsTransparency) pencere olduğu için her kare tüm barı yeniden çizer. Yalnız durum değişiminde genişlik ve saydamlık geçişi oynar.
+- Hava durumu widget'ı "gizli ağ isteği yok" kuralının bilinçli istisnasıdır: kullanıcı widget'ı ekleyip şehir yazmadan istek yapılmaz; yalnız `geocoding-api.open-meteo.com` ve `api.open-meteo.com` HTTPS, yönlendirme ve çerez yok, yanıt 256 KB ve 10 sn ile sınırlı. Veri Open-Meteo'nun CC BY 4.0 lisansıyla; widget'ta kaynak yazar.
+- GPU/disk/ağ grafikleri belgelenmiş PDH sayaçlarından İngilizce yol adlarıyla okunur (Windows dilinden bağımsız). Sayaç yoksa sıfır değil "Yok" gösterilir.
+- Rice dosyası paylaşım içindir: kişisel metin, web widget paketleri, kısayollar ve Windows değişiklikleri dışarıda kalır. Yerel yedek (`rice-backups`, son 5) kişisel metni korur. İçe aktarmada zip yalnız sabit adlı en fazla üç dosya içerebilir; klasör, fazladan dosya, bilinmeyen JSON alanı ve beyan edilenden büyük içerik reddedilir.
+- Bellek: açılıştan 20 sn sonra bir kez SetProcessWorkingSetSizeEx(-1,-1) ile boşta kalan sayfalar Windows'a verilir; sayfalar gerektiğinde geri gelir, bu bir "RAM temizleyici" değildir.

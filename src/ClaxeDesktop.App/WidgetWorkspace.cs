@@ -54,13 +54,23 @@ public sealed class WidgetWorkspace
         editor.Activate();
     }
     public void Change(string id, Func<WidgetInstance,WidgetInstance> change) => Mutate(Items.Select(w => w.Id == id && !w.Locked ? change(w) : w).ToArray());
+    /// <summary>Content typed on the widget itself (the weather city): a draft change in edit mode, saved at once otherwise.</summary>
+    public async Task<bool> SetTextAsync(string id, string text)
+    {
+        if (Editing) { Change(id, w => w with { Text = text }); return true; }
+        var next = Items.Select(w => w.Id == id ? w with { Text = text } : w).ToArray();
+        try { WidgetLayout.Validate(next); } catch (InvalidDataException ex) { controller.ViewModel.Status = ex.Message; return false; }
+        if (!await controller.SaveWidgetsAsync(next)) return false;
+        Items = baseline = next; Render(); return true;
+    }
     public void SetLock(string id, bool value) => Mutate(Items.Select(w => w.Id == id ? w with { Locked = value } : w).ToArray());
     public void Add(string kind)
     {
         if (!Editing || Items.Count >= 30) return;
-        var name = kind switch { "clock" => "Saat", "calendar" => "Takvim", "note" => "Not", _ => "Sistem ve saat" };
+        var name = kind switch { "clock" => "Saat", "calendar" => "Takvim", "note" => "Not", "music" => "Müzik", "weather" => "Hava durumu", "graph" => "Sistem grafiği", "bigclock" => "Büyük saat", _ => "Sistem ve saat" };
+        var (width, height) = kind switch { "clock" => (300, 200), "music" => (300, 420), "weather" => (300, 340), "graph" => (320, 430), "bigclock" => (420, 230), _ => (300, 342) };
         var main = controller.ViewModel.Monitors.First(m => m.Primary);
-        var item = new WidgetInstance { Kind = kind, Name = name, Width = 300, Height = kind == "clock" ? 200 : 342, Layer = Items.Count, Placement = new(main.Id, 360 + Items.Count * 12, 108 + Items.Count * 12) };
+        var item = new WidgetInstance { Kind = kind, Name = name, Width = width, Height = height, Text = kind == "weather" ? "" : new WidgetInstance().Text, Layer = Items.Count, Placement = new(main.Id, 360 + Items.Count * 12, 108 + Items.Count * 12) };
         Selection.Clear(); Selection.Add(item.Id); Mutate([..Items,item]);
     }
     public void Import(string path)

@@ -8,7 +8,18 @@ public sealed class WindowsWallpaperService : IWallpaperService
         var instance=Activator.CreateInstance(Type.GetTypeFromCLSID(new("C2CF3110-460E-4FC1-B9D0-8A1C0C9CC4BD"))!)!;
         try { return action((IDesktopWallpaper)instance); }finally { Marshal.ReleaseComObject(instance); }
     }
-    public IReadOnlyList<WallpaperDisplay> Displays()=>Use(w=>{w.GetMonitorDevicePathCount(out var count);var result=new List<WallpaperDisplay>();for(uint i=0;i<count;i++){w.GetMonitorDevicePathAt(i,out var id);w.GetMonitorRECT(id,out var r);result.Add(new(id,$"Ekran {i+1} · {r.Right-r.Left} × {r.Bottom-r.Top}",r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top));}return (IReadOnlyList<WallpaperDisplay>)result;});
+    // Windows also lists monitors that are remembered but not attached; GetMonitorRECT fails for those, so they are skipped.
+    public IReadOnlyList<WallpaperDisplay> Displays()=>Use(w=>
+    {
+        w.GetMonitorDevicePathCount(out var count); var result=new List<WallpaperDisplay>();
+        for(uint i=0;i<count;i++)
+        {
+            w.GetMonitorDevicePathAt(i,out var id); Rect r;
+            try { w.GetMonitorRECT(id,out r); } catch (COMException) { continue; }
+            result.Add(new(id,$"Ekran {result.Count+1} · {r.Right-r.Left} × {r.Bottom-r.Top}",r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top));
+        }
+        return (IReadOnlyList<WallpaperDisplay>)result;
+    });
     public string Read(string monitor)=>Use(w=>{w.GetWallpaper(monitor,out var path);return path;});
     public void Set(string monitor,string path)=>Use(w=>{w.SetWallpaper(monitor,path);return true;});
     public bool HasSlideshow()=>Use(w=>{w.GetStatus(out var state);return (state&2)!=0;});

@@ -14,16 +14,18 @@ public sealed record WidgetInstance
     public string? GroupId { get; init; }
     public string Text { get; init; } = "Bugün neye odaklanıyorsun?";
     public string? WebPackageId { get; init; }
+    public static readonly IReadOnlySet<string> Kinds = new HashSet<string>(StringComparer.Ordinal) { "system", "clock", "calendar", "note", "web", "music", "weather", "graph", "bigclock" };
     public static WidgetInstance Default { get; } = new() { Id = "system-main" };
     public override string ToString() => $"{Name}{(Locked ? " · kilitli" : "")}{(!Visible ? " · gizli" : "")}";
     public void Validate()
     {
         if (string.IsNullOrWhiteSpace(Id) || Id.Length > 64 || !Id.All(c => char.IsAsciiLetterOrDigit(c) || c == '-') || string.IsNullOrWhiteSpace(Name) || Name.Length > 80)
             throw new InvalidDataException("Widget kimliği veya adı geçersiz.");
-        if (Kind is not ("system" or "clock" or "calendar" or "note" or "web")) throw new InvalidDataException("Widget türü desteklenmiyor.");
+        if (!Kinds.Contains(Kind)) throw new InvalidDataException("Widget türü desteklenmiyor.");
         if (!double.IsFinite(Width) || !double.IsFinite(Height) || Width is < 160 or > 1200 || Height is < 120 or > 900 || Layer is < 0 or > 1000 || Text is null || Text.Length > 4000)
             throw new InvalidDataException("Widget ölçüsü veya içeriği geçersiz.");
         if (GroupId is not null && (GroupId.Length > 64 || !GroupId.All(c => char.IsAsciiLetterOrDigit(c) || c == '-'))) throw new InvalidDataException("Widget grubu geçersiz.");
+        if (Kind == "weather" && Text.Length > OpenMeteo.MaxCityLength) throw new InvalidDataException("Hava durumu şehri en fazla 80 karakter olabilir.");
         if (Kind == "web" && (WebPackageId is null || !Guid.TryParseExact(WebPackageId, "N", out _))) throw new InvalidDataException("Web widget paket kimliği geçersiz.");
         if (Placement is { } p && (string.IsNullOrWhiteSpace(p.MonitorId) || !double.IsFinite(p.X) || !double.IsFinite(p.Y) || Math.Abs(p.X) > 100000 || Math.Abs(p.Y) > 100000)) throw new InvalidDataException("Widget konumu geçersiz.");
     }

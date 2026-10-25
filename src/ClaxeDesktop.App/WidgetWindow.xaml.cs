@@ -45,12 +45,12 @@ public partial class WidgetWindow : FloatingWindow
         grip.Visibility = CanMove ? Visibility.Visible : Visibility.Collapsed;
         if (contentChanged) BuildContent();
     }
-    private void ClockChanged(object? sender,System.ComponentModel.PropertyChangedEventArgs e) { if(Model.Kind=="calendar" && e.PropertyName=="Date" && calendarDay!=DateTime.Today) { calendarDay=DateTime.Today; if(IsVisible)BuildContent(); } }
+    private void ClockChanged(object? sender,System.ComponentModel.PropertyChangedEventArgs e) { if (e.PropertyName == "Time" && IsVisible && liveTick is not null) LiveTick(); if(Model.Kind=="calendar" && e.PropertyName=="Date" && calendarDay!=DateTime.Today) { calendarDay=DateTime.Today; if(IsVisible)BuildContent(); } }
     public void ShowSelection(bool selected)
     {
         if(selected) { Frame.SetResourceReference(Border.BorderBrushProperty,"Accent"); Frame.BorderThickness = new(2); }
     }
-    private void StopWeb() { web?.Dispose(); web = null; }
+    private void StopWeb() { web?.Dispose(); web = null; StopLive(); }
     private void BuildContent()
     {
         StopWeb(); body.Children.Clear(); var stack = new StackPanel(); body.Children.Add(new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
@@ -73,6 +73,7 @@ public partial class WidgetWindow : FloatingWindow
             for (int i = 1; i <= DateTime.DaysInMonth(today.Year, today.Month); i++) { var label = new TextBlock { Text = i.ToString(), Margin = new(3), FontWeight = i == today.Day ? FontWeights.Bold : FontWeights.Normal }; if (i == today.Day) label.SetResourceReference(TextBlock.ForegroundProperty, "Accent"); grid.Children.Add(label); }
             stack.Children.Add(grid);
         }
+        if (IsLive(Model.Kind)) { if (IsVisible) BuildLive(stack); return; }
         if (Model.Kind == "note") stack.Children.Add(new TextBlock { Text = Model.Text, TextWrapping = TextWrapping.Wrap, FontSize = 17 });
         if (Model.Kind != "web") return;
         if (workspace.SafeMode) { stack.Children.Add(new TextBlock { Text = "Güvenli modda web widget kapalı.", TextWrapping = TextWrapping.Wrap }); return; }

@@ -38,6 +38,7 @@ public sealed class WidgetEditorWindow : Window
         stack.Children.Add(new TextBlock { Text = "Widget atölyesi", FontSize = 26, FontWeight = FontWeights.SemiBold });
         stack.Children.Add(new TextBlock { Text = "Başlıktan sürükle · Alt + yön tuşlarıyla taşı · Köşeden boyutlandır\nCtrl/Shift ile çoklu seç. Değişiklikler Kaydet'e kadar taslaktır.", Margin = new(0,10,0,14), TextWrapping = TextWrapping.Wrap });
         Row(stack,("+ Saat",()=>workspace.Add("clock")),("+ Takvim",()=>workspace.Add("calendar")),("+ Not",()=>workspace.Add("note")),("+ Sistem",()=>workspace.Add("system")));
+        Row(stack,("+ Müzik",()=>workspace.Add("music")),("+ Hava durumu",()=>workspace.Add("weather")),("+ Sistem grafiği",()=>workspace.Add("graph")),("+ Büyük saat",()=>workspace.Add("bigclock")));
         Row(stack,("Yerel web paketi ekle",Import)); stack.Children.Add(list);
         list.SelectionChanged += (_,_) => { if (refreshing) return; workspace.Selection.Clear(); foreach (WidgetInstance item in list.SelectedItems) workspace.Selection.Add(item.Id); Populate(); workspace.RefreshSelection(); DrawPreview(); };
         Row(stack,("Çoğalt",workspace.Duplicate),("Kaldır",workspace.Remove),("Kilitle / aç",()=>Each(w=>{ workspace.SetLock(w.Id,!w.Locked); })),("Göster / gizle",()=>Each(w=>workspace.Change(w.Id,x=>x with { Visible = !x.Visible }))));
@@ -47,8 +48,8 @@ public sealed class WidgetEditorWindow : Window
         var position = new StackPanel { Orientation = Orientation.Horizontal }; position.Children.Add(new TextBlock { Text = "Konum X / Y (DIP) ", VerticalAlignment = VerticalAlignment.Center }); position.Children.Add(xPosition); position.Children.Add(yPosition); stack.Children.Add(position);
         Row(stack,("Seçili ekrana taşı",()=> { if(monitor.SelectedItem is not MonitorInfo target || !double.TryParse(xPosition.Text,out var x) || !double.TryParse(yPosition.Text,out var y)) throw new InvalidDataException("Geçerli konum ve ekran seç."); Each(w=>workspace.Change(w.Id,i=>i with { Placement = new(target.Id,x,y) })); }));
         Row(stack,("Boyutu uygula",()=> { if (!double.TryParse(width.Text,NumberStyles.Float,CultureInfo.CurrentCulture,out var x) || !double.TryParse(height.Text,NumberStyles.Float,CultureInfo.CurrentCulture,out var y)) throw new InvalidDataException("Sayısal boyut gir."); Each(w=>workspace.Change(w.Id,i=>i with { Width = x, Height = y })); }));
-        stack.Children.Add(new TextBlock { Text = "Seçili notun içeriği", Margin = new(0,8,0,4) }); stack.Children.Add(note);
-        Row(stack,("Notu uygula",()=>Each(w=> { if(w.Kind=="note") workspace.Change(w.Id,x=>x with { Text = note.Text }); })));
+        stack.Children.Add(new TextBlock { Text = "Seçili notun metni veya hava durumu şehri", Margin = new(0,8,0,4) }); stack.Children.Add(note);
+        Row(stack,("Metni uygula",()=>Each(w=> { if(w.Kind=="note") workspace.Change(w.Id,x=>x with { Text = note.Text }); else if(w.Kind=="weather") workspace.Change(w.Id,x=>x with { Text = OpenMeteo.CleanCity(note.Text) }); })));
         Row(stack,("Geri al",workspace.Undo),("Yinele",workspace.Redo));
         var footer = new StackPanel(); footer.Children.Add(status);
         var save = new Button { Content = "Düzeni kaydet", Margin = new(0,8,0,0) }; save.SetResourceReference(Button.BackgroundProperty,"Accent"); save.Click += async (_,_) => { await workspace.SaveAsync(); status.Text = workspace.Status; }; footer.Children.Add(save);
@@ -60,7 +61,7 @@ public sealed class WidgetEditorWindow : Window
     private void Row(Panel parent,params (string Label,Action Action)[] buttons)
     {
         var row = new WrapPanel { Margin = new(0,5,0,0) }; parent.Children.Add(row);
-        foreach(var button in buttons) { var control = new Button { Content = button.Label, Margin = new(0,0,6,4), Padding = new(9,6,9,6) }; control.Click += (_,_)=> { try { button.Action(); status.Text = "Önizleme · Kaydet veya İptal."; } catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or ArgumentException) { status.Text = ex.Message; } }; row.Children.Add(control); }
+        foreach(var button in buttons) { var control = new Button { Content = button.Label, Margin = new(0,0,6,4), Padding = new(9,6,9,6) }; control.Click += (_,_)=> { try { button.Action(); status.Text = "Önizleme · Kaydet veya İptal."; } catch(Exception ex) when(ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException) { status.Text = ex.Message; } }; row.Children.Add(control); }
     }
     private void Import() { var picker = new OpenFileDialog { Title = "Yerel widget.json seç · ağ ve cihaz izinleri kapalı", Filter = "Widget manifesti|widget.json", CheckFileExists = true }; if(picker.ShowDialog(this)==true) workspace.Import(picker.FileName); }
     private void Refresh() { refreshing = true; list.ItemsSource = workspace.Items; foreach(var item in workspace.Items.Where(w=>workspace.Selection.Contains(w.Id))) list.SelectedItems.Add(item); refreshing = false; Populate(); DrawPreview(); }

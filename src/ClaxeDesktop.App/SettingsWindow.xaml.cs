@@ -18,7 +18,7 @@ public partial class SettingsWindow : Window
     private async void Save(object sender, RoutedEventArgs e) { if (Editor.CanSave) await controller.SaveAsync(); }
     private void Revert(object sender, RoutedEventArgs e) { Editor.ClearErrors(); controller.RevertPreview(); }
     private void Widgets(object sender, RoutedEventArgs e) => controller.Widgets.ShowEditor();
-    private void Controls(object sender, RoutedEventArgs e) => controller.ShowControls();
+    private void Controls(object sender, RoutedEventArgs e) => controller.ShowFullControls();
     private void Applications(object sender, RoutedEventArgs e) => controller.ShowLauncher();
     private void Undo(object sender, RoutedEventArgs e) => Editor.Undo();
     private void Redo(object sender, RoutedEventArgs e) => Editor.Redo();

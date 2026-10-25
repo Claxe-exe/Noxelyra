@@ -61,13 +61,13 @@ public sealed partial class DesktopController
         {
             window.Moved += OnMoved; window.Closing += WindowClosing; window.Show();
         }
-        StartDesktopServices(); Widgets.Start(); StartAdvancedServices(); StartDesktopSpace();
+        StartDesktopServices(); Widgets.Start(); StartAdvancedServices(); StartDesktopSpace(); TrimMemoryLater();
         ApplyAppearance(); PlaceAll(safe); Tick();
         timer.Tick += (_, _) => Tick(); timer.Start();
         saveTimer.Tick += async (_, _) => { saveTimer.Stop(); await SaveCommittedAsync(); };
         SystemEvents.DisplaySettingsChanged += DisplayChanged; SystemEvents.SessionSwitch += SessionChanged; SystemEvents.PowerModeChanged += PowerChanged;
         tray = new Forms.NotifyIcon { Text = "Noxelyra Desktop", Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application, Visible = true };
-        var menu = new Forms.ContextMenuStrip(); menu.Items.Add("Noxelyra masaüstü alanını aç", null, (_, _) => ShowDesktopSpace()); menu.Items.Add("Dock'u öne getir · Alt+K", null, (_, _) => SummonDock()); menu.Items.Add("Uygulamalar", null, (_, _) => ShowLauncher()); menu.Items.Add("Kontrol merkezi", null, (_, _) => ShowControls()); menu.Items.Add("Hafifletme", null, (_, _) => ShowLighten()); menu.Items.Add("Profiller ve pencere düzenleri", null, (_, _) => ShowAdvanced()); menu.Items.Add("Ayarlar", null, (_, _) => ShowSettings()); menu.Items.Add("Widget atölyesi", null, (_, _) => Widgets.ShowEditor()); menu.Items.Add("Widget rafını göster / gizle", null, (_, _) => Widgets.ToggleShelf()); menu.Items.Add("Panelleri göster", null, (_, _) => { foreach (var w in windows.Where(w => w.IsVisible)) w.Activate(); }); menu.Items.Add("Noxelyra'dan çık", null, (_, _) => Exit()); tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => ShowSettings();
+        var menu = new Forms.ContextMenuStrip(); menu.Items.Add("Noxelyra masaüstü alanını aç", null, (_, _) => ShowDesktopSpace()); menu.Items.Add("Dock'u öne getir · Alt+K", null, (_, _) => SummonDock()); menu.Items.Add("Uygulamalar", null, (_, _) => ShowLauncher()); menu.Items.Add("Hızlı ayarlar ve bildirimler", null, (_, _) => ShowQuickSettings()); menu.Items.Add("Kontrol merkezi", null, (_, _) => ShowFullControls()); menu.Items.Add("Hafifletme", null, (_, _) => ShowLighten()); menu.Items.Add("Profiller ve pencere düzenleri", null, (_, _) => ShowAdvanced()); menu.Items.Add("Ayarlar", null, (_, _) => ShowSettings()); menu.Items.Add("Widget atölyesi", null, (_, _) => Widgets.ShowEditor()); menu.Items.Add("Widget rafını göster / gizle", null, (_, _) => Widgets.ToggleShelf()); menu.Items.Add("Panelleri göster", null, (_, _) => { foreach (var w in windows.Where(w => w.IsVisible)) w.Activate(); }); menu.Items.Add("Noxelyra'dan çık", null, (_, _) => Exit()); tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => ShowSettings();
         if (!safe && Environment.GetEnvironmentVariable("CLAXE_DATA_DIR") is null && Startup.Enabled)
         {
             try { Startup.SetEnabled(true); } catch (Exception ex) { Log.Write("startup-migration-failed", ex); ViewModel.Status = "Başlangıç kısayolu güncellenemedi; ayarlardan yeniden etkinleştir."; }
@@ -86,7 +86,7 @@ public sealed partial class DesktopController
     }
     private void Tick()
     {
-        _ = AdvanceProfilesAsync();MascotActivity(); DesktopSpaceActivity(); KeepTaskbarHidden();
+        TimerTick(); _ = AdvanceProfilesAsync();MascotActivity(); DesktopSpaceActivity(); KeepTaskbarHidden();
         _ = AdvanceWallpaperRotationsAsync();
         Widgets.UpdateActivity();
         if (locked || suspended || !windows.Any(w => w.IsVisible && w.WindowState != WindowState.Minimized)) return;
@@ -158,26 +158,31 @@ public sealed partial class DesktopController
         await persistenceGate.WaitAsync();
         try
         {
-            var candidate = ViewModel.Settings with { Widgets = committed.Widgets, IntegratedDesktop=committed.IntegratedDesktop,HideWindowsTaskbar=committed.HideWindowsTaskbar,GlobalShortcuts=committed.GlobalShortcuts,WallpaperEnabled=committed.WallpaperEnabled,Wallpapers=committed.Wallpapers,WallpaperRotations=committed.WallpaperRotations,ActiveProfileId=committed.ActiveProfileId,ProfileManualUntil=committed.ProfileManualUntil,LayoutShortcut=committed.LayoutShortcut,Mascot=committed.Mascot,DesktopSpace=committed.DesktopSpace };
+            var candidate = ViewModel.Settings with { Widgets = committed.Widgets, IntegratedDesktop=committed.IntegratedDesktop,HideWindowsTaskbar=committed.HideWindowsTaskbar,GlobalShortcuts=committed.GlobalShortcuts,WallpaperEnabled=committed.WallpaperEnabled,Wallpapers=committed.Wallpapers,WallpaperRotations=committed.WallpaperRotations,ActiveProfileId=committed.ActiveProfileId,ProfileManualUntil=committed.ProfileManualUntil,LayoutShortcut=committed.LayoutShortcut,Mascot=committed.Mascot,DesktopSpace=committed.DesktopSpace,Keyboard=committed.Keyboard };
             if (safe) candidate = candidate with { Panel = committed.Panel, Dock = committed.Dock, Widget = committed.Widget };
             await store.SaveAsync(candidate); committed = candidate; if (ViewModel.Settings == candidate) ViewModel.AcceptChanges(); ViewModel.Status = "Ayarlar kaydedildi."; Log.Write("settings-saved");
         }
         catch (Exception ex) { Log.Write("save-failed", ex); ViewModel.Status = "Ayarlar kaydedilemedi. Son kayıt korunuyor; yeniden deneyebilirsin."; }
         finally { persistenceGate.Release(); }
     }
-    // Applies and persists only the palette, so unrelated previews in an open settings window stay unsaved.
-    internal async Task<bool> SetThemeAsync(string id)
+    // Applies and persists one catalog setting, so unrelated previews in an open settings window stay unsaved.
+    internal async Task<bool> SetSettingAsync(string key, object value, string? done = null)
     {
-        if (ReadOnly || safe) { ViewModel.Status = "Güvenli/salt okunur modda tema kaydedilmez."; return false; }
+        if (ReadOnly || safe) { ViewModel.Status = "Güvenli/salt okunur modda bu ayar kaydedilmez."; return false; }
         await persistenceGate.WaitAsync();
         try
         {
-            var next = SettingsCatalog.Apply(committed, "themes.activeTheme", id); await store.SaveAsync(next); committed = next;
-            ViewModel.Edit(SettingsCatalog.Apply(ViewModel.Settings, "themes.activeTheme", id));
-            ViewModel.Status = ViewModel.ThemeName + " uygulandı."; return true;
+            var next = SettingsCatalog.Apply(committed, key, value); await store.SaveAsync(next); committed = next;
+            ViewModel.Edit(SettingsCatalog.Apply(ViewModel.Settings, key, value));
+            ViewModel.Status = done ?? "Ayar kaydedildi."; return true;
         }
-        catch (Exception ex) { Log.Write("theme-save-failed", ex); ViewModel.Status = "Tema uygulanamadı: " + ex.Message; return false; }
+        catch (Exception ex) { Log.Write("setting-save-failed", ex); ViewModel.Status = "Ayar uygulanamadı: " + ex.Message; return false; }
         finally { persistenceGate.Release(); }
+    }
+    internal async Task<bool> SetThemeAsync(string id)
+    {
+        if (!await SetSettingAsync("themes.activeTheme", id)) return false;
+        ViewModel.Status = ViewModel.ThemeName + " uygulandı."; return true;
     }
     internal bool IsPinned(string target) => ViewModel.Shortcuts.Any(s => string.Equals(s.Target, target, StringComparison.OrdinalIgnoreCase));
     internal void TogglePin(Shortcut app)
@@ -259,7 +264,7 @@ public sealed partial class DesktopController
     {
         if (exiting) return; exiting = true;
         // The power-off sequence covers the screen while everything below is saved and closed.
-        var outro = safe ? Task.CompletedTask : IntroWindow.PlayOutroAsync(committed);
+        var outro = safe || emergencyExit ? Task.CompletedTask : IntroWindow.PlayOutroAsync(committed);
         if (desktopSpace is not null) { committed = committed with { DesktopSpace = committed.DesktopSpace with { Icons = desktopSpace.IconPositions } }; ViewModel.SetAdvanced(committed); }
         timer.Stop(); saveTimer.Stop(); lifetime.Cancel(); await SaveCommittedAsync();
         SystemEvents.DisplaySettingsChanged -= DisplayChanged; SystemEvents.SessionSwitch -= SessionChanged; SystemEvents.PowerModeChanged -= PowerChanged;

@@ -1,5 +1,44 @@
 # Değişiklikler
 
+## 0.33.0 · 2026-10-25 · Linux hissi: klavye, dinamik ada, döşeme ve rice
+
+0.28-0.33 arası planlanan altı sürüm tek pakette.
+
+**Klavye (0.28-0.29)**
+- Acil çıkış: **Ctrl+Shift+Ü** her durumda Noxelyra'yı animasyonsuz kapatır ve Windows'u eski haline getirir. Arayüz donsa bile kendi iş parçacığında çalışır; 2,5 sn içinde kapanmazsa görev çubuğunu ve arka planı oradan geri yükleyip süreci bitirir. Kısayol Noxelyra masaüstünün sol alt köşesinde ve hızlı ayarlarda yazar.
+- Klavye ve kısayollar penceresi: her Noxelyra kısayolu "Değiştir"e basıp yeni tuşlara basarak değiştirilir; çakışmalar ve Windows'a ayrılmış birleşimler reddedilir.
+- Win tuşuna tek basış Noxelyra başlatıcısını açar (Win+E, Win+L gibi kısayollar çalışmaya devam eder). Başlatıcı iki stilde: ortada arama kartı veya tam ekran ızgara.
+- Kendi Alt+Tab'ı: canlı DWM önizlemeli kartlar; Tab/oklar gezer, Alt'ı bırakmak geçer, Esc vazgeçer.
+
+**Döşeme (0.30)**
+- Hyprland "dwindle" otomatik döşeme: yeni pencereler uzun kenardan bölünerek yerleşir. Diyaloglar, küçük ve büyütülmüş pencereler, oyunlar serbest kalır. Win+T döşemeden çıkarır, Win+Q kapatır, Win+F tam ekran, Win+oklar odak, Shift+Win+oklar yer değiştirir. Boşluk 0-40 px.
+- Win başlatıcı, Alt+Tab ve döşeme yeni kurulumlarda kapalı gelir.
+
+**Panel (0.31)**
+- Dinamik ada: bardaki saat adası çalan parçayı (kapak ve başlık), ses değişimini, Noxelyra bildirimlerini ve zamanlayıcıyı gösterir; genişliği yumuşakça değişir. Tıklayınca parça kartı (ilerleme, önceki/oynat/sonraki) veya zamanlayıcı menüsü (1-25 dk, kronometre) açılır. Ayarlar → Paneller'den kapatılabilir.
+- Hızlı ayarlar barın sağ üstünden kayarak açılır: rahatsız etme, döşeme, Win başlatıcı, Alt+Tab, koyu Windows, görev çubuğu gizleme, dinamik ada, animasyonlar; ses, çalan parça, paletler, Wi-Fi/Bluetooth/Ekran/Ses ayarları ve bildirimler. Dışarı tıklayınca kapanır.
+- Bildirim merkezi: güncelleme, zamanlayıcı ve kısayol çakışması bildirimleri (en fazla 100, rahatsız etme modu). Başka uygulamaların Windows bildirimleri okunamaz; yalnız Noxelyra'nınkiler.
+- "Panel için çalışma alanı ayır" modunda bar artık ayrılan şeridin dışına itilemez; Windows şeridi aşağı kaydırırsa bir kez yeniden ayırır ve günlüğe yazar.
+
+**Widget'lar (0.32)**
+- Müzik kartı (kapak, ilerleme, kontroller), hava durumu, sistem grafiği (son 60 sn CPU, GPU, RAM, disk, ağ; Windows performans sayaçları) ve büyük saat. Widget'lar yalnız görünürken çalışır.
+- Hava durumu yalnız sen bir şehir yazınca Open-Meteo'ya (iki sabit HTTPS adresi, anahtar ve konum izni yok) sorar, 30 dakikada bir ve yalnız widget görünürken yeniler.
+
+**Rice (0.33)**
+- Duvar kâğıdından renk: Noxelyra masaüstü görselinden veya Windows duvar kâğıdından okunaklılığı denetlenmiş bir palet (palet menüsü, hızlı ayarlar veya kontrol merkezi).
+- Rice dışa/içe aktarma: tema, bar/dock görünümü ve widget düzeni tek `.noxrice` dosyasında; istersen masaüstü görseli ve açılış klibi de. Not metinleri, hava durumu şehri, kısayollar ve Windows ayarları dosyaya girmez. İçe aktarma dosyayı sıkı denetler, önceki görünümü yedekler; "Önceki görünüme dön" geri alır.
+- Görev çubuğu tamamen gizliyken bardaki ˄ düğmesi görev çubuğunu kısa süre gösterip sistem tepsisine odaklanır (Win+B), sonra yeniden gizler.
+
+**Hafiflik ve temizlik**
+- Görev çubuğu koruyucusu artık WPF yüklemeden çalışır; açılıştan 20 sn sonra başlangıç belleği Windows'a geri verilir; eşzamanlı GC kapalı.
+- Doğrulayıcılar `Verification/` klasörüne taşındı; koyu temaya uyan ince kaydırma çubuğu.
+
+**Düzeltmeler**
+- Windows'un hatırladığı ama bağlı olmayan bir ekran, duvar kâğıdı ekran listesini COM hatasıyla bozuyordu (kontrol merkezi → Masaüstü arka planı). Bağlı olmayan ekranlar artık atlanır.
+- Ayar kataloğu testi eski sayıyı bekliyordu; gerçek sayıya (27) güncellendi.
+
+QA (bu bilgisayarda): 99/99 birim testi; `Verify-V033.ps1` 11/11, `Verify-Noxelyra.ps1` 12/12, `Verify-Integration.ps1` 13/13 (ayrılan şeritte bar konumu dahil), `Verify-Taskbar.ps1` 12/12. Döşeme ve tepsi düğmesi gerçek pencereleri taşıyıp odakladığı için otomatik doğrulamaya alınmadı; elle denenmeli.
+
 ## 0.27.0 · 2026-10-23 · Tek tıkla kurulum ve kendini güncelleme
 
 - `Noxelyra-win-Setup.exe` (~90 MB): yönetici izni olmadan kurar, masaüstü ve Başlat menüsü kısayolu, Uygulamalar listesinde kaldırma. .NET pakete gömülü. Ayrıca taşınabilir zip.
