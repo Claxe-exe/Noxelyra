@@ -1,5 +1,10 @@
 # Değişiklikler
 
+## 0.38.0 · 2026-10-26 · Gizli simgeler ve widget taşıma
+
+- Bardaki ˄ düğmesi artık Windows'un "gizli simgeler" panelini doğrudan açıyor (UI Automation ile); olmazsa eskisi gibi Win+B. Başka uygulamaların tepsi simgeleri Noxelyra'nın kendi paneline kopyalanamaz, Windows bunun için bir arayüz sunmuyor.
+- Widget atölyesinin önizlemesinde kartları sürükleyerek gerçek widget'ları taşıyabilirsin; tıklamak seçer. Kilitli widget taşınmaz. Değişiklik Kaydet'e kadar taslaktır. Test edilmeden kuruldu.
+
 ## 0.37.0 · 2026-10-26 · Noxelyra Music tek tuşla
 
 - Kontrol merkezinde "Noxelyra Music" bölümü ve boş adada (bir şey çalmıyorken) düğme: Noxelyra Music kuruluysa açar, değilse son sürümün kurulumunu Claxe-exe/Noxelyra-Music GitHub sürümlerinden indirip başlatır. İndirme yalnız düğmeye basınca yapılır ve yalnız GitHub adreslerine izin verilir. Test edilmeden yayımlandı.

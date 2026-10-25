@@ -21,6 +21,10 @@ public sealed class WidgetEditorWindow : Window
     private readonly TextBox xPosition = new() { Width = 80 };
     private readonly TextBox yPosition = new() { Width = 80 };
     private bool showGrid = true;
+    // Dragging a card in the preview moves the real widget there.
+    private Border? dragCard;
+    private Point dragStart, dragOrigin;
+    private bool dragMoved;
     public WidgetEditorWindow(WidgetWorkspace workspace)
     {
         this.workspace = workspace; Title = "Noxelyra · Widget atölyesi"; Width = 1240; Height = 850; MinWidth = 1000; MinHeight = 650; WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -76,7 +80,27 @@ public sealed class WidgetEditorWindow : Window
         {
             var card = new Border { Width=item.Width*scale,Height=item.Height*scale,CornerRadius=new(8),BorderThickness=new(workspace.Selection.Contains(item.Id)?2:1), Background=(Brush)FindResource("Card"),BorderBrush=(Brush)FindResource(workspace.Selection.Contains(item.Id)?"Accent":"Line"),Child=new TextBlock { Text=item.Name+(item.Locked?" · kilitli":""),TextWrapping=TextWrapping.Wrap,Margin=new(8),FontSize=12 } };
             Canvas.SetLeft(card,item.Placement!.X*scale); Canvas.SetTop(card,item.Placement.Y*scale); preview.Children.Add(card);
-            card.MouseLeftButtonDown += (_,_)=> { list.SelectedItem = item; };
+            card.Cursor = item.Locked ? System.Windows.Input.Cursors.No : System.Windows.Input.Cursors.SizeAll;
+            card.ToolTip = item.Locked ? "Kilitli · taşımak için önce kilidi aç" : "Sürükleyerek taşı · tıklayarak seç";
+            card.MouseLeftButtonDown += (_,e)=> { dragCard = card; dragMoved = false; dragStart = e.GetPosition(preview); dragOrigin = new(Canvas.GetLeft(card), Canvas.GetTop(card)); card.CaptureMouse(); e.Handled = true; };
+            card.MouseMove += (_,e)=>
+            {
+                if (dragCard != card || !card.IsMouseCaptured || item.Locked) return;
+                var p = e.GetPosition(preview); var dx = p.X - dragStart.X; var dy = p.Y - dragStart.Y;
+                if (!dragMoved && Math.Abs(dx) + Math.Abs(dy) < 3) return;
+                dragMoved = true;
+                Canvas.SetLeft(card, Math.Clamp(dragOrigin.X + dx, 0, Math.Max(0, preview.Width - card.Width)));
+                Canvas.SetTop(card, Math.Clamp(dragOrigin.Y + dy, 0, Math.Max(0, preview.Height - card.Height)));
+            };
+            card.MouseLeftButtonUp += (_,_)=>
+            {
+                if (dragCard != card) return;
+                card.ReleaseMouseCapture(); dragCard = null;
+                if (!dragMoved) { list.SelectedItem = item; return; }
+                var x = Math.Round(Canvas.GetLeft(card) / scale); var y = Math.Round(Canvas.GetTop(card) / scale);
+                try { workspace.Change(item.Id, w => w with { Placement = new(screen.Id, x, y) }); status.Text = item.Name + " taşındı · Kaydet veya İptal."; }
+                catch (Exception ex) when (ex is InvalidDataException or ArgumentException) { status.Text = ex.Message; DrawPreview(); }
+            };
         }
     }
 }

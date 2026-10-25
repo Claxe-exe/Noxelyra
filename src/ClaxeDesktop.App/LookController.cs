@@ -137,8 +137,13 @@ public sealed partial class DesktopController
         try
         {
             if (taskbarHiddenByUs) { TaskbarWindows.SetVisible(true); trayPeekStarted = DateTime.UtcNow; trayPeekUntil = trayPeekStarted.AddSeconds(12); }
-            KeyboardHook.Chord(0x5B, 0x42);
-            ViewModel.Status = "Sistem tepsisi açıldı. Görev çubuğu kendiliğinden yeniden gizlenir.";
+            // Open Windows' own "hidden icons" panel through UI Automation (its accessibility interface); Win+B if that fails.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(taskbarHiddenByUs ? 250 : 0);
+                if (!TrayFlyout.Open()) KeyboardHook.Chord(0x5B, 0x42);
+            });
+            ViewModel.Status = "Gizli simgeler açıldı. Görev çubuğu kendiliğinden yeniden gizlenir.";
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { Log.Write("tray-peek-failed", ex); ViewModel.Status = "Sistem tepsisine ulaşılamadı."; }
     }
