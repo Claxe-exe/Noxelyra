@@ -4,7 +4,7 @@
 <p align="center"><b>Windows 11 için Linux rice ruhunda, yumuşak ve kişiselleştirilebilir bir masaüstü katmanı.</b><br>
 <sub>A soft, Linux-rice-style desktop layer for Windows 11 — bar, dock, widgets, its own desktop and a lighten center, without replacing Explorer.</sub></p>
 
-<p align="center">v0.33 · .NET 10 WPF · MIT</p>
+<p align="center">v0.34 · .NET 10 WPF · MIT</p>
 
 > [!TIP]
 > ### 📥 Nasıl kurulur? (30 saniye)
@@ -23,7 +23,7 @@
 | | |
 |---|---|
 | **Üst bar** | Hyprland/Waybar tarzı cam adacıklar: başlatıcı, odaktaki pencere, ses (tekerlekle), CPU/RAM, palet menüsü, tepsi düğmesi. |
-| **Dinamik ada** | Saat adası çalan parçayı, ses değişimini, bildirimleri ve zamanlayıcıyı gösterir; tıklayınca parça kartı veya zamanlayıcı açılır. |
+| **Dinamik ada** | Saat adası çalan parçayı, ses değişimini, bildirimleri ve zamanlayıcıyı gösterir. Tıklayınca iki sayfalık kart açılır: parça (±10 sn), hava, CPU/GPU/RAM; ses, mikrofon, parlaklık, ekran görüntüsü, donan uygulamayı kapatma. **Alt+0** kartı oyundayken bile üste getirir. |
 | **Hızlı ayarlar** | Bardan kayan panel: rahatsız etme, döşeme, koyu Windows, görev çubuğu, ses, çalan parça, paletler ve Noxelyra bildirimleri. |
 | **Klavye** | Win tuşu başlatıcıyı açar, canlı önizlemeli kendi Alt+Tab, Hyprland "dwindle" otomatik döşeme, kısayol düzenleyici. Acil çıkış: **Ctrl+Shift+Ü**. (İlk üçü varsayılan kapalı.) |
 | **Dock** | Sürükle-bırak ile sabitleme, sayfalar (1-2-3, tekerlek), macOS benzeri dalga büyütme, çalışan uygulama göstergesi. |

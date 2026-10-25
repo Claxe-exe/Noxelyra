@@ -29,6 +29,7 @@ public sealed partial class DesktopController
         profileStore=new(desktopData);automation=new(ManualUntil:committed.ProfileManualUntil);
         layoutShortcut=new(windows.OfType<PanelWindow>().Single(),()=>ShowAdvanced(2));
         dockShortcut = new(windows.OfType<PanelWindow>().Single(), SummonDock);
+        islandShortcut = new(windows.OfType<PanelWindow>().Single(), 755, ToggleIslandSummon, "Klavye ve kısayollar penceresinden başka bir kısayol seçebilirsin.");
         ApplyHotkeys();
         advancedLoad=LoadAdvancedAsync();UpdateMascot();
     }
@@ -154,6 +155,6 @@ public sealed partial class DesktopController
     {
         if(safe||ReadOnly)return;var placement=window.Capture(ViewModel.Monitors);await persistenceGate.WaitAsync();try{var next=committed with{Mascot=committed.Mascot with{Placement=placement}};await store.SaveAsync(next);committed=next;ViewModel.SetAdvanced(next);}catch(Exception ex){Log.Write("mascot-placement-failed",ex);ViewModel.Status="Maskot konumu kaydedilemedi.";}finally{persistenceGate.Release();}
     }
-    private void StopAdvancedServices(){StopKeyboard();dockShortcut?.Dispose();layoutShortcut?.Dispose();advancedWindow?.Close();}
+    private void StopAdvancedServices(){StopKeyboard();islandShortcut?.Dispose();islandCard?.Close();dockShortcut?.Dispose();layoutShortcut?.Dispose();advancedWindow?.Close();}
 }
 

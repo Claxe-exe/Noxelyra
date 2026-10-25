@@ -10,29 +10,22 @@ namespace ClaxeDesktop.App;
 
 /// <summary>
 /// The bar's centre island, iPhone-style. It shows the clock and morphs (width animation and cross-fade) into the playing track,
-/// a volume change, a Noxelyra notification or a running timer. A click expands the track into a card or opens the timer menu.
+/// a volume change, a Noxelyra notification or a running timer. A click opens the two-page island card (track, weather, stats / PC controls).
 /// Nothing animates continuously: the bar is a layered window and every frame would repaint all of it.
 /// </summary>
 internal sealed class DynamicIsland : Grid
 {
     private enum View { Clock, Music, Volume, Note, Timer }
     private const string IconFont = "Segoe Fluent Icons, Segoe MDL2 Assets";
-    private const double VolumeTrack = 92, CardTrack = 214;
+    private const double VolumeTrack = 92;
     private readonly DesktopViewModel vm;
     private readonly DesktopController controller;
-    private readonly Func<string, Task> mediaCommand;
     private readonly Dictionary<View, FrameworkElement> views = [];
     private readonly TextBlock musicTitle = Text(13), noteTitle = Text(13), noteBody = Text(13), timerText = Figure(), volumeText = Figure();
     private readonly TextBlock volumeGlyph = Glyph("\uE767"), artGlyph = Glyph("\uE8D6"), timerGlyph = Glyph("\uE916");
     private readonly Border art = new() { Width = 22, Height = 22, CornerRadius = new(7), Margin = new(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
     private readonly Border volumeFill = new() { Height = 4, CornerRadius = new(2), HorizontalAlignment = HorizontalAlignment.Left };
     private readonly DispatcherTimer expiry = new();
-    private readonly Popup card = new() { AllowsTransparency = true, StaysOpen = false, Placement = PlacementMode.Custom };
-    private readonly Border cardArt = new() { Width = 72, Height = 72, CornerRadius = new(14), Margin = new(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Top };
-    private readonly TextBlock cardTitle = Text(15), cardArtist = Text(12), cardPosition = Figure(), cardDuration = Figure(), cardPlay = Glyph("\uE768");
-    private readonly Border cardFill = new() { Height = 4, CornerRadius = new(2), HorizontalAlignment = HorizontalAlignment.Left };
-    private readonly FrameworkElement cardProgress;
-    private readonly Button cardPrevious, cardPlayButton, cardNext;
     private View shown = View.Clock;
     internal string State => shown.ToString();
     private View? transient;
@@ -43,12 +36,12 @@ internal sealed class DynamicIsland : Grid
     /// <summary>The date next to the time; it gives way first on a narrow bar.</summary>
     public TextBlock Date { get; } = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 0, 10, 0) };
     /// <summary>Off: a plain clock, as before the island existed.</summary>
-    public bool Enabled { get; set { field = value; if (!value) { transient = null; card.IsOpen = false; } Render(); } } = true;
+    public bool Enabled { get; set { field = value; if (!value) transient = null; Render(); } } = true;
     /// <summary>Width the bar can give the island; set by the panel on every resize.</summary>
     public double Available { get; set { field = value; Resize(); } } = double.PositiveInfinity;
-    public DynamicIsland(DesktopViewModel vm, DesktopController controller, Func<string, Task> mediaCommand)
+    public DynamicIsland(DesktopViewModel vm, DesktopController controller)
     {
-        this.vm = vm; this.controller = controller; this.mediaCommand = mediaCommand;
+        this.vm = vm; this.controller = controller;
         ClipToBounds = true; Focusable = true;
         System.Windows.Automation.AutomationProperties.SetName(this, "Dinamik ada: saat, medya, ses, bildirim ve zamanlayıcı");
 
@@ -78,7 +71,6 @@ internal sealed class DynamicIsland : Grid
         views[View.Clock].Visibility = Visibility.Visible;
 
         expiry.Tick += (_, _) => { expiry.Stop(); transient = null; Render(); };
-        (cardProgress, cardPrevious, cardPlayButton, cardNext) = BuildCard();
         Loaded += (_, _) => Render();
     }
     private void Add(View view, params UIElement[] children)
@@ -87,61 +79,12 @@ internal sealed class DynamicIsland : Grid
         foreach (var child in children) row.Children.Add(child);
         views[view] = row; Children.Add(row);
     }
-    private (FrameworkElement, Button, Button, Button) BuildCard()
-    {
-        var body = new Border { Width = 344, CornerRadius = new(22), BorderThickness = new(1), Padding = new(16), Margin = new(14, 4, 14, 18) };
-        body.SetResourceReference(Border.BackgroundProperty, "Surface"); body.SetResourceReference(Border.BorderBrushProperty, "Line");
-        body.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 24, ShadowDepth = 6, Opacity = .4, Color = Colors.Black };
-        body.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Text");
-        var layout = new DockPanel(); body.Child = layout;
-        cardArt.SetResourceReference(Border.BackgroundProperty, "Card");
-        var bigNote = Glyph("\uE8D6"); bigNote.FontSize = 26; bigNote.HorizontalAlignment = HorizontalAlignment.Center; cardArt.Child = bigNote;
-        DockPanel.SetDock(cardArt, Dock.Left); layout.Children.Add(cardArt);
-        var details = new StackPanel(); layout.Children.Add(details);
-        cardTitle.FontWeight = FontWeights.SemiBold; cardTitle.MaxWidth = CardTrack; cardArtist.MaxWidth = CardTrack; cardArtist.Margin = new(0, 2, 0, 10);
-        cardArtist.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        details.Children.Add(cardTitle); details.Children.Add(cardArtist);
-
-        var progress = new StackPanel();
-        var track = new Grid { Width = CardTrack, Height = 4, HorizontalAlignment = HorizontalAlignment.Left };
-        var rail = new Border { CornerRadius = new(2) }; rail.SetResourceReference(Border.BackgroundProperty, "Line");
-        cardFill.SetResourceReference(Border.BackgroundProperty, "Accent"); track.Children.Add(rail); track.Children.Add(cardFill);
-        var times = new DockPanel { Width = CardTrack, HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 4, 0, 0) };
-        cardPosition.FontSize = cardDuration.FontSize = 11; cardPosition.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); cardDuration.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        DockPanel.SetDock(cardDuration, Dock.Right); times.Children.Add(cardDuration); times.Children.Add(cardPosition);
-        progress.Children.Add(track); progress.Children.Add(times); details.Children.Add(progress);
-
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, Margin = new(-8, 6, 0, 0) };
-        Button Control(TextBlock glyph, string name, Func<string> action)
-        {
-            glyph.FontSize = 18;
-            var button = new Button { Content = glyph, ToolTip = name, Padding = new(12, 6, 12, 6), Background = Brushes.Transparent, BorderThickness = new(0) };
-            System.Windows.Automation.AutomationProperties.SetName(button, name);
-            button.Click += async (_, _) => await mediaCommand(action());
-            buttons.Children.Add(button); return button;
-        }
-        var previous = Control(Glyph("\uE892"), "Önceki parça", () => "previous");
-        var play = Control(cardPlay, "Oynat / duraklat", () => media?.Playing == true ? "pause" : "play");
-        var next = Control(Glyph("\uE893"), "Sonraki parça", () => "next");
-        var timer = new Button { Content = Glyph("\uE916"), ToolTip = "Zamanlayıcı", Padding = new(12, 6, 12, 6), Margin = new(12, 0, 0, 0), Background = Brushes.Transparent, BorderThickness = new(0) };
-        System.Windows.Automation.AutomationProperties.SetName(timer, "Zamanlayıcı menüsü");
-        timer.Click += (_, _) => { card.IsOpen = false; OpenMenu(); };
-        buttons.Children.Add(timer);
-        details.Children.Add(buttons);
-
-        card.Child = body; card.PlacementTarget = this;
-        // Centred under the island, whatever its current width.
-        card.CustomPopupPlacementCallback = (popup, target, _) => [new CustomPopupPlacement(new Point((target.Width - popup.Width) / 2, target.Height + 2), PopupPrimaryAxis.Horizontal)];
-        card.Opened += (_, _) => UpdateCard();
-        return (progress, previous, play, next);
-    }
     /// <summary>The current media session from the panel's poll; null when nothing is published.</summary>
     public void ShowMedia(MediaState? state)
     {
         media = state is not null && (!string.IsNullOrWhiteSpace(state.Title) || !string.IsNullOrWhiteSpace(state.Artist)) ? state : null;
         mediaRead = DateTime.UtcNow;
-        if (media is null) card.IsOpen = false;
-        else
+        if (media is not null)
         {
             musicTitle.Text = string.IsNullOrWhiteSpace(media.Artist) ? media.Title : $"{media.Title} · {media.Artist}";
             if (!ReferenceEquals(media.Artwork, artSource))
@@ -150,7 +93,6 @@ internal sealed class DynamicIsland : Grid
                 art.Background = artSource is null ? (Brush)FindResource("Card") : new ImageBrush(artSource) { Stretch = Stretch.UniformToFill };
                 artGlyph.Visibility = artSource is null ? Visibility.Visible : Visibility.Collapsed;
             }
-            if (card.IsOpen) UpdateCard();
         }
         Render();
     }
@@ -176,7 +118,6 @@ internal sealed class DynamicIsland : Grid
     public void Tick()
     {
         if (controller.Timer is { } timer) timerText.Text = timer.Text(DateTimeOffset.Now);
-        if (card.IsOpen) UpdateProgress();
         Render();
     }
     private void Render()
@@ -210,51 +151,10 @@ internal sealed class DynamicIsland : Grid
         if (!first && IsLoaded && Motion.Enabled(vm)) Motion.To(this, WidthProperty, target, 420);
         else { BeginAnimation(WidthProperty, null); Width = target; }
     }
-    /// <summary>Click or Enter: a notification opens quick settings, the track opens its card, anything else the timer menu.</summary>
-    public void Click()
-    {
-        if (shown == View.Note) { controller.ShowQuickSettings(); return; }
-        if (media is not null && (shown == View.Music || shown == View.Volume)) { Expand(!card.IsOpen); return; }
-        OpenMenu();
-    }
-    private void Expand(bool open)
-    {
-        card.PopupAnimation = Motion.Enabled(vm) ? PopupAnimation.Fade : PopupAnimation.None;
-        card.IsOpen = open && media is not null;
-    }
-    public void OpenMenu()
-    {
-        var menu = new ContextMenu { PlacementTarget = this, Placement = PlacementMode.Bottom };
-        void Add(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => action(); menu.Items.Add(item); }
-        if (media is not null) { Add("Çalan parça", () => Expand(true)); menu.Items.Add(new Separator()); }
-        foreach (var minutes in IslandTimer.Presets) { var length = minutes; Add(length == 25 ? "25 dakika · odak" : $"{length} dakika", () => controller.StartTimer(length)); }
-        Add("Kronometre", () => controller.StartTimer(null));
-        if (controller.Timer is not null) Add("Zamanlayıcıyı durdur", controller.StopTimer);
-        menu.Items.Add(new Separator());
-        Add("Bildirimler ve hızlı ayarlar", controller.ShowQuickSettings);
-        menu.IsOpen = true;
-    }
-    private void UpdateCard()
-    {
-        if (media is null) return;
-        cardTitle.Text = string.IsNullOrWhiteSpace(media.Title) ? "Bilinmeyen parça" : media.Title;
-        cardArtist.Text = media.Artist; cardArtist.Visibility = string.IsNullOrWhiteSpace(media.Artist) ? Visibility.Collapsed : Visibility.Visible;
-        cardArt.Background = artSource is null ? (Brush)FindResource("Card") : new ImageBrush(artSource) { Stretch = Stretch.UniformToFill };
-        cardArt.Child.Visibility = artSource is null ? Visibility.Visible : Visibility.Collapsed;
-        cardPlay.Text = media.Playing ? "\uE769" : "\uE768";
-        cardPlayButton.IsEnabled = media.Playing ? media.CanPause : media.CanPlay; cardPrevious.IsEnabled = media.CanPrevious; cardNext.IsEnabled = media.CanNext;
-        UpdateProgress();
-    }
-    private void UpdateProgress()
-    {
-        if (media is null || media.Duration <= TimeSpan.Zero) { cardProgress.Visibility = Visibility.Collapsed; return; }
-        var position = media.Position + (media.Playing ? DateTime.UtcNow - mediaRead : TimeSpan.Zero);
-        if (position > media.Duration) position = media.Duration;
-        cardProgress.Visibility = Visibility.Visible;
-        cardFill.Width = CardTrack * position.TotalSeconds / media.Duration.TotalSeconds;
-        cardPosition.Text = Clock(position); cardDuration.Text = Clock(media.Duration);
-    }
-    private static string Clock(TimeSpan span) => span.TotalHours >= 1 ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}" : $"{(int)span.TotalMinutes}:{span.Seconds:00}";
+    /// <summary>Click or Enter: the island card under the island, whatever the island shows.</summary>
+    public void Click() => controller.ShowIslandCard(this);
+    /// <summary>Right click: timer presets, the card and quick settings.</summary>
+    public void OpenMenu() => controller.ShowTimerMenu(this);
     private static TextBlock Glyph(string code) => new() { Text = code, FontFamily = new FontFamily(IconFont), FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
     private static TextBlock Text(double size) => new() { FontSize = size, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     private static TextBlock Figure() { var block = new TextBlock { VerticalAlignment = VerticalAlignment.Center }; System.Windows.Documents.Typography.SetNumeralAlignment(block, FontNumeralAlignment.Tabular); return block; }

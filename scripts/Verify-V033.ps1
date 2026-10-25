@@ -19,7 +19,7 @@ try{
     $report.checks|Format-Table name,passed,detail -Wrap
     $out=Join-Path $root 'artifacts/v033'; New-Item -ItemType Directory -Force $out|Out-Null
     Copy-Item -LiteralPath $path -Destination $out
-    Get-ChildItem -LiteralPath $env:CLAXE_DATA_DIR -Filter 'v033-*.png'|Copy-Item -Destination $out
+    Get-ChildItem -LiteralPath $env:CLAXE_DATA_DIR -Filter 'v03*.png'|Copy-Item -Destination $out
     if(!$report.success){throw $report.error}
     if(Test-Path -LiteralPath (Join-Path $env:CLAXE_DATA_DIR 'session.lock')){throw 'Unclean exit'}
     $after=@(Get-Process explorer|ForEach-Object{$_.Id})

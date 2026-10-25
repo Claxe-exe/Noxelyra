@@ -62,6 +62,9 @@ public static class WindowOps
     public static void Maximize(nint hwnd, bool on) => ShowWindow(hwnd, on ? 3 : 9);
     public static bool Focus(nint hwnd) { if (IsIconic(hwnd)) ShowWindow(hwnd, 9); return SetForegroundWindow(hwnd); }
     public static nint Foreground => GetForegroundWindow();
+    /// <summary>The id of the process that owns the window, or 0.</summary>
+    public static int ProcessId(nint hwnd) { GetWindowThreadProcessId(hwnd, out var pid); return (int)pid; }
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint hwnd, out uint pid);
     public static bool IsAlive(nint hwnd) => IsWindow(hwnd) && IsWindowVisible(hwnd);
     [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] private struct MonitorData { public int Size; public Rect Monitor, Work; public uint Flags; }

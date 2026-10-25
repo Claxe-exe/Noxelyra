@@ -58,7 +58,7 @@ public sealed class PanelWindow : FloatingWindow
         left.Children.Add(MakeIsland(focused));
 
         // Center: the dynamic island. It doubles as the drag handle while the bar floats; a click without movement acts on the island.
-        island = new(vm, controller, MediaAsync) { Enabled = vm.Settings.DynamicIsland };
+        island = new(vm, controller) { Enabled = vm.Settings.DynamicIsland };
         clockIsland = MakeIsland(island); center.Children.Add(clockIsland);
         clockIsland.ToolTip = "Tıkla: zamanlayıcı veya çalan parça · Sağ tık: menü · Bar serbestken sürükleyerek taşı";
         clockIsland.MouseLeftButtonDown += (_, e) => { if (e.ClickCount != 1 || !CanMove) return; e.Handled = true; if (!TryDrag()) island.Click(); };

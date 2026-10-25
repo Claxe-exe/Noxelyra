@@ -23,14 +23,16 @@ internal static class V033Verifier
             await controller.WaitAdvancedAsync(); await Task.Delay(500);
             Check("Emergency exit shortcut is registered and named for the keyboard layout", controller.EmergencyRegistered && controller.GestureText("emergency").StartsWith("Ctrl+Shift+"), controller.GestureText("emergency"));
 
-            Check("Island starts as the clock", island.State == "Clock", island.State);
+            // A track already playing on the test machine legitimately starts the island as "Music".
+            var baseline = island.State;
+            Check("Island starts as the clock, or the track when one is playing", baseline is "Clock" or "Music", baseline);
             controller.StartTimer(1); island.Tick(); var timer = island.State;
             controller.StopTimer(); var afterTimer = island.State;
-            Check("Timer takes the island and stopping returns to the clock", timer == "Timer" && afterTimer == "Clock", timer + "/" + afterTimer);
+            Check("Timer takes the island and stopping returns to the previous view", timer == "Timer" && afterTimer == baseline, timer + "/" + afterTimer);
 
             island.ShowVolume(40, false, "\uE994"); var volume = island.State; await Task.Delay(500); ExportOver(panel, Path.Combine(directory, "v033-island-volume.png"));
             await Task.Delay(1800);
-            Check("A volume change shows briefly, then the clock returns", volume == "Volume" && island.State == "Clock", volume + "/" + island.State);
+            Check("A volume change shows briefly, then the previous view returns", volume == "Volume" && island.State == baseline, volume + "/" + island.State);
 
             var posted = 0; void Count(NotificationItem _) => posted++;
             controller.NotificationPosted += Count; var before = controller.Notifications.Items.Count;
@@ -76,6 +78,19 @@ internal static class V033Verifier
             var restored = await controller.RestoreRiceBackupAsync();
             Check("Rice exports, imports with a backup and returns to the previous look", File.Exists(rice) && imported && controller.ViewModel.Settings.ThemeId == "tokyo-night", exported + " | " + message + " | " + restored);
             await controller.SetThemeAsync("midnight-claxe");
+
+            controller.ShowIslandCard(island); await Task.Delay(400);
+            var card = controller.Card;
+            var underBar = card is { IsVisible: true, Summoned: false } && card.Page == 0;
+            if (card is not null) { await Task.Delay(900); card.UpdateLayout(); Export(card, Path.Combine(directory, "v034-card-page1.png")); card.Press(0x09); await Task.Delay(450); card.UpdateLayout(); Export(card, Path.Combine(directory, "v034-card-page2.png")); }
+            var flipped = card?.Page == 1;
+            controller.ShowIslandCard(island); await Task.Delay(400);
+            Check("Island click opens the two-page card, Tab/arrow flips to PC controls and a second click closes it", underBar && flipped && card is { IsVisible: false }, $"under={underBar} flipped={flipped}");
+            var focused = WindowOps.Foreground;
+            controller.ToggleIslandSummon(); await Task.Delay(450);
+            var summoned = card is { IsVisible: true, Summoned: true } && WindowOps.Foreground == focused; var keys = card?.RegisteredKeys ?? 0;
+            controller.ToggleIslandSummon(); await Task.Delay(400);
+            Check("Alt+0 summons the card on top without taking focus, claims the card keys and gives them back", controller.IslandShortcutRegistered && summoned && keys >= 5 && card is { IsVisible: false, RegisteredKeys: 0 }, $"shortcut={controller.IslandShortcutRegistered} summoned={summoned} keys={keys}");
 
             // Visual QA only: the island holding a track, on a wide bar.
             panel.Width = 1600; await Task.Delay(500);

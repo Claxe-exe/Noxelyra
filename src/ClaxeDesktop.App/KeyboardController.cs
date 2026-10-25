@@ -41,6 +41,7 @@ public sealed partial class DesktopController
         emergency?.Dispose(); emergency = null;
         if (!exiting) { emergency = new(Gesture("emergency"), EmergencyPressed); if (emergency.Error is { } error) problem ??= error; }
         if (dockShortcut is not null) Try(() => dockShortcut.Register(Gesture("dock")));
+        if (islandShortcut is not null) Try(() => islandShortcut.Register(Gesture("island")));
         if (layoutShortcut is not null) Try(() => layoutShortcut.Configure(!safe && committed.LayoutShortcut, Gesture("layout")));
         if (desktopBindings is not null && !safe) Try(() => desktopBindings.Configure(committed.IntegratedDesktop, committed.GlobalShortcuts, ViewModel.PanelHeight, Gesture("launcher"), Gesture("controls")));
         ConfigureKeyboard();

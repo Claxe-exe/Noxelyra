@@ -57,7 +57,7 @@ public sealed class DesktopViewModel : INotifyPropertyChanged
         foreach (var name in new[] { nameof(Time), nameof(Date), nameof(ShortDate), nameof(Greeting), nameof(CpuText), nameof(MemoryText), nameof(MemoryDetail), nameof(CpuValue), nameof(MemoryValue) }) Notify(name);
     }
     public void Replace(Settings value) { history.Clear(); Set(value); }
-    internal void SetAdvanced(Settings value){settings=settings with{DesktopSpace=value.DesktopSpace,ActiveProfileId=value.ActiveProfileId,ProfileManualUntil=value.ProfileManualUntil,LayoutShortcut=value.LayoutShortcut,Mascot=value.Mascot,Keyboard=value.Keyboard};Notify(nameof(Settings));}
+    internal void SetAdvanced(Settings value){settings=settings with{DesktopSpace=value.DesktopSpace,ActiveProfileId=value.ActiveProfileId,ProfileManualUntil=value.ProfileManualUntil,LayoutShortcut=value.LayoutShortcut,Mascot=value.Mascot,Keyboard=value.Keyboard,IslandCity=value.IslandCity};Notify(nameof(Settings));}
     internal void SetWidgets(IReadOnlyList<WidgetInstance> widgets) => settings = settings with { Widgets = widgets.ToList() };
     internal void SetDesktopSettings(Settings value) { settings=settings with { IntegratedDesktop=value.IntegratedDesktop,HideWindowsTaskbar=value.HideWindowsTaskbar,GlobalShortcuts=value.GlobalShortcuts,WallpaperEnabled=value.WallpaperEnabled,Wallpapers=value.Wallpapers,WallpaperRotations=value.WallpaperRotations }; Notify(nameof(Settings)); }
     public void Edit(Settings value) { value.Validate(); if (value == settings) return; history.Push(settings); status = "Değişiklikler önizleniyor. Kalıcılaştırmak için Kaydet."; Set(value); }
@@ -66,7 +66,7 @@ public sealed class DesktopViewModel : INotifyPropertyChanged
         var changed = !settings.Shortcuts.SequenceEqual(value.Shortcuts); settings = value;
         if (changed) RefreshShortcuts(); Notify(""); AppearanceChanged?.Invoke();
     }
-    private Settings PreserveIndependent(Settings value) => value with { DesktopSpace=settings.DesktopSpace,Panel=settings.Panel,Dock=settings.Dock,Widget=settings.Widget,Widgets=settings.Widgets,IntegratedDesktop=settings.IntegratedDesktop,HideWindowsTaskbar=settings.HideWindowsTaskbar,GlobalShortcuts=settings.GlobalShortcuts,WallpaperEnabled=settings.WallpaperEnabled,Wallpapers=settings.Wallpapers,WallpaperRotations=settings.WallpaperRotations,ActiveProfileId=settings.ActiveProfileId,ProfileManualUntil=settings.ProfileManualUntil,LayoutShortcut=settings.LayoutShortcut,Mascot=settings.Mascot,Keyboard=settings.Keyboard };
+    private Settings PreserveIndependent(Settings value) => value with { DesktopSpace=settings.DesktopSpace,Panel=settings.Panel,Dock=settings.Dock,Widget=settings.Widget,Widgets=settings.Widgets,IntegratedDesktop=settings.IntegratedDesktop,HideWindowsTaskbar=settings.HideWindowsTaskbar,GlobalShortcuts=settings.GlobalShortcuts,WallpaperEnabled=settings.WallpaperEnabled,Wallpapers=settings.Wallpapers,WallpaperRotations=settings.WallpaperRotations,ActiveProfileId=settings.ActiveProfileId,ProfileManualUntil=settings.ProfileManualUntil,LayoutShortcut=settings.LayoutShortcut,Mascot=settings.Mascot,Keyboard=settings.Keyboard,IslandCity=settings.IslandCity };
     public void Undo() { if (history.CanUndo) Set(PreserveIndependent(history.Undo(settings))); }
     public void Redo() { if (history.CanRedo) Set(PreserveIndependent(history.Redo(settings))); }
     public void AcceptChanges() { history.Clear(); Notify(nameof(CanUndo)); Notify(nameof(CanRedo)); }

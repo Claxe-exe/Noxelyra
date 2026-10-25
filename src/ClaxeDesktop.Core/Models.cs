@@ -48,6 +48,8 @@ public sealed record Settings
     public bool DynamicIsland { get; init; } = true;
     /// <summary>Colours generated from a wallpaper, used while <see cref="ThemeId"/> is "wallpaper".</summary>
     public ThemePalette? CustomPalette { get; init; }
+    /// <summary>City for the island card's weather; empty means the first weather widget's city, or none.</summary>
+    public string IslandCity { get; init; } = "";
     public Placement? Panel { get; init; }
     public Placement? Dock { get; init; }
     public Placement? Widget { get; init; }
@@ -61,6 +63,7 @@ public sealed record Settings
         if(ActiveProfileId is not null&&!Guid.TryParseExact(ActiveProfileId,"N",out _))throw new InvalidDataException("Profil kimliği geçersiz.");
         if(Mascot is null)throw new InvalidDataException("Maskot tercihi geçersiz.");Mascot.Validate();
         if (Keyboard is null) throw new InvalidDataException("Klavye tercihi geçersiz."); Keyboard.Validate();
+        if (IslandCity is null || IslandCity.Length > OpenMeteo.MaxCityLength || IslandCity.Any(char.IsControl)) throw new InvalidDataException("Ada şehri geçersiz.");
         if(WallpaperRotations is null||WallpaperRotations.Count>32||WallpaperRotations.Any(r=>r is null||string.IsNullOrWhiteSpace(r.MonitorId)||r.IntervalSeconds is <30 or >3600||r.AssetPaths is null||r.AssetPaths.Count is <2 or >20||r.AssetPaths.Any(p=>string.IsNullOrWhiteSpace(p)||!Path.IsPathFullyQualified(p)||p.StartsWith(@"\\")))||WallpaperRotations.Select(r=>r.MonitorId).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=WallpaperRotations.Count)throw new InvalidDataException("Arka plan listesi geçersiz.");
         if(Wallpapers is null || Wallpapers.Count>32 || Wallpapers.Any(w=>w is null || string.IsNullOrWhiteSpace(w.MonitorId) || string.IsNullOrWhiteSpace(w.AssetPath) || !Path.IsPathFullyQualified(w.AssetPath) || w.AssetPath.StartsWith(@"\\")) || Wallpapers.Select(w=>w.MonitorId).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=Wallpapers.Count) throw new InvalidDataException("Arka plan atamaları geçersiz.");
         if (ThemeId == ThemePresets.WallpaperId) { if (CustomPalette is null) throw new InvalidDataException("Duvar kâğıdı paleti eksik."); ThemePresets.ValidateCustom(CustomPalette); }

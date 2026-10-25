@@ -5,13 +5,14 @@ namespace ClaxeDesktop.Platform.Win;
 public sealed record AudioState(float Level,bool Muted);
 public sealed class WindowsAudioService
 {
-    private static T WithEndpoint<T>(Func<IAudioEndpointVolume,T> action)
+    // flow 0 = output (multimedia role), 1 = microphone (console role, the "default device" in Windows sound settings).
+    private static T WithEndpoint<T>(Func<IAudioEndpointVolume,T> action, int flow = 0)
     {
         object? enumerator=null; IMMDevice? device=null; object? endpoint=null;
         try
         {
             enumerator=Activator.CreateInstance(Type.GetTypeFromCLSID(new("BCDE0395-E52F-467C-8E3D-C4579291692E"))!)!;
-            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)enumerator).GetDefaultAudioEndpoint(0,1,out device));
+            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)enumerator).GetDefaultAudioEndpoint(flow,flow==0?1:0,out device));
             var id=typeof(IAudioEndpointVolume).GUID; Marshal.ThrowExceptionForHR(device.Activate(ref id,23,0,out endpoint));
             return action((IAudioEndpointVolume)endpoint);
         }
@@ -20,6 +21,9 @@ public sealed class WindowsAudioService
     public AudioState Read() => WithEndpoint(endpoint=>{ Marshal.ThrowExceptionForHR(endpoint.GetMasterVolumeLevelScalar(out var volume));Marshal.ThrowExceptionForHR(endpoint.GetMute(out var mute));return new AudioState(volume,mute); });
     public void SetLevel(float level) { if(!float.IsFinite(level)||level is <0 or >1)throw new ArgumentOutOfRangeException(nameof(level)); WithEndpoint(endpoint=>{var context=Guid.Empty;Marshal.ThrowExceptionForHR(endpoint.SetMasterVolumeLevelScalar(level,ref context));return true;}); }
     public void SetMute(bool muted) => WithEndpoint(endpoint=>{var context=Guid.Empty;Marshal.ThrowExceptionForHR(endpoint.SetMute(muted,ref context));return true;});
+    /// <summary>The default microphone; throws COMException when no microphone is present.</summary>
+    public AudioState ReadMicrophone() => WithEndpoint(endpoint=>{ Marshal.ThrowExceptionForHR(endpoint.GetMasterVolumeLevelScalar(out var volume));Marshal.ThrowExceptionForHR(endpoint.GetMute(out var mute));return new AudioState(volume,mute); },1);
+    public void SetMicrophoneMute(bool muted) => WithEndpoint(endpoint=>{var context=Guid.Empty;Marshal.ThrowExceptionForHR(endpoint.SetMute(muted,ref context));return true;},1);
     [ComImport,Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] private interface IMMDeviceEnumerator
     {
         [PreserveSig]int EnumAudioEndpoints(int flow,uint state,out nint devices);

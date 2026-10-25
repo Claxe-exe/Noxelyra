@@ -47,21 +47,21 @@ public sealed record KeyboardOptions
     public List<HotkeyBinding> Bindings { get; init; } = [];
 
     /// <summary>Shortcuts registered with RegisterHotKey (work everywhere, even over elevated windows).</summary>
-    public static readonly string[] SystemActions = ["emergency", "dock", "launcher", "controls", "layout"];
+    public static readonly string[] SystemActions = ["emergency", "island", "dock", "launcher", "controls", "layout"];
     /// <summary>Win-key shortcuts handled by the keyboard hook, active only while tiling is on.</summary>
     public static readonly string[] TilingActions = ["tile.float", "tile.close", "tile.fullscreen", "tile.focusLeft", "tile.focusRight", "tile.focusUp", "tile.focusDown", "tile.moveLeft", "tile.moveRight", "tile.moveUp", "tile.moveDown"];
     public static IEnumerable<string> Actions => SystemActions.Concat(TilingActions);
     /// <summary>Default gestures. The emergency key is Ctrl+Shift+Ü; on a Turkish Q keyboard Ü is VK_OEM_6, the app re-resolves it for the active layout.</summary>
     public static IReadOnlyDictionary<string, string> Defaults { get; } = new Dictionary<string, string>
     {
-        ["emergency"] = "Ctrl+Shift+#221", ["dock"] = "Alt+#75", ["launcher"] = "Ctrl+Alt+#32", ["controls"] = "Ctrl+Alt+#81", ["layout"] = "Ctrl+Alt+#76",
+        ["emergency"] = "Ctrl+Shift+#221", ["island"] = "Alt+#48", ["dock"] = "Alt+#75", ["launcher"] = "Ctrl+Alt+#32", ["controls"] = "Ctrl+Alt+#81", ["layout"] = "Ctrl+Alt+#76",
         ["tile.float"] = "Win+#84", ["tile.close"] = "Win+#81", ["tile.fullscreen"] = "Win+#70",
         ["tile.focusLeft"] = "Win+#37", ["tile.focusUp"] = "Win+#38", ["tile.focusRight"] = "Win+#39", ["tile.focusDown"] = "Win+#40",
         ["tile.moveLeft"] = "Shift+Win+#37", ["tile.moveUp"] = "Shift+Win+#38", ["tile.moveRight"] = "Shift+Win+#39", ["tile.moveDown"] = "Shift+Win+#40",
     };
     public static string Label(string action) => action switch
     {
-        "emergency" => "Acil çıkış (Noxelyra'yı hemen kapatır)", "dock" => "Dock'u öne getir", "launcher" => "Başlatıcı", "controls" => "Hızlı ayarlar", "layout" => "Pencere düzenleri",
+        "emergency" => "Acil çıkış (Noxelyra'yı hemen kapatır)", "island" => "Dinamik ada kartı (her yerde, oyunda da)", "dock" => "Dock'u öne getir", "launcher" => "Başlatıcı", "controls" => "Hızlı ayarlar", "layout" => "Pencere düzenleri",
         "tile.float" => "Pencereyi döşemeden çıkar / geri al", "tile.close" => "Odaktaki pencereyi kapat", "tile.fullscreen" => "Tam ekran / döşemeye dön",
         "tile.focusLeft" => "Soldaki pencereye geç", "tile.focusRight" => "Sağdaki pencereye geç", "tile.focusUp" => "Üstteki pencereye geç", "tile.focusDown" => "Alttaki pencereye geç",
         "tile.moveLeft" => "Pencereyi sola taşı", "tile.moveRight" => "Pencereyi sağa taşı", "tile.moveUp" => "Pencereyi yukarı taşı", "tile.moveDown" => "Pencereyi aşağı taşı",

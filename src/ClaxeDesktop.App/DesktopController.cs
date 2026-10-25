@@ -100,7 +100,7 @@ public sealed partial class DesktopController
         try
         {
             var snapshot = await Task.Run(windowService.Snapshot, lifetime.Token);
-            if (!exiting) {lastWindowSnapshot=snapshot;windows.OfType<DockWindow>().Single().UpdateWindows(snapshot);windows.OfType<PanelWindow>().Single().UpdateWindows(snapshot, windowService.Foreground);}
+            if (!exiting) {lastWindowSnapshot=snapshot;TrackAppWindow(snapshot);windows.OfType<DockWindow>().Single().UpdateWindows(snapshot);windows.OfType<PanelWindow>().Single().UpdateWindows(snapshot, windowService.Foreground);}
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) { Log.Write("window-snapshot-failed", ex); ViewModel.Status = "Açık pencereler şu anda okunamıyor."; }

@@ -147,3 +147,10 @@
 - GPU/disk/ağ grafikleri belgelenmiş PDH sayaçlarından İngilizce yol adlarıyla okunur (Windows dilinden bağımsız). Sayaç yoksa sıfır değil "Yok" gösterilir.
 - Rice dosyası paylaşım içindir: kişisel metin, web widget paketleri, kısayollar ve Windows değişiklikleri dışarıda kalır. Yerel yedek (`rice-backups`, son 5) kişisel metni korur. İçe aktarmada zip yalnız sabit adlı en fazla üç dosya içerebilir; klasör, fazladan dosya, bilinmeyen JSON alanı ve beyan edilenden büyük içerik reddedilir.
 - Bellek: açılıştan 20 sn sonra bir kez SetProcessWorkingSetSizeEx(-1,-1) ile boşta kalan sayfalar Windows'a verilir; sayfalar gerektiğinde geri gelir, bu bir "RAM temizleyici" değildir.
+
+## Ada kartı ve Alt+0 · 25 Ekim 2026
+
+- Kullanıcı Shift+0 istedi; Türkçe klavyede Shift+0 "=" yazdığı için Alt+0 seçildi (soruldu).
+- Alt+0 ile açılan kart WS_EX_NOACTIVATE ile odak almaz, böylece oyun alta inmez. Fare kilitli oyunlarda kullanılabilsin diye kart açıkken ←/→/↑/↓/Boşluk/Tab/Esc RegisterHotKey ile geçici olarak karta bağlanır; 12 sn boşta kalınca veya kart kapanınca bırakılır. Tuş kaydı ya da genel kanca yoktur.
+- Monitör parlaklığı belgelenmiş Monitor Configuration API (dxva2, DDC/CI) ile; desteklenmiyorsa sahte kaydırıcı yerine açıklama gösterilir. Gece ışığı ve ses çıkış aygıtı değiştirme için belgelenmiş API olmadığından eklenmedi.
+- "Uygulamayı kapat" iki aşamalıdır ve explorer, dwm, csrss, winlogon, svchost gibi kabuk/oturum süreçleri ile Noxelyra'yı reddeder; yönetici olarak çalışan uygulamalar kapatılamazsa bunu söyler.

@@ -67,3 +67,21 @@ public sealed record IslandTimer(DateTimeOffset Started, TimeSpan? Length)
     public string Text(DateTimeOffset now) => Format(Stopwatch ? Elapsed(now) : TimeSpan.FromSeconds(Math.Ceiling(Remaining(now).TotalSeconds)));
     public static string Format(TimeSpan span) => span.TotalHours >= 1 ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}" : $"{span.Minutes:00}:{span.Seconds:00}";
 }
+
+/// <summary>Small rules behind the island card's media and "close frozen app" controls.</summary>
+public static class IslandRules
+{
+    /// <summary>Position after a relative seek, kept inside the track (or at zero when the length is unknown).</summary>
+    public static TimeSpan Seek(TimeSpan position, TimeSpan delta, TimeSpan duration)
+    {
+        var target = position + delta;
+        if (target < TimeSpan.Zero) target = TimeSpan.Zero;
+        if (duration > TimeSpan.Zero && target > duration) target = duration;
+        return target;
+    }
+    private static readonly HashSet<string> Protected = new(StringComparer.OrdinalIgnoreCase)
+    { "explorer", "dwm", "csrss", "winlogon", "wininit", "services", "lsass", "smss", "svchost", "fontdrvhost", "sihost", "ctfmon", "taskmgr", "System", "Idle", "Registry", "Noxelyra" };
+    /// <summary>Whether the island may end this process: never Windows' own shell and session processes, nor Noxelyra itself.</summary>
+    public static bool CanTerminate(string? processName, int processId, int ownId) =>
+        processId > 4 && processId != ownId && !string.IsNullOrWhiteSpace(processName) && !Protected.Contains(processName);
+}

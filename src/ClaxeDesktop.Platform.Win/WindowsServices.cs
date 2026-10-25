@@ -53,6 +53,8 @@ public sealed class WindowsLauncher : IAppLauncher
 public static class WindowPlacement
 {
     public static void RaiseWithoutActivation(nint hwnd) => Native.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x13);
+    /// <summary>Puts the window in the topmost band above other topmost windows, without activating it.</summary>
+    public static void RaiseTopmost(nint hwnd) => Native.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 0x13);
     public static void Move(nint hwnd, int x, int y) => Native.SetWindowPos(hwnd, 0, x, y, 0, 0, 0x15);
     public static (int X, int Y) Position(nint hwnd) { if (!Native.GetWindowRect(hwnd, out var r)) throw new Win32Exception(); return (r.Left, r.Top); }
 }

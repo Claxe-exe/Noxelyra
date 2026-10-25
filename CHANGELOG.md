@@ -1,5 +1,16 @@
 # Değişiklikler
 
+## 0.34.0 · 2026-10-25 · Ada kartı ve Alt+0
+
+- Dinamik adaya tıklayınca, bir şey çalmasa da iki sayfalık ada kartı açılır; iki sayfa aynı boyutta, sağdaki okla (veya Tab) geçilir.
+  - **Sayfa 1:** çalan parça (kapak, ilerleme, önceki/oynat/sonraki, **±10 sn sarma**), hava durumu ve CPU/GPU/RAM. Bir şey çalmıyorsa büyük saat görünür. Kartın kendi şehri yoksa ilk hava durumu widget'ının şehri kullanılır.
+  - **Sayfa 2:** ses düzeyi ve sessiz, mikrofon aç/kapa, monitör parlaklığı (DDC/CI; desteklemeyen monitörde açıkça yazar), ekran görüntüsü, donan uygulamayı kapatma (iki kez basınca; Windows'un kabuk süreçleri ve Noxelyra kapatılamaz) ve dock'taki ilk uygulamalar.
+- **Alt+0** kartı nerede olursan ol ekranın üstüne getirir, tekrar basınca kaldırır. Odak oyunda kalır; kart açıkken ←/→ 10 sn sarar, ↑/↓ sesi değiştirir, Boşluk oynatır/duraklatır, Tab sayfa değiştirir, Esc kapatır. 12 sn dokunulmazsa kendiliğinden kapanır ve bu tuşlar oyuna geri döner. Kısayol Klavye penceresinden değiştirilebilir.
+- Gerçek "özel tam ekran" oyunlarda hiçbir uygulama üste çıkamaz; kart "kenarlıksız pencere" modunda çalışır. Sarma, uygulama izin veriyorsa çalışır (YouTube, Spotify gibi); izin vermeyende düğmeler kapalı görünür.
+- Sağ tık zamanlayıcı menüsünü açar; kartta da zamanlayıcı düğmesi var.
+
+QA (bu bilgisayarda): 100/100 birim testi; `Verify-V033.ps1` 13/13 (kart iki sayfa, Alt+0 odak almadan açılır ve tuşları geri verir). Sarma ve "uygulamayı kapat" gerçek uygulamaları etkilediği için otomatik denenmedi; elle denenmeli.
+
 ## 0.33.0 · 2026-10-25 · Linux hissi: klavye, dinamik ada, döşeme ve rice
 
 0.28-0.33 arası planlanan altı sürüm tek pakette.

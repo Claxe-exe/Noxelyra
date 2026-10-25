@@ -212,6 +212,16 @@ Test("Dynamic island defaults on and switches from the catalog; new widget kinds
     Throws(() => new WidgetInstance { Kind = "weather", Text = new string('a', 81) }.Validate());
     Throws(() => new WidgetInstance { Kind = "unknown" }.Validate());
 });
+Test("Island card rules: seeking stays inside the track, shell processes cannot be closed, Alt+0 is free", () => {
+    Check(IslandRules.Seek(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(-10), TimeSpan.FromMinutes(3)) == TimeSpan.Zero);
+    Check(IslandRules.Seek(TimeSpan.FromSeconds(175), TimeSpan.FromSeconds(10), TimeSpan.FromMinutes(3)) == TimeSpan.FromMinutes(3));
+    Check(IslandRules.Seek(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(10), TimeSpan.Zero) == TimeSpan.FromSeconds(40));
+    Check(IslandRules.CanTerminate("game", 1234, 99) && !IslandRules.CanTerminate("explorer", 1234, 99) && !IslandRules.CanTerminate("Noxelyra", 1234, 99));
+    Check(!IslandRules.CanTerminate("game", 99, 99) && !IslandRules.CanTerminate("game", 4, 99) && !IslandRules.CanTerminate(null, 1234, 99));
+    var keys = new KeyboardOptions(); keys.Validate(); Check(keys.Gesture("island") == HotkeyGesture.Parse("Alt+#48"));
+    Throws(() => keys.With("island", HotkeyGesture.Parse("Alt+#75")));
+    Throws(() => new Settings { IslandCity = new string('a', 81) }.Validate());
+});
 var selectedTests = args.Contains("--v033") ? tests.Skip(v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }
