@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.38.2 · 2026-10-26 · Barlar masaüstünde kaybolmuyor
+
+- Noxelyra masaüstüne sağ tıklayınca ya da "Görünüm"e basınca üst bar ve dock masaüstü alanının arkasına düşüyordu (Alt+K veya Alt+Tab gerekiyordu). Artık her tıklamadan sonra yeniden öne alınıyorlar. Test edilmeden yayımlandı.
+
 ## 0.38.1 · 2026-10-26 · Ada videosu köşeleri
 
 - Video oynarken kartın köşelerinde görünen küçük kutular giderildi: video kartın biraz içinden başlıyor ve ince koyu bir kenarla çevrili, köşeleri Windows da yuvarlıyor. Test edilmeden kuruldu.

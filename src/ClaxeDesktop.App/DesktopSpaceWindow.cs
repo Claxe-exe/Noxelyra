@@ -85,7 +85,8 @@ internal sealed class DesktopSpaceWindow : Window
         }
         Closing += (_, e) => { if (!controller.IsExiting) { e.Cancel = true; controller.DismissDesktopSpace(); return; } foreach (var watcher in watchers) watcher.Dispose(); refreshDelay.Stop(); saveLayout.Stop(); reflow.Stop(); video.Close(); shellIcons.Dispose(); closed = true; };
         // Clicking the desktop activates this window; keep the bar, dock and widgets above it like a real desktop.
-        Activated += (_, _) => controller.RaiseDesktopParts();
+        Activated += (_, _) => KeepPartsOnTop();
+        PreviewMouseDown += (_, _) => KeepPartsOnTop();
         LoadOptions();
     }
     private Grid Header()
@@ -116,6 +117,15 @@ internal sealed class DesktopSpaceWindow : Window
         var back = new Button { Content = "Windows'a dön  ·  Esc", Padding = new(14, 7, 14, 7), Margin = new(2), ToolTip = "Noxelyra alanını geçici gizler; bir sonraki masaüstü ziyaretinde geri gelir" };
         back.Click += (_, _) => controller.DismissDesktopSpace(); tools.Children.Add(back);
         return header;
+    }
+    // Activating this window (a click, a right click, the Görünüm menu) lifts it over the bar and dock, and Windows finishes that
+    // after the Activated event. Raise them again once the click is handled and once more a moment later.
+    private void KeepPartsOnTop()
+    {
+        Dispatcher.BeginInvoke(controller.RaiseDesktopParts, System.Windows.Threading.DispatcherPriority.Input);
+        var later = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+        later.Tick += (_, _) => { later.Stop(); controller.RaiseDesktopParts(); };
+        later.Start();
     }
     private Brush Glass()
     {
