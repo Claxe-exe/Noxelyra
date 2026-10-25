@@ -28,7 +28,11 @@ internal static class VideoRegion
             for (int i = 0; i < Frames && !token.IsCancellationRequested; i++)
             {
                 await Task.Delay(110, token);
-                using var frame = pool.TryGetNextFrame(); if (frame is null) continue;
+                // The pool queues frames; drain it so each sample is the newest frame, ~110 ms after the last one.
+                Direct3D11CaptureFrame? latest = null;
+                for (var next = pool.TryGetNextFrame(); next is not null; next = pool.TryGetNextFrame()) { latest?.Dispose(); latest = next; }
+                if (latest is null) continue;
+                using var frame = latest;
                 using var bitmap = await SoftwareBitmap.CreateCopyFromSurfaceAsync(frame.Surface, BitmapAlphaMode.Premultiplied);
                 if (width == 0) { width = bitmap.PixelWidth; height = bitmap.PixelHeight; cell = Math.Max(8, width / Columns); }
                 if (bitmap.PixelWidth != width || bitmap.PixelHeight != height) continue;
@@ -65,8 +69,8 @@ internal static class VideoRegion
     private static (int X0, int Y0, int X1, int Y1)? MovingArea(List<float[]> grids, int cols, int rows)
     {
         var changes = new int[cols * rows];
-        for (int f = 1; f < grids.Count; f++) for (int i = 0; i < changes.Length; i++) if (Math.Abs(grids[f][i] - grids[f - 1][i]) > 6) changes[i]++;
-        var need = Math.Max(2, (grids.Count - 1) / 3);
+        for (int f = 1; f < grids.Count; f++) for (int i = 0; i < changes.Length; i++) if (Math.Abs(grids[f][i] - grids[f - 1][i]) > 4) changes[i]++;
+        var need = Math.Max(2, (grids.Count - 1) / 4);
         var seen = new bool[changes.Length]; (int X0, int Y0, int X1, int Y1, int Count) best = default;
         for (int start = 0; start < changes.Length; start++)
         {

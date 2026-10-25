@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.36.1 · 2026-10-25 · Ada videosu düzeltmesi
+
+- Video alanı bulunurken art arda kuyruktaki kareler okunuyordu; aralarında fark olmadığından hareket görünmüyor, yalnız kapak çıkıyordu. Artık her örnekte en yeni kare alınıyor, eşik düşürüldü ve video bulunamazsa 15 sn'de bir yeniden aranıyor. Test edilmeden kuruldu.
+
 ## 0.36.0 · 2026-10-25 · Kartın arkasında video, döşeme Snap'e karışmıyor
 
 - Ada kartının 1. sayfasının arka planında çalan videonun kendisi oynar. Noxelyra oynatıcı penceresini (YouTube Music, YouTube, Spotify) yaklaşık 1,5 sn Windows Graphics Capture ile izleyip sürekli değişen alanı bulur ve yalnız o kısmı kartı dolduracak şekilde DWM ile gösterir. Görüntü kaydedilmez, hiçbir yere gönderilmez. Pencere boyutu değişince alan yeniden bulunur.

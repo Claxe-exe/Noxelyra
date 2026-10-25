@@ -79,6 +79,7 @@ internal sealed class IslandCard : Window
     private string? videoKey;
     private (double Width, double Height) videoWindowSize;
     private CancellationTokenSource? videoScan;
+    private DateTime videoScanned;
     private bool videoOn = true;
     private nint playerWindow;
     private PerformanceSampler? sampler;
@@ -401,8 +402,9 @@ internal sealed class IslandCard : Window
         var info = WindowOps.Read(playerWindow);
         var size = info is null ? (0d, 0d) : (info.Bounds.Width, info.Bounds.Height);
         var key = track.AppId + "|" + track.Title + "|" + playerWindow;
-        if (key == videoKey && size == videoWindowSize) { ApplyBackground(); return; }
-        videoKey = key; videoWindowSize = size; videoCrop = null; ApplyBackground();
+        // Not found yet (paused, loading, ad): look again every 15 s.
+        if (key == videoKey && size == videoWindowSize && (videoCrop is not null || DateTime.UtcNow - videoScanned < TimeSpan.FromSeconds(15))) { ApplyBackground(); return; }
+        videoKey = key; videoWindowSize = size; videoCrop = null; videoScanned = DateTime.UtcNow; ApplyBackground();
         videoScan?.Cancel(); var scan = videoScan = new CancellationTokenSource(); var window = playerWindow;
         var found = await VideoRegion.FindAsync(window, scan.Token);
         if (scan.IsCancellationRequested || key != videoKey) return;
