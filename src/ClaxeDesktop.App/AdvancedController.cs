@@ -21,6 +21,8 @@ public sealed partial class DesktopController
     private List<WindowsLayoutService.Snapshot> lastLayout=[];
     private IReadOnlyList<AppWindow> lastWindowSnapshot=[];
     internal IReadOnlyList<AppWindow> LastSnapshot => lastWindowSnapshot;
+    /// <summary>A fresh window list; the periodic snapshot pauses while a fullscreen game hides Noxelyra.</summary>
+    internal IReadOnlyList<AppWindow> FreshWindows() { try { return windowService.Snapshot(); } catch (System.ComponentModel.Win32Exception) { return lastWindowSnapshot; } }
     public event Action? AdvancedChanged;
     internal ProfileBook Profiles=>profileBook;
     internal Task WaitAdvancedAsync()=>advancedLoad;

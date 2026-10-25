@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.36.3 · 2026-10-26 · Ada videosu: doğru pencere
+
+- Tam ekran oyunda Noxelyra'nın pencere listesi duraklıyordu; ada yeni açılan mini oynatıcıyı görmüyor, küçültülmüş eski pencereye bakıyordu. Oynatıcı penceresi artık her seferinde taze listeden seçiliyor ve küçültülmemiş pencere (mini oynatıcı) öne alınıyor. Test edilmeden kuruldu.
+
 ## 0.36.1 · 2026-10-25 · Ada videosu düzeltmesi
 
 - Video alanı bulunurken art arda kuyruktaki kareler okunuyordu; aralarında fark olmadığından hareket görünmüyor, yalnız kapak çıkıyordu. Artık her örnekte en yeni kare alınıyor, eşik düşürüldü ve video bulunamazsa 15 sn'de bir yeniden aranıyor. Test edilmeden kuruldu.

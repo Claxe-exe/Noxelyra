@@ -391,9 +391,11 @@ internal sealed class IslandCard : Window
     private nint FindPlayerWindow()
     {
         if (track?.AppId is not { } id) return 0;
-        var candidates = controller.LastSnapshot.Where(w => IslandRules.MatchesApp(id, w.Executable is { } exe ? System.IO.Path.GetFileNameWithoutExtension(exe) : null)).ToList();
-        var titled = candidates.FirstOrDefault(w => !string.IsNullOrWhiteSpace(track.Title) && w.Title.Contains(track.Title, StringComparison.OrdinalIgnoreCase));
-        return (titled ?? candidates.FirstOrDefault(w => !w.Minimized) ?? candidates.FirstOrDefault())?.Handle ?? 0;
+        var candidates = controller.FreshWindows().Where(w => IslandRules.MatchesApp(id, w.Executable is { } exe ? System.IO.Path.GetFileNameWithoutExtension(exe) : null)).ToList();
+        // A minimized window has no picture; prefer a visible one (a mini player) that names the track.
+        bool Titled(AppWindow w) => !string.IsNullOrWhiteSpace(track.Title) && w.Title.Contains(track.Title, StringComparison.OrdinalIgnoreCase);
+        var pick = candidates.FirstOrDefault(w => !w.Minimized && Titled(w)) ?? candidates.FirstOrDefault(w => !w.Minimized) ?? candidates.FirstOrDefault(Titled) ?? candidates.FirstOrDefault();
+        return pick?.Handle ?? 0;
     }
     // Find the video area once per track (and again if the player window is resized), then keep it behind page 1.
     private async Task UpdateVideoAsync()
