@@ -32,7 +32,7 @@ internal sealed class IslandCard : Window
     private readonly ShellIconService icons;
     private readonly MediaService media = new();
     private readonly WindowsAudioService audio = new();
-    private readonly Border card = new() { Width = CardWidth, Height = CardHeight, CornerRadius = new(28), BorderThickness = new(1), Padding = new(16, 16, 16, 8), Margin = new(Shadow) };
+    private readonly Border card = new() { Width = CardWidth, Height = CardHeight, CornerRadius = new(28), BorderThickness = new(1), Margin = new(Shadow) };
     private readonly ScaleTransform grow = new(1, 1);
     private readonly TranslateTransform slide = new();
     private readonly TextBlock arrowGlyph = Glyph("\uE76C", 14), hint = new() { FontSize = 10, VerticalAlignment = VerticalAlignment.Center };
@@ -70,7 +70,16 @@ internal sealed class IslandCard : Window
     private readonly TextBlock appLabel = new() { FontSize = 11, Width = 84, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     private readonly DispatcherTimer appVolumeSave = new() { Interval = TimeSpan.FromMilliseconds(120) };
     private readonly Border liveBadge = new() { Width = 20, Height = 20, CornerRadius = new(10), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 8, -4), Visibility = Visibility.Collapsed, IsHitTestVisible = false };
-    private LivePreview? preview;
+    // The track's video (or blurred cover) behind page 1.
+    private readonly Image blurArt = new() { Stretch = Stretch.UniformToFill, Opacity = .5, Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 28 }, Visibility = Visibility.Collapsed };
+    private readonly Border shade = new() { Visibility = Visibility.Collapsed, IsHitTestVisible = false };
+    private SolidColorBrush opaqueBrush = new(Colors.Black), glassBrush = new(Colors.Black);
+    private VideoBackdrop? backdrop;
+    private (int Left, int Top, int Right, int Bottom)? videoCrop;
+    private string? videoKey;
+    private (double Width, double Height) videoWindowSize;
+    private CancellationTokenSource? videoScan;
+    private bool videoOn = true;
     private nint playerWindow;
     private PerformanceSampler? sampler;
     private nint hwnd, brightnessMonitor, killWindow;
@@ -95,7 +104,11 @@ internal sealed class IslandCard : Window
         var layout = new Grid();
         layout.ColumnDefinitions.Add(new() { Width = new(PageWidth) }); layout.ColumnDefinitions.Add(new());
         layout.RowDefinitions.Add(new() { Height = new(PageHeight) }); layout.RowDefinitions.Add(new());
-        card.Child = layout;
+        // Background layer (blurred cover or the video showing through) under the pages, clipped to the card's corners.
+        var host = new Grid { Clip = new RectangleGeometry(new Rect(0, 0, CardWidth - 2, CardHeight - 2), 27, 27) };
+        shade.Background = new LinearGradientBrush(Color.FromArgb(0xC8, 0, 0, 0), Color.FromArgb(0x50, 0, 0, 0), 0);
+        host.Children.Add(blurArt); host.Children.Add(shade);
+        layout.Margin = new(16, 16, 16, 8); host.Children.Add(layout); card.Child = host;
         // A Canvas, not a StackPanel: a panel narrower than its content clips it, which would hide page 2 after the slide.
         var strip = new Canvas { RenderTransform = slide };
         var viewport = new Border { ClipToBounds = true, Child = strip }; layout.Children.Add(viewport);
@@ -109,8 +122,8 @@ internal sealed class IslandCard : Window
         art.SetResourceReference(Border.BackgroundProperty, "Card"); artGlyph.HorizontalAlignment = HorizontalAlignment.Center; art.Child = artGlyph;
         // The cover doubles as the switch for the live player-window view; the small badge says one is available.
         liveBadge.SetResourceReference(Border.BackgroundProperty, "Accent"); var badgeGlyph = Glyph("\uE714", 10); badgeGlyph.HorizontalAlignment = HorizontalAlignment.Center; badgeGlyph.SetResourceReference(TextBlock.ForegroundProperty, "Canvas"); liveBadge.Child = badgeGlyph;
-        var cover = new Grid { Cursor = Cursors.Hand, ToolTip = "Canlı oynatıcı görüntüsü" }; cover.Children.Add(art); cover.Children.Add(liveBadge);
-        cover.MouseLeftButtonUp += (_, _) => TogglePreview();
+        var cover = new Grid { Cursor = Cursors.Hand, ToolTip = "Arka planda video: aç / kapat" }; cover.Children.Add(art); cover.Children.Add(liveBadge);
+        cover.MouseLeftButtonUp += (_, _) => ToggleVideo();
         DockPanel.SetDock(cover, Dock.Left); head.Children.Add(cover);
         var names = new StackPanel { VerticalAlignment = VerticalAlignment.Center }; artist.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); artist.Margin = new(0, 2, 0, 0);
         names.Children.Add(title); names.Children.Add(artist); head.Children.Add(names);
@@ -253,7 +266,7 @@ internal sealed class IslandCard : Window
     }
     private void Stop()
     {
-        preview?.Leave(); appVolumeSave.Stop();
+        backdrop?.Leave(); videoScan?.Cancel(); videoKey = null; videoCrop = null; appVolumeSave.Stop();
         UnregisterKeys(); idle.Stop(); poll.Stop(); brightnessSave.Stop();
         weatherCancel?.Cancel(); weatherCancel?.Dispose(); weatherCancel = null;
         sampler?.Dispose(); sampler = null;
@@ -261,7 +274,7 @@ internal sealed class IslandCard : Window
     private void Prepare(nint target)
     {
         var palette = ThemePresets.Resolve(controller.ViewModel.Settings);
-        var canvas = (Color)ColorConverter.ConvertFromString(palette.Canvas); canvas.A = 0xF2; card.Background = new SolidColorBrush(canvas);
+        var canvas = (Color)ColorConverter.ConvertFromString(palette.Canvas); canvas.A = 0xF2; opaqueBrush = new SolidColorBrush(canvas); canvas.A = 0x30; glassBrush = new SolidColorBrush(canvas); card.Background = opaqueBrush;
         hint.Text = summoned ? "←/→ 10 sn · ↑/↓ ses · Boşluk oynat · Tab sayfa · Esc kapat" : "";
         Flip(0, animate: false);
         killWindow = target; killArmedUntil = DateTime.MinValue; UpdateKillTarget();
@@ -289,6 +302,7 @@ internal sealed class IslandCard : Window
         dot1.SetResourceReference(Shape.FillProperty, page == 0 ? "Accent" : "Line"); dot2.SetResourceReference(Shape.FillProperty, page == 1 ? "Accent" : "Line");
         if (animate && Motion.Enabled(controller.ViewModel)) Motion.To(slide, TranslateTransform.XProperty, -page * PageWidth, 320);
         else { slide.BeginAnimation(TranslateTransform.XProperty, null); slide.X = -page * PageWidth; }
+        ApplyBackground();
     }
     private void Touch() { if (summoned && IsVisible) { idle.Stop(); idle.Start(); } }
 
@@ -371,7 +385,7 @@ internal sealed class IslandCard : Window
         appLabel.ToolTip = level is null ? "Uygulama şu an ses çalmıyor." : level.Label.StartsWith("tüm ", StringComparison.Ordinal) ? "Windows sekme başına ses vermez; bu bar tarayıcının tamamını ayarlar." : level.Label + " uygulamasının sesi";
         playerWindow = FindPlayerWindow();
         liveBadge.Visibility = playerWindow != 0 ? Visibility.Visible : Visibility.Collapsed;
-        if (preview is { IsVisible: true }) { if (playerWindow == 0) preview.Leave(); else PlacePreview(); }
+        _ = UpdateVideoAsync();
     }
     private nint FindPlayerWindow()
     {
@@ -380,20 +394,42 @@ internal sealed class IslandCard : Window
         var titled = candidates.FirstOrDefault(w => !string.IsNullOrWhiteSpace(track.Title) && w.Title.Contains(track.Title, StringComparison.OrdinalIgnoreCase));
         return (titled ?? candidates.FirstOrDefault(w => !w.Minimized) ?? candidates.FirstOrDefault())?.Handle ?? 0;
     }
-    private void TogglePreview()
+    // Find the video area once per track (and again if the player window is resized), then keep it behind page 1.
+    private async Task UpdateVideoAsync()
     {
-        Touch();
-        if (preview is { IsVisible: true }) { preview.Leave(); return; }
-        if (playerWindow == 0) { controller.ViewModel.Status = "Çalan uygulamanın penceresi bulunamadı."; return; }
-        if (preview is null) { preview = new LivePreview(); preview.Clicked += () => preview.Leave(); }
-        PlacePreview();
+        if (!videoOn || track is not { Playing: true } || playerWindow == 0 || !IsVisible) { ApplyBackground(); return; }
+        var info = WindowOps.Read(playerWindow);
+        var size = info is null ? (0d, 0d) : (info.Bounds.Width, info.Bounds.Height);
+        var key = track.AppId + "|" + track.Title + "|" + playerWindow;
+        if (key == videoKey && size == videoWindowSize) { ApplyBackground(); return; }
+        videoKey = key; videoWindowSize = size; videoCrop = null; ApplyBackground();
+        videoScan?.Cancel(); var scan = videoScan = new CancellationTokenSource(); var window = playerWindow;
+        var found = await VideoRegion.FindAsync(window, scan.Token);
+        if (scan.IsCancellationRequested || key != videoKey) return;
+        videoCrop = found; ApplyBackground();
     }
-    // A 16:9 view as wide as the card, just under it.
-    private void PlacePreview()
+    private void ApplyBackground()
     {
-        if (preview is null || WindowOps.Read(hwnd)?.Bounds is not { } b) return;
-        var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-        preview.Present(playerWindow, (int)(b.X + Shadow * scale), (int)(b.Y + b.Height - Shadow * scale + 6 * scale), CardWidth, CardWidth * 9 / 16);
+        var front = page == 0 && IsVisible && !leaving;
+        var video = front && videoOn && videoCrop is not null && playerWindow != 0 && WindowOps.Read(playerWindow) is { Minimized: false };
+        if (video && WindowOps.Read(hwnd)?.Bounds is { } b)
+        {
+            var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+            backdrop ??= new VideoBackdrop();
+            backdrop.Present(hwnd, playerWindow, videoCrop!.Value, (int)Math.Round(b.X + Shadow * scale), (int)Math.Round(b.Y + Shadow * scale), (int)Math.Round(CardWidth * scale), (int)Math.Round(CardHeight * scale), (int)(28 * scale));
+            card.Background = glassBrush; blurArt.Visibility = Visibility.Collapsed; shade.Visibility = Visibility.Visible;
+            return;
+        }
+        backdrop?.Leave();
+        var art = front && videoOn && artShown is not null && nowPlaying.Visibility == Visibility.Visible;
+        blurArt.Source = art ? artShown : null; blurArt.Visibility = art ? Visibility.Visible : Visibility.Collapsed;
+        shade.Visibility = art ? Visibility.Visible : Visibility.Collapsed; card.Background = opaqueBrush;
+    }
+    private void ToggleVideo()
+    {
+        Touch(); videoOn = !videoOn; videoKey = null;
+        controller.ViewModel.Status = videoOn ? "Ada arka planında video açık." : "Ada arka planında video kapalı.";
+        _ = UpdateVideoAsync();
     }
     private void ShowTrack()
     {

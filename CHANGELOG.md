@@ -1,5 +1,13 @@
 # Değişiklikler
 
+## 0.36.0 · 2026-10-25 · Kartın arkasında video, döşeme Snap'e karışmıyor
+
+- Ada kartının 1. sayfasının arka planında çalan videonun kendisi oynar. Noxelyra oynatıcı penceresini (YouTube Music, YouTube, Spotify) yaklaşık 1,5 sn Windows Graphics Capture ile izleyip sürekli değişen alanı bulur ve yalnız o kısmı kartı dolduracak şekilde DWM ile gösterir. Görüntü kaydedilmez, hiçbir yere gönderilmez. Pencere boyutu değişince alan yeniden bulunur.
+- Video yoksa (sabit kapaklı parça, duraklatılmış video) arka planda bulanık kapak görünür. Kapağa tıklamak arka plan videosunu açar/kapatır. 0.35'teki pencerenin tamamını gösteren önizleme kaldırıldı.
+- Döşeme artık Windows Snap ile kavga etmiyor: elle taşınan, sürüklenip Snap düzenine bırakılan veya Win+oklarla yerleştirilen pencere döşemeden çıkar. Win+oklar ve Shift+Win+oklar yine Windows'un; döşemede odak Ctrl+Alt+Win+oklar, yer değiştirme Ctrl+Alt+Shift+Win+oklar.
+
+Test edilmeden kuruldu.
+
 ## 0.35.0 · 2026-10-25 · Çalan uygulamanın sesi ve canlı önizleme
 
 - Ada kartında şarkı kontrollerinin altında ses barı: yalnız çalan uygulamanın sesini değiştirir (Windows ses karıştırıcısındaki uygulama sesi). Tarayıcıda çalıyorsa Windows sekme başına ses vermediği için barın yanında "tüm Chrome" gibi yazar ve tarayıcının tamamını ayarlar.

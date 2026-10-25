@@ -4,7 +4,7 @@
 <p align="center"><b>Windows 11 için Linux rice ruhunda, yumuşak ve kişiselleştirilebilir bir masaüstü katmanı.</b><br>
 <sub>A soft, Linux-rice-style desktop layer for Windows 11 — bar, dock, widgets, its own desktop and a lighten center, without replacing Explorer.</sub></p>
 
-<p align="center">v0.35 · .NET 10 WPF · MIT</p>
+<p align="center">v0.36 · .NET 10 WPF · MIT</p>
 
 > [!TIP]
 > ### 📥 Nasıl kurulur? (30 saniye)

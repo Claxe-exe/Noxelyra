@@ -14,6 +14,14 @@ public static class DwmThumbnail
         var props = new Properties { Flags = 0x1 | 0x4 | 0x8 | 0x10, Destination = new Rect { Left = left, Top = top, Right = right, Bottom = bottom }, Opacity = opacity, Visible = true, SourceClientAreaOnly = false };
         DwmUpdateThumbnailProperties(thumbnail, ref props);
     }
+    /// <summary>Shows only the <paramref name="source"/> part of the window (window-rect pixels) at the destination rectangle.</summary>
+    public static void ShowCropped(nint thumbnail, (int Left, int Top, int Right, int Bottom) destination, (int Left, int Top, int Right, int Bottom) source)
+    {
+        var props = new Properties { Flags = 0x1 | 0x2 | 0x4 | 0x8 | 0x10, Destination = new Rect { Left = destination.Left, Top = destination.Top, Right = destination.Right, Bottom = destination.Bottom },
+            Source = new Rect { Left = source.Left, Top = source.Top, Right = source.Right, Bottom = source.Bottom }, Opacity = 255, Visible = true, SourceClientAreaOnly = false };
+        DwmUpdateThumbnailProperties(thumbnail, ref props);
+    }
+    public static void Hide(nint thumbnail) { var props = new Properties { Flags = 0x8, Visible = false }; DwmUpdateThumbnailProperties(thumbnail, ref props); }
     public static void Unregister(nint thumbnail) { if (thumbnail != 0) DwmUnregisterThumbnail(thumbnail); }
     [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] private struct Size { public int X, Y; }
@@ -62,6 +70,9 @@ public static class WindowOps
     public static void Maximize(nint hwnd, bool on) => ShowWindow(hwnd, on ? 3 : 9);
     public static bool Focus(nint hwnd) { if (IsIconic(hwnd)) ShowWindow(hwnd, 9); return SetForegroundWindow(hwnd); }
     public static nint Foreground => GetForegroundWindow();
+    /// <summary>Where the visible frame (what screen capture sees) starts inside the window rectangle (what DWM thumbnails use).</summary>
+    public static (int X, int Y) FrameOffset(nint hwnd) =>
+        GetWindowRect(hwnd, out var outer) && DwmGetWindowAttribute(hwnd, 9, out var frame, Marshal.SizeOf<Rect>()) == 0 ? (frame.Left - outer.Left, frame.Top - outer.Top) : (0, 0);
     /// <summary>The id of the process that owns the window, or 0.</summary>
     public static int ProcessId(nint hwnd) { GetWindowThreadProcessId(hwnd, out var pid); return (int)pid; }
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint hwnd, out uint pid);

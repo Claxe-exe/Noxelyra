@@ -56,8 +56,9 @@ public sealed record KeyboardOptions
     {
         ["emergency"] = "Ctrl+Shift+#221", ["island"] = "Alt+#48", ["dock"] = "Alt+#75", ["launcher"] = "Ctrl+Alt+#32", ["controls"] = "Ctrl+Alt+#81", ["layout"] = "Ctrl+Alt+#76",
         ["tile.float"] = "Win+#84", ["tile.close"] = "Win+#81", ["tile.fullscreen"] = "Win+#70",
-        ["tile.focusLeft"] = "Win+#37", ["tile.focusUp"] = "Win+#38", ["tile.focusRight"] = "Win+#39", ["tile.focusDown"] = "Win+#40",
-        ["tile.moveLeft"] = "Shift+Win+#37", ["tile.moveUp"] = "Shift+Win+#38", ["tile.moveRight"] = "Shift+Win+#39", ["tile.moveDown"] = "Shift+Win+#40",
+        // Win+arrows (Snap) and Shift+Win+arrows (move to another monitor) stay with Windows.
+        ["tile.focusLeft"] = "Ctrl+Alt+Win+#37", ["tile.focusUp"] = "Ctrl+Alt+Win+#38", ["tile.focusRight"] = "Ctrl+Alt+Win+#39", ["tile.focusDown"] = "Ctrl+Alt+Win+#40",
+        ["tile.moveLeft"] = "Ctrl+Alt+Shift+Win+#37", ["tile.moveUp"] = "Ctrl+Alt+Shift+Win+#38", ["tile.moveRight"] = "Ctrl+Alt+Shift+Win+#39", ["tile.moveDown"] = "Ctrl+Alt+Shift+Win+#40",
     };
     public static string Label(string action) => action switch
     {

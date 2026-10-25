@@ -16,6 +16,8 @@ internal sealed class TilingService : IDisposable
     private readonly Func<double> gap;
     private readonly Dictionary<nint, List<nint>> order = [];
     private readonly HashSet<nint> floating = [], immovable = [];
+    // Where tiling last put each window; a window found elsewhere was moved by the user or by Windows Snap.
+    private readonly Dictionary<nint, LayoutRect> placed = [];
     private readonly DispatcherTimer debounce = new() { Interval = TimeSpan.FromMilliseconds(140) };
     private readonly WindowEvents events;
     private bool disposed;
@@ -24,7 +26,8 @@ internal sealed class TilingService : IDisposable
         this.windows = windows; this.usableArea = usableArea; this.gap = gap;
         debounce.Tick += (_, _) => { debounce.Stop(); Retile(); };
         // Foreground changes do not change the layout; everything else (show, hide, destroy, minimize, move end) may.
-        events = new((_, type) => { if (type != 0x0003) Schedule(); });
+        // A finished drag or resize (including dragging to a Snap layout) hands that window back to the user.
+        events = new((hwnd, type) => { if (type == 0x000B && placed.Remove(hwnd)) floating.Add(hwnd); if (type != 0x0003) Schedule(); });
         Retile();
     }
     internal void Schedule() { if (disposed) return; debounce.Stop(); debounce.Start(); }
@@ -41,6 +44,13 @@ internal sealed class TilingService : IDisposable
         if (disposed) return;
         IReadOnlyList<AppWindow> snapshot;
         try { snapshot = windows.Snapshot(); } catch (System.ComponentModel.Win32Exception) { return; }
+        // Never fight Windows Snap (Win+arrows, snap layouts) or a manual move: such windows leave tiling.
+        foreach (var (handle, rect) in placed.ToArray())
+        {
+            if (WindowOps.Read(handle) is not { } now) { placed.Remove(handle); continue; }
+            var b = now.Bounds;
+            if (Math.Abs(b.X - rect.X) > 24 || Math.Abs(b.Y - rect.Y) > 24 || Math.Abs(b.Width - rect.Width) > 32 || Math.Abs(b.Height - rect.Height) > 32) { placed.Remove(handle); floating.Add(handle); }
+        }
         var live = new Dictionary<nint, WindowOps.Info>();
         foreach (var window in snapshot)
             if (!floating.Contains(window.Handle) && !immovable.Contains(window.Handle) && WindowOps.Read(window.Handle) is { } info && Tileable(info)) live[window.Handle] = info;
@@ -61,8 +71,9 @@ internal sealed class TilingService : IDisposable
             for (int i = 0; i < tiles.Count; i++)
             {
                 var have = live[tiles[i]].Bounds; var want = rects[i];
-                if (Math.Abs(have.X - want.X) < 3 && Math.Abs(have.Y - want.Y) < 3 && Math.Abs(have.Width - want.Width) < 16 && Math.Abs(have.Height - want.Height) < 16) continue;
-                if (!WindowOps.Place(tiles[i], want)) { immovable.Add(tiles[i]); list.Remove(tiles[i]); }
+                if (Math.Abs(have.X - want.X) < 3 && Math.Abs(have.Y - want.Y) < 3 && Math.Abs(have.Width - want.Width) < 16 && Math.Abs(have.Height - want.Height) < 16) { placed[tiles[i]] = have; continue; }
+                if (WindowOps.Place(tiles[i], want)) placed[tiles[i]] = WindowOps.Read(tiles[i])?.Bounds ?? want;
+                else { immovable.Add(tiles[i]); list.Remove(tiles[i]); }
             }
         }
     }
