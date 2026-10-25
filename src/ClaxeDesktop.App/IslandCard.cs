@@ -406,7 +406,8 @@ internal sealed class IslandCard : Window
         if (key == videoKey && size == videoWindowSize && (videoCrop is not null || DateTime.UtcNow - videoScanned < TimeSpan.FromSeconds(15))) { ApplyBackground(); return; }
         videoKey = key; videoWindowSize = size; videoCrop = null; videoScanned = DateTime.UtcNow; ApplyBackground();
         videoScan?.Cancel(); var scan = videoScan = new CancellationTokenSource(); var window = playerWindow;
-        var found = await VideoRegion.FindAsync(window, scan.Token);
+        var found = await VideoRegion.FindAsync(window, scan.Token, line => controller.Log.Write("island-video " + line));
+        controller.Log.Write(found is null ? "island-video none" : "island-video found");
         if (scan.IsCancellationRequested || key != videoKey) return;
         videoCrop = found; ApplyBackground();
     }

@@ -15,9 +15,11 @@ namespace ClaxeDesktop.App;
 internal static class VideoRegion
 {
     private const int Frames = 14, Columns = 96;
-    internal static async Task<(int Left, int Top, int Right, int Bottom)?> FindAsync(nint window, CancellationToken token)
+    /// <param name="trace">Short diagnostic lines (no pixels or titles) for the local log.</param>
+    internal static async Task<(int Left, int Top, int Right, int Bottom)?> FindAsync(nint window, CancellationToken token, Action<string>? trace = null)
     {
-        if (!GraphicsCaptureSession.IsSupported() || WindowOps.Read(window) is not { Minimized: false }) return null;
+        if (!GraphicsCaptureSession.IsSupported()) { trace?.Invoke("unsupported"); return null; }
+        if (WindowOps.Read(window) is not { Minimized: false }) { trace?.Invoke("minimized-or-gone"); return null; }
         IDirect3DDevice? device = null; Direct3D11CaptureFramePool? pool = null; GraphicsCaptureSession? session = null;
         try
         {
@@ -38,14 +40,15 @@ internal static class VideoRegion
                 if (bitmap.PixelWidth != width || bitmap.PixelHeight != height) continue;
                 grids.Add(Luminance(bitmap, cell));
             }
+            trace?.Invoke($"frames={grids.Count} size={width}x{height} cell={cell}");
             if (grids.Count < 4 || width == 0) return null;
-            var box = MovingArea(grids, width / cell, height / cell);
+            var box = MovingArea(grids, width / cell, height / cell, trace);
             if (box is not { } b) return null;
             var (dx, dy) = WindowOps.FrameOffset(window);
             return (b.X0 * cell + dx, b.Y0 * cell + dy, Math.Min(width, (b.X1 + 1) * cell) + dx, Math.Min(height, (b.Y1 + 1) * cell) + dy);
         }
         catch (OperationCanceledException) { return null; }
-        catch (Exception ex) when (ex is COMException or InvalidCastException or ArgumentException or UnauthorizedAccessException or InvalidOperationException) { return null; }
+        catch (Exception ex) when (ex is COMException or InvalidCastException or ArgumentException or UnauthorizedAccessException or InvalidOperationException) { trace?.Invoke("error " + ex.GetType().Name + " " + ex.HResult.ToString("X8")); return null; }
         finally { session?.Dispose(); pool?.Dispose(); device?.Dispose(); }
     }
     // Average brightness per cell, sampling every fourth pixel; enough to see motion, cheap on a 1080p frame.
@@ -66,7 +69,7 @@ internal static class VideoRegion
         return grid;
     }
     // Cells that changed in at least a third of the frame pairs, then the largest connected patch of them.
-    private static (int X0, int Y0, int X1, int Y1)? MovingArea(List<float[]> grids, int cols, int rows)
+    private static (int X0, int Y0, int X1, int Y1)? MovingArea(List<float[]> grids, int cols, int rows, Action<string>? trace)
     {
         var changes = new int[cols * rows];
         for (int f = 1; f < grids.Count; f++) for (int i = 0; i < changes.Length; i++) if (Math.Abs(grids[f][i] - grids[f - 1][i]) > 4) changes[i]++;
@@ -91,6 +94,7 @@ internal static class VideoRegion
             if (count > best.Count) best = (x0, y0, x1, y1, count);
         }
         var area = (best.X1 - best.X0 + 1) * (best.Y1 - best.Y0 + 1);
+        trace?.Invoke($"grid={cols}x{rows} need={need} maxChanges={changes.Max()} best={best.Count} box={best.X0},{best.Y0}-{best.X1},{best.Y1}");
         // A real video is a sizeable patch, not a blinking caret or a progress bar.
         if (best.Count < 12 || area < cols * rows / 40 || best.X1 - best.X0 < 6 || best.Y1 - best.Y0 < 4) return null;
         return (best.X0, best.Y0, best.X1, best.Y1);
