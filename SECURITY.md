@@ -15,6 +15,7 @@ Please report vulnerabilities privately through GitHub's **Security → Report a
 - Web widget'ları yalnız yerel paketlerden, kısıtlı bir izin ve origin politikasıyla çalışır.
 - **Klavye kancası** (Win+D, Win tuşu başlatıcısı, Alt+Tab, döşeme kısayolları) isteğe bağlıdır ve varsayılan kapalıdır; belgelenmiş düşük seviye klavye kancasıyla yalnız açık özelliklerin tuşlarını işler, tuş kaydetmez, diske veya ağa tuş bilgisi yazmaz. **Ctrl+Shift+Ü** acil çıkışı her zaman Noxelyra'yı kapatıp Windows'u geri yükler.
 - **Ada kartı (Alt+0)** açıkken yalnız ←/→/↑/↓/Boşluk/Tab/Esc geçici olarak karta bağlanır (RegisterHotKey) ve kart kapanınca ya da 12 sn sonra bırakılır; tuş kaydedilmez. "Uygulamayı kapat" iki onay ister ve Windows kabuk/oturum süreçlerini reddeder.
+- **Noxelyra Music kurulumu** yalnız kullanıcı "Noxelyra Music'i kur" düğmesine basınca yapılır: kurulum dosyası HTTPS ile yalnız github.com ve GitHub'ın indirme sunucularından alınır, başka adrese yönlenirse durdurulur, sonra normal kurulum penceresi açılır. Dosya imzasızdır; Windows SmartScreen uyarabilir.
 - **Rice dosyaları** (`.noxrice`) içe aktarılırken sıkı denetlenir: yalnız `rice.json` ve sabit adlı bir görsel/klip; klasör yolu, fazladan dosya, bilinmeyen alan ve beyan edilenden büyük içerik reddedilir; çalıştırılabilir içerik kabul edilmez. Dışa aktarmada not metinleri, hava durumu şehri, kısayollar ve Windows ayarları dosyaya girmez.
 - Kullanıcının seçtiği görseller, videolar ve açılış klipleri yerel veri klasörüne kopyalanır; ağ ve ağ paylaşımı yolları reddedilir.
 

@@ -80,6 +80,8 @@ internal sealed class IslandCard : Window
     private (double Width, double Height) videoWindowSize;
     private CancellationTokenSource? videoScan;
     private DateTime videoScanned;
+    private readonly Button musicLink;
+    private void MusicLinkText() => musicLink.Content = MusicApp.Installed ? "Noxelyra Music'i aç" : "Noxelyra Music'i kur";
     // Video areas already found, per player window and size, so a reopened card shows the video at once.
     private readonly Dictionary<(nint Window, double Width, double Height), (int Left, int Top, int Right, int Bottom)> knownCrops = [];
     private bool videoOn = true;
@@ -157,6 +159,10 @@ internal sealed class IslandCard : Window
         var bigDate = Small(); bigDate.DataContext = controller.ViewModel; bigDate.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Date)));
         var silence = Small(); silence.Text = "Şu an çalan bir şey yok"; silence.Margin = new(0, 8, 0, 0);
         quiet.Children.Add(bigDate); quiet.Children.Add(bigTime); quiet.Children.Add(silence);
+        // Nothing playing: one tap opens (or installs) Noxelyra Music, whose video can play behind this card.
+        musicLink = new Button { FontSize = 11, Padding = new(10, 4, 10, 4), Margin = new(0, 10, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+        musicLink.Click += async (_, _) => { Touch(); musicLink.IsEnabled = false; controller.ViewModel.Status = MusicApp.Installed ? MusicApp.Open() : await MusicApp.InstallAsync(s => controller.ViewModel.Status = s, CancellationToken.None); musicLink.IsEnabled = true; MusicLinkText(); };
+        quiet.Children.Add(musicLink); MusicLinkText();
         nothingPlaying = quiet; music.Children.Add(quiet);
 
         var side = new StackPanel(); Grid.SetColumn(side, 2); one.Children.Add(side);
@@ -281,7 +287,7 @@ internal sealed class IslandCard : Window
         hint.Text = summoned ? "←/→ 10 sn · ↑/↓ ses · Boşluk oynat · Tab sayfa · Esc kapat" : "";
         Flip(0, animate: false);
         killWindow = target; killArmedUntil = DateTime.MinValue; UpdateKillTarget();
-        RenderApps(); TimerChanged();
+        RenderApps(); TimerChanged(); MusicLinkText();
         weatherDue = DateTime.MinValue; UpdateWeatherSource();
         poll.Start(); _ = RefreshAsync();
     }

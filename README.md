@@ -4,7 +4,7 @@
 <p align="center"><b>Windows 11 için Linux rice ruhunda, yumuşak ve kişiselleştirilebilir bir masaüstü katmanı.</b><br>
 <sub>A soft, Linux-rice-style desktop layer for Windows 11 — bar, dock, widgets, its own desktop and a lighten center, without replacing Explorer.</sub></p>
 
-<p align="center">v0.36 · .NET 10 WPF · MIT</p>
+<p align="center">v0.37 · .NET 10 WPF · MIT</p>
 
 > [!TIP]
 > ### 📥 Nasıl kurulur? (30 saniye)
@@ -32,6 +32,7 @@
 | **Açılış / kapanış** | TV açılışı gibi ışık çizgisi, zıplayan noktalar ve hilal; ya da kendi 10 saniyelik MP4/GIF klibin, kararma ve TV geçişiyle. |
 | **Hafifletme** | Gerçek RAM kullanımı, açılışta başlayan programlar, Windows ekstraları; isteğe bağlı (UAC'li) telemetri / SysMain / arama servisleri. Hepsi geri alınabilir. |
 | **Widget'lar** | Saat, büyük saat, takvim, not, sistem, son 60 sn CPU/GPU/RAM/disk/ağ grafiği, kapaklı müzik kartı, hava durumu (Open-Meteo) ve izinleri kısıtlı yerel HTML/CSS/JS widget'ları. |
+| **Noxelyra Music** | Videosu adanın arkasında oynayan eşlikçi oynatıcı ([ayrı repo](https://github.com/Claxe-exe/Noxelyra-Music)). Kontrol merkezinden veya boş adadan tek tuşla kurulur. |
 | **Rice** | Duvar kâğıdından okunaklı tema rengi; bütün görünümü tek `.noxrice` dosyasıyla paylaş ve içe aktar. |
 
 <p align="center"><img src="docs/images/intro-dots.png" width="380" alt="Açılıştaki dört renkli nokta"> <img src="docs/images/nox.png" width="140" alt="Nox maskotu"></p>

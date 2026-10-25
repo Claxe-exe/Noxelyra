@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.37.0 · 2026-10-26 · Noxelyra Music tek tuşla
+
+- Kontrol merkezinde "Noxelyra Music" bölümü ve boş adada (bir şey çalmıyorken) düğme: Noxelyra Music kuruluysa açar, değilse son sürümün kurulumunu Claxe-exe/Noxelyra-Music GitHub sürümlerinden indirip başlatır. İndirme yalnız düğmeye basınca yapılır ve yalnız GitHub adreslerine izin verilir. Test edilmeden yayımlandı.
+
 ## 0.36.5 · 2026-10-26 · Ada videosu anında
 
 - Bulunan video alanı pencere ve boyut başına hatırlanıyor; kart yeniden açılınca video hemen geliyor, alan arka planda yine denetleniyor. Hareket görülmeyen bir yeniden tarama (duraklatma, sabit kare) hatırlanan alanı silmiyor. Test edilmeden kuruldu.

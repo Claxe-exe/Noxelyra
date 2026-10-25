@@ -92,6 +92,12 @@ internal sealed class ControlCenterWindow : Window
         Button? restartUpdate=null;
         var checkNow=Button(updateActions,"Şimdi denetle",async()=>{updateStatus.Text="GitHub denetleniyor…";updateStatus.Text=await controller.CheckUpdatesAsync();restartUpdate!.IsEnabled=controller.Updates.ReadyVersion is not null;});checkNow.IsEnabled=controller.Updates.Installed;
         restartUpdate=Button(updateActions,"Güncelle ve yeniden başlat",controller.RestartToUpdate);restartUpdate.IsEnabled=controller.Updates.ReadyVersion is not null;
+        var music=Section(root,"Noxelyra Music");
+        var musicStatus=new TextBlock{Text="Videosu adanın arkasında oynayan eşlikçi müzik ve video oynatıcı. Kurulum yalnız bu düğmeye basınca Claxe-exe/Noxelyra-Music sürümlerinden (GitHub, HTTPS) indirilir.",TextWrapping=TextWrapping.Wrap,Opacity=.7};
+        music.Children.Add(musicStatus);var musicActions=new WrapPanel();music.Children.Add(musicActions);
+        Button? musicButton=null;void MusicText()=>musicButton!.Content=MusicApp.Installed?"Noxelyra Music'i aç":"Noxelyra Music'i kur";
+        musicButton=Button(musicActions,"",async()=>{musicButton!.IsEnabled=false;musicStatus.Text=MusicApp.Installed?MusicApp.Open():await MusicApp.InstallAsync(s=>musicStatus.Text=s,CancellationToken.None);musicButton.IsEnabled=true;MusicText();});MusicText();
+        Button(musicActions,"Sürümler sayfası",()=>{try{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(MusicApp.Repository+"/releases"){UseShellExecute=true});}catch(System.ComponentModel.Win32Exception){musicStatus.Text="Tarayıcı açılamadı.";}});
         var intro=Section(root,"Açılış");
         var introStatus=new TextBlock{TextWrapping=TextWrapping.Wrap,Opacity=.7};void IntroText(){introStatus.Text=controller.ViewModel.Settings.DesktopSpace.IntroMediaPath is null?"Varsayılan Noxelyra açılışı. En fazla 10 saniyelik kendi MP4 veya GIF klibini koyabilirsin.":"Kendi klibin oynuyor; bitince seçtiğin geçişle masaüstü açılır.";}IntroText();intro.Children.Add(introStatus);
         var modes=new[]{"tv","fade","fade-tv"};
