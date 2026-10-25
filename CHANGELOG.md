@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.36.4 · 2026-10-26 · Ada videosu gerçek düzeltme
+
+- Asıl sebep bulundu: Windows 11'de yakalama çerçevesini gizleyen çağrı .NET'in desteklemediği bir COM tanımı kullanıyordu ve her video aramasını en başta düşürüyordu; hata sessizce yutulduğu için yalnız kapak görünüyordu. Tanım düzeltildi, aramadaki her hata artık yalnız "video yok" sayılıp kayda yazılıyor. `Noxelyra.exe --probe-video <pencere>` görünmez tanı modu eklendi.
+
 ## 0.36.3 · 2026-10-26 · Ada videosu: doğru pencere
 
 - Tam ekran oyunda Noxelyra'nın pencere listesi duraklıyordu; ada yeni açılan mini oynatıcıyı görmüyor, küçültülmüş eski pencereye bakıyordu. Oynatıcı penceresi artık her seferinde taze listeden seçiliyor ve küçültülmemiş pencere (mini oynatıcı) öne alınıyor. Test edilmeden kuruldu.

@@ -23,6 +23,15 @@ public static class Program
             TaskbarGuardian.RunAsync(data, new(parentId, parentTicks), args[0] == "--taskbar-guardian-fixture" ? new TaskbarFileFixture(data) : null).GetAwaiter().GetResult();
             return;
         }
+        // Diagnostic: run the island's video search on one window and write the trace to %TEMP%. No window, no tray, no network.
+        if (args.Length == 2 && args[0] == "--probe-video" && long.TryParse(args[1], out var handle))
+        {
+            var lines = new List<string>();
+            var found = VideoRegion.FindAsync((nint)handle, CancellationToken.None, lines.Add).GetAwaiter().GetResult();
+            lines.Add(found is { } f ? $"found {f.Left},{f.Top}-{f.Right},{f.Bottom}" : "none");
+            File.WriteAllLines(Path.Combine(Path.GetTempPath(), "noxelyra-video-probe.txt"), lines);
+            return;
+        }
         var app = new App(); app.InitializeComponent(); app.Run();
     }
 }

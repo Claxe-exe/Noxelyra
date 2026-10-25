@@ -48,7 +48,8 @@ internal static class VideoRegion
             return (b.X0 * cell + dx, b.Y0 * cell + dy, Math.Min(width, (b.X1 + 1) * cell) + dx, Math.Min(height, (b.Y1 + 1) * cell) + dy);
         }
         catch (OperationCanceledException) { return null; }
-        catch (Exception ex) when (ex is COMException or InvalidCastException or ArgumentException or UnauthorizedAccessException or InvalidOperationException) { trace?.Invoke("error " + ex.GetType().Name + " " + ex.HResult.ToString("X8")); return null; }
+        // Any failure only means "no video"; it must never escape into the card or the app.
+        catch (Exception ex) when (ex is not OutOfMemoryException) { trace?.Invoke("error " + ex.GetType().Name + " " + ex.HResult.ToString("X8")); return null; }
         finally { session?.Dispose(); pool?.Dispose(); device?.Dispose(); }
     }
     // Average brightness per cell, sampling every fourth pixel; enough to see motion, cheap on a 1080p frame.
@@ -133,7 +134,7 @@ internal static class VideoRegion
             if (Marshal.QueryInterface(native, in iid, out var pointer) != 0) return;
             try { ((IGraphicsCaptureSession3)Marshal.GetObjectForIUnknown(pointer)).put_IsBorderRequired(false); } finally { Marshal.Release(pointer); }
         }
-        catch (Exception ex) when (ex is COMException or InvalidCastException) { }
+        catch (Exception ex) when (ex is COMException or InvalidCastException or PlatformNotSupportedException) { }
     }
     [ComImport, Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IGraphicsCaptureItemInterop
@@ -141,9 +142,13 @@ internal static class VideoRegion
         [PreserveSig] int CreateForWindow(nint window, ref Guid iid, out nint result);
         [PreserveSig] int CreateForMonitor(nint monitor, ref Guid iid, out nint result);
     }
-    [ComImport, Guid("F2CDD966-22AE-5EA1-9596-3A289344C3BE"), InterfaceType(ComInterfaceType.InterfaceIsIInspectable)]
+    // .NET cannot marshal IInspectable interfaces, so the three IInspectable slots are declared by hand before the real methods.
+    [ComImport, Guid("F2CDD966-22AE-5EA1-9596-3A289344C3BE"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IGraphicsCaptureSession3
     {
+        [PreserveSig] int GetIids(out int count, out nint iids);
+        [PreserveSig] int GetRuntimeClassName(out nint name);
+        [PreserveSig] int GetTrustLevel(out int level);
         [PreserveSig] int get_IsBorderRequired(out byte value);
         [PreserveSig] int put_IsBorderRequired([MarshalAs(UnmanagedType.U1)] bool value);
     }
