@@ -20,6 +20,7 @@ public sealed partial class DesktopController
     private readonly WindowsLayoutService layoutService=new();
     private List<WindowsLayoutService.Snapshot> lastLayout=[];
     private IReadOnlyList<AppWindow> lastWindowSnapshot=[];
+    internal IReadOnlyList<AppWindow> LastSnapshot => lastWindowSnapshot;
     public event Action? AdvancedChanged;
     internal ProfileBook Profiles=>profileBook;
     internal Task WaitAdvancedAsync()=>advancedLoad;

@@ -65,6 +65,13 @@ internal sealed class IslandCard : Window
     private DateTime hiddenAt, trackRead, weatherDue, killArmedUntil;
     private MediaState? track;
     private ImageSource? artShown;
+    // App volume (the playing app only) and the live player-window preview.
+    private readonly Slider appVolume = new() { Minimum = 0, Maximum = 100, Margin = new(6, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center, IsSnapToTickEnabled = true, TickFrequency = 1 };
+    private readonly TextBlock appLabel = new() { FontSize = 11, Width = 84, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+    private readonly DispatcherTimer appVolumeSave = new() { Interval = TimeSpan.FromMilliseconds(120) };
+    private readonly Border liveBadge = new() { Width = 20, Height = 20, CornerRadius = new(10), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 8, -4), Visibility = Visibility.Collapsed, IsHitTestVisible = false };
+    private LivePreview? preview;
+    private nint playerWindow;
     private PerformanceSampler? sampler;
     private nint hwnd, brightnessMonitor, killWindow;
     private string? killName;
@@ -100,7 +107,11 @@ internal sealed class IslandCard : Window
         var playingPanel = new StackPanel();
         var head = new DockPanel();
         art.SetResourceReference(Border.BackgroundProperty, "Card"); artGlyph.HorizontalAlignment = HorizontalAlignment.Center; art.Child = artGlyph;
-        DockPanel.SetDock(art, Dock.Left); head.Children.Add(art);
+        // The cover doubles as the switch for the live player-window view; the small badge says one is available.
+        liveBadge.SetResourceReference(Border.BackgroundProperty, "Accent"); var badgeGlyph = Glyph("\uE714", 10); badgeGlyph.HorizontalAlignment = HorizontalAlignment.Center; badgeGlyph.SetResourceReference(TextBlock.ForegroundProperty, "Canvas"); liveBadge.Child = badgeGlyph;
+        var cover = new Grid { Cursor = Cursors.Hand, ToolTip = "Canlı oynatıcı görüntüsü" }; cover.Children.Add(art); cover.Children.Add(liveBadge);
+        cover.MouseLeftButtonUp += (_, _) => TogglePreview();
+        DockPanel.SetDock(cover, Dock.Left); head.Children.Add(cover);
         var names = new StackPanel { VerticalAlignment = VerticalAlignment.Center }; artist.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); artist.Margin = new(0, 2, 0, 0);
         names.Children.Add(title); names.Children.Add(artist); head.Children.Add(names);
         playingPanel.Children.Add(head);
@@ -116,6 +127,13 @@ internal sealed class IslandCard : Window
         next = IconButton("\uE893", "Sonraki parça", () => _ = MediaAsync("next"), 16); controls.Children.Add(next);
         forward10 = TextButton("+10", "10 saniye ileri", () => _ = SeekAsync(10)); controls.Children.Add(forward10);
         playingPanel.Children.Add(controls);
+        var appRow = new DockPanel { Margin = new(0, 2, 0, 0) };
+        var appGlyph = Glyph("\uE767", 12); appGlyph.Margin = new(6, 0, 2, 0); DockPanel.SetDock(appGlyph, Dock.Left); appRow.Children.Add(appGlyph);
+        appLabel.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); DockPanel.SetDock(appLabel, Dock.Right); appRow.Children.Add(appLabel);
+        appRow.Children.Add(appVolume); playingPanel.Children.Add(appRow);
+        System.Windows.Automation.AutomationProperties.SetName(appVolume, "Çalan uygulamanın sesi");
+        appVolume.ValueChanged += (_, _) => { appVolume.ToolTip = $"%{appVolume.Value:0}"; if (!refreshing) { Touch(); appVolumeSave.Stop(); appVolumeSave.Start(); } };
+        appVolumeSave.Tick += (_, _) => { appVolumeSave.Stop(); var id = track?.AppId; var level = (float)(appVolume.Value / 100); _ = Task.Run(() => { try { AppAudio.Set(id, level); } catch (COMException) { } }); };
         playingPanel.Visibility = Visibility.Collapsed; nowPlaying = playingPanel; music.Children.Add(playingPanel);
         var quiet = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var bigTime = new TextBlock { FontSize = 44, FontWeight = FontWeights.Light, DataContext = controller.ViewModel }; bigTime.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Time)));
@@ -235,6 +253,7 @@ internal sealed class IslandCard : Window
     }
     private void Stop()
     {
+        preview?.Leave(); appVolumeSave.Stop();
         UnregisterKeys(); idle.Stop(); poll.Stop(); brightnessSave.Stop();
         weatherCancel?.Cancel(); weatherCancel?.Dispose(); weatherCancel = null;
         sampler?.Dispose(); sampler = null;
@@ -334,8 +353,47 @@ internal sealed class IslandCard : Window
             try { track = await media.ReadAsync(); trackRead = DateTime.UtcNow; }
             catch (Exception ex) when (ex is COMException or InvalidOperationException or UnauthorizedAccessException) { track = null; }
             ShowTrack();
+            await RefreshAppAsync();
         }
         finally { polling = false; }
+    }
+    // The playing app's own volume and window. A browser shares one volume (and window) across its tabs.
+    private async Task RefreshAppAsync()
+    {
+        var id = track?.AppId;
+        AppVolume? level = null;
+        try { if (id is not null) level = await Task.Run(() => AppAudio.Read(id)); } catch (COMException) { }
+        appVolume.IsEnabled = level is not null;
+        refreshing = true;
+        if (level is not null && !appVolume.IsMouseCaptureWithin) appVolume.Value = Math.Round(level.Level * 100);
+        refreshing = false;
+        appLabel.Text = level?.Label ?? "Ses oturumu yok";
+        appLabel.ToolTip = level is null ? "Uygulama şu an ses çalmıyor." : level.Label.StartsWith("tüm ", StringComparison.Ordinal) ? "Windows sekme başına ses vermez; bu bar tarayıcının tamamını ayarlar." : level.Label + " uygulamasının sesi";
+        playerWindow = FindPlayerWindow();
+        liveBadge.Visibility = playerWindow != 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (preview is { IsVisible: true }) { if (playerWindow == 0) preview.Leave(); else PlacePreview(); }
+    }
+    private nint FindPlayerWindow()
+    {
+        if (track?.AppId is not { } id) return 0;
+        var candidates = controller.LastSnapshot.Where(w => IslandRules.MatchesApp(id, w.Executable is { } exe ? System.IO.Path.GetFileNameWithoutExtension(exe) : null)).ToList();
+        var titled = candidates.FirstOrDefault(w => !string.IsNullOrWhiteSpace(track.Title) && w.Title.Contains(track.Title, StringComparison.OrdinalIgnoreCase));
+        return (titled ?? candidates.FirstOrDefault(w => !w.Minimized) ?? candidates.FirstOrDefault())?.Handle ?? 0;
+    }
+    private void TogglePreview()
+    {
+        Touch();
+        if (preview is { IsVisible: true }) { preview.Leave(); return; }
+        if (playerWindow == 0) { controller.ViewModel.Status = "Çalan uygulamanın penceresi bulunamadı."; return; }
+        if (preview is null) { preview = new LivePreview(); preview.Clicked += () => preview.Leave(); }
+        PlacePreview();
+    }
+    // A 16:9 view as wide as the card, just under it.
+    private void PlacePreview()
+    {
+        if (preview is null || WindowOps.Read(hwnd)?.Bounds is not { } b) return;
+        var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        preview.Present(playerWindow, (int)(b.X + Shadow * scale), (int)(b.Y + b.Height - Shadow * scale + 6 * scale), CardWidth, CardWidth * 9 / 16);
     }
     private void ShowTrack()
     {

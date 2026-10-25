@@ -10,6 +10,8 @@ internal sealed record MediaState(string Title, string Artist, bool CanPlay, boo
     public TimeSpan Duration { get; init; }
     /// <summary>The app accepts position changes (±10 s on the island).</summary>
     public bool CanSeek { get; init; }
+    /// <summary>The publishing app's id (AUMID), used to find its audio session and window.</summary>
+    public string? AppId { get; init; }
 }
 /// <summary>Windows' global media session (the same one the volume flyout shows). Art is decoded once per track.</summary>
 internal sealed class MediaService
@@ -30,7 +32,7 @@ internal sealed class MediaService
         var duration = timeline.EndTime - timeline.StartTime;
         if (duration < TimeSpan.Zero || duration > TimeSpan.FromHours(24)) duration = TimeSpan.Zero;
         if (position < TimeSpan.Zero) position = TimeSpan.Zero; if (duration > TimeSpan.Zero && position > duration) position = duration;
-        return new(properties.Title, properties.Artist, c.IsPlayEnabled, c.IsPauseEnabled, c.IsNextEnabled, c.IsPreviousEnabled, playing) { Artwork = art, Position = position, Duration = duration, CanSeek = c.IsPlaybackPositionEnabled };
+        return new(properties.Title, properties.Artist, c.IsPlayEnabled, c.IsPauseEnabled, c.IsNextEnabled, c.IsPreviousEnabled, playing) { Artwork = art, Position = position, Duration = duration, CanSeek = c.IsPlaybackPositionEnabled, AppId = session.SourceAppUserModelId };
     }
     private static async Task<BitmapImage?> LoadArtAsync(IRandomAccessStreamReference? reference)
     {

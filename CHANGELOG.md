@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.35.0 · 2026-10-25 · Çalan uygulamanın sesi ve canlı önizleme
+
+- Ada kartında şarkı kontrollerinin altında ses barı: yalnız çalan uygulamanın sesini değiştirir (Windows ses karıştırıcısındaki uygulama sesi). Tarayıcıda çalıyorsa Windows sekme başına ses vermediği için barın yanında "tüm Chrome" gibi yazar ve tarayıcının tamamını ayarlar.
+- Kapağa tıklayınca müziği çalan pencerenin (tarayıcı, Spotify) canlı görüntüsü kartın altında açılır; kapaktaki küçük rozet görüntü olduğunu gösterir. Windows videonun kendisini vermediği için bu pencerenin tamamıdır; simge durumundaki pencerenin görüntüsü yoktur.
+
+QA: 101/101 birim testi ve `Verify-V033.ps1` 13/13 geçti. Uygulama sesi ve canlı önizleme gerçek oynatıcıyla elle denenmedi.
+
 ## 0.34.0 · 2026-10-25 · Ada kartı ve Alt+0
 
 - Dinamik adaya tıklayınca, bir şey çalmasa da iki sayfalık ada kartı açılır; iki sayfa aynı boyutta, sağdaki okla (veya Tab) geçilir.

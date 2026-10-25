@@ -222,6 +222,12 @@ Test("Island card rules: seeking stays inside the track, shell processes cannot 
     Throws(() => keys.With("island", HotkeyGesture.Parse("Alt+#75")));
     Throws(() => new Settings { IslandCity = new string('a', 81) }.Validate());
 });
+Test("Media app ids map to the right process, Store package and volume label", () => {
+    Check(IslandRules.AppTarget("Spotify.exe") == ("Spotify", null) && IslandRules.AppTarget("Chrome") == ("chrome", null) && IslandRules.AppTarget("MSEdge") == ("msedge", null));
+    Check(IslandRules.AppTarget("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify") == ("Spotify", "SpotifyAB.SpotifyMusic_zpdnekdrzrea0") && IslandRules.AppTarget("308046B0AF4A39CB").Process == "firefox" && IslandRules.AppTarget(null).Process is null);
+    Check(IslandRules.MatchesApp("Chrome", "chrome") && !IslandRules.MatchesApp("Chrome", "msedge") && IslandRules.MatchesApp("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify", "x", "...SpotifyAB.SpotifyMusic_zpdnekdrzrea0..."));
+    Check(IslandRules.AppLabel("chrome") == "tüm Chrome" && IslandRules.AppLabel("Spotify") == "Spotify" && IslandRules.AppLabel("vlc") == "Vlc");
+});
 var selectedTests = args.Contains("--v033") ? tests.Skip(v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }

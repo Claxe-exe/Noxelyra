@@ -81,6 +81,35 @@ public static class IslandRules
     }
     private static readonly HashSet<string> Protected = new(StringComparer.OrdinalIgnoreCase)
     { "explorer", "dwm", "csrss", "winlogon", "wininit", "services", "lsass", "smss", "svchost", "fontdrvhost", "sihost", "ctfmon", "taskmgr", "System", "Idle", "Registry", "Noxelyra" };
+    private static readonly Dictionary<string, string> AppProcesses = new(StringComparer.OrdinalIgnoreCase)
+    { ["Chrome"] = "chrome", ["MSEdge"] = "msedge", ["Brave"] = "brave", ["Opera"] = "opera", ["Vivaldi"] = "vivaldi" };
+    public static readonly IReadOnlySet<string> Browsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "chrome", "msedge", "firefox", "brave", "opera", "vivaldi", "arc" };
+    /// <summary>The process name and, for Store apps, the package family behind a media session's app id (AUMID).</summary>
+    public static (string? Process, string? Family) AppTarget(string? appId)
+    {
+        if (string.IsNullOrWhiteSpace(appId)) return (null, null);
+        var bang = appId.IndexOf('!');
+        if (bang > 0 && bang < appId.Length - 1) return (appId[(bang + 1)..], appId[..bang]);
+        var name = Path.GetFileNameWithoutExtension(appId.Trim());
+        if (AppProcesses.TryGetValue(name, out var mapped)) return (mapped, null);
+        // Firefox publishes a 16-digit hex hash as its app id.
+        if (name.Length == 16 && name.All(Uri.IsHexDigit)) return ("firefox", null);
+        return (name, null);
+    }
+    /// <summary>Whether an audio session or window (process name, session identifier) belongs to the media session's app.</summary>
+    public static bool MatchesApp(string? appId, string? processName, string? sessionIdentifier = null)
+    {
+        var (process, family) = AppTarget(appId);
+        if (process is null) return false;
+        if (family is not null && sessionIdentifier?.Contains(family, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return string.Equals(processName, process, StringComparison.OrdinalIgnoreCase);
+    }
+    /// <summary>Name shown next to the island's app volume; browsers say "tüm Chrome" because Windows has no per-tab volume.</summary>
+    public static string AppLabel(string processName)
+    {
+        var name = processName.ToLowerInvariant() switch { "chrome" => "Chrome", "msedge" => "Edge", "firefox" => "Firefox", "brave" => "Brave", "opera" => "Opera", "vivaldi" => "Vivaldi", "arc" => "Arc", "spotify" => "Spotify", _ => processName.Length > 0 ? char.ToUpper(processName[0], System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) + processName[1..] : processName };
+        return Browsers.Contains(processName) ? "tüm " + name : name;
+    }
     /// <summary>Whether the island may end this process: never Windows' own shell and session processes, nor Noxelyra itself.</summary>
     public static bool CanTerminate(string? processName, int processId, int ownId) =>
         processId > 4 && processId != ownId && !string.IsNullOrWhiteSpace(processName) && !Protected.Contains(processName);
