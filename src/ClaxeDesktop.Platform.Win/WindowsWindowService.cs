@@ -11,7 +11,6 @@ public sealed class WindowsWindowService : IWindowService
     public IReadOnlyList<AppWindow> Snapshot()
     {
         var windows = new List<AppWindow>();
-        var processPaths = new Dictionary<uint, string?>();
         if (!Api.EnumWindows((hwnd, _) =>
         {
             Api.GetWindowThreadProcessId(hwnd, out var pid);
@@ -20,15 +19,25 @@ public sealed class WindowsWindowService : IWindowService
             Api.DwmGetWindowAttribute(hwnd, 14, out var cloaked, sizeof(int));
             var candidate = new WindowCandidate(Api.IsWindowVisible(hwnd), cloaked != 0, (style & 0x80) != 0, (style & 0x08000000) != 0, Api.GetWindow(hwnd, 4) != 0, (style & 0x40000) != 0, pid == Environment.ProcessId, title.ToString());
             if (!WindowFilter.Include(candidate)) return true;
-            if (!processPaths.TryGetValue(pid, out var path))
-            {
-                try { using var process = Process.GetProcessById((int)pid); path = process.MainModule?.FileName; }
-                catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or ArgumentException or NotSupportedException) { path = null; }
-                processPaths[pid] = path;
-            }
-            windows.Add(new(hwnd, pid, title.ToString(), path, Api.IsIconic(hwnd))); return true;
+            windows.Add(new(hwnd, pid, title.ToString(), PathOf(pid), Api.IsIconic(hwnd))); return true;
         }, 0)) throw new Win32Exception();
+        // Forget processes that have no windows any more so a reused id cannot inherit an old path.
+        foreach (var gone in Paths.Keys.Except(windows.Select(w => w.ProcessId)).ToArray()) Paths.TryRemove(gone, out _);
         return windows;
+    }
+    // Process image paths are cached per id and read with QueryFullProcessImageName (limited query rights), which is
+    // much faster than Process.MainModule and also works for elevated processes. Alt+Tab snapshots run on key press.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<uint, string?> Paths = new();
+    private static string? PathOf(uint pid)
+    {
+        if (Paths.TryGetValue(pid, out var cached)) return cached;
+        string? path = null; var process = Api.OpenProcess(0x1000, false, pid);
+        if (process != 0)
+        {
+            try { var buffer = new StringBuilder(1024); var size = buffer.Capacity; if (Api.QueryFullProcessImageName(process, 0, buffer, ref size)) path = buffer.ToString(); }
+            finally { Api.CloseHandle(process); }
+        }
+        Paths[pid] = path; return path;
     }
     public bool Activate(AppWindow window)
     {
@@ -36,6 +45,10 @@ public sealed class WindowsWindowService : IWindowService
         Api.GetWindowThreadProcessId(window.Handle, out var pid);
         if (pid != window.ProcessId) return false;
         if (Api.IsIconic(window.Handle)) Api.ShowWindowAsync(window.Handle, 9);
+        if (Api.SetForegroundWindow(window.Handle)) return true;
+        // Windows only lets the process that sent the last input change the foreground window. An unassigned key (0xE8)
+        // makes Noxelyra that process without any visible effect, then the switch is allowed.
+        KeyboardHook.Chord(0xE8);
         return Api.SetForegroundWindow(window.Handle);
     }
     public bool IsFullscreenOn(MonitorInfo monitor)
@@ -55,6 +68,9 @@ public sealed class WindowsWindowService : IWindowService
     {
         internal delegate bool EnumCallback(nint hwnd, nint data);
         [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumCallback callback, nint data);
+        [DllImport("kernel32.dll", SetLastError = true)] internal static extern nint OpenProcess(uint access, bool inherit, uint pid);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] internal static extern bool QueryFullProcessImageName(nint process, uint flags, StringBuilder name, ref int size);
+        [DllImport("kernel32.dll")] internal static extern bool CloseHandle(nint handle);
         [DllImport("user32.dll")] internal static extern bool IsWindowVisible(nint hwnd);
         [DllImport("user32.dll")] internal static extern bool IsWindow(nint hwnd);
         [DllImport("user32.dll")] internal static extern bool IsIconic(nint hwnd);

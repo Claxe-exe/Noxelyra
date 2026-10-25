@@ -58,10 +58,12 @@ internal sealed class SwitcherWindow : Window
             cards.Children.Add(card); items.Add((window, card, preview, 0));
         }
         selected = windows.Count == 1 ? 0 : previous ? items.Count - 1 : 1;
-        Show();
+        Highlight();
+        // Measure and place before showing, so the card never flashes at its previous spot and size.
+        var root = (FrameworkElement)Content; root.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Left = (monitor.X / monitor.Scale) + (monitor.Width / monitor.Scale - root.DesiredSize.Width) / 2; Top = (monitor.Y / monitor.Scale) + (monitor.Height / monitor.Scale - root.DesiredSize.Height) / 2;
+        Show(); UpdateLayout();
         var dpi = VisualTreeHelper.GetDpi(this);
-        Left = (monitor.X / monitor.Scale) + (monitor.Width / monitor.Scale - ActualWidth) / 2; Top = (monitor.Y / monitor.Scale) + (monitor.Height / monitor.Scale - ActualHeight) / 2;
-        UpdateLayout();
         var handle = new WindowInteropHelper(this).Handle;
         for (int i = 0; i < items.Count; i++)
         {

@@ -4,8 +4,9 @@
 
 - Ada kartında şarkı kontrollerinin altında ses barı: yalnız çalan uygulamanın sesini değiştirir (Windows ses karıştırıcısındaki uygulama sesi). Tarayıcıda çalıyorsa Windows sekme başına ses vermediği için barın yanında "tüm Chrome" gibi yazar ve tarayıcının tamamını ayarlar.
 - Kapağa tıklayınca müziği çalan pencerenin (tarayıcı, Spotify) canlı görüntüsü kartın altında açılır; kapaktaki küçük rozet görüntü olduğunu gösterir. Windows videonun kendisini vermediği için bu pencerenin tamamıdır; simge durumundaki pencerenin görüntüsü yoktur.
+- Alt+Tab hızlandı: pencere listesi işlem yolunu artık hızlı ve önbellekli okuyor (`QueryFullProcessImageName`), kart önce yerleşip sonra görünüyor (eski yerinde parlamıyor), Windows geçişi reddederse görünmez bir tuşla izin alınıp yeniden deneniyor.
 
-QA: 101/101 birim testi ve `Verify-V033.ps1` 13/13 geçti. Uygulama sesi ve canlı önizleme gerçek oynatıcıyla elle denenmedi.
+QA: 101/101 birim testi ve `Verify-V033.ps1` 13/13 geçti. Uygulama sesi ve canlı önizleme gerçek oynatıcıyla elle denenmedi. Alt+Tab düzeltmesi test edilmeden paketlendi.
 
 ## 0.34.0 · 2026-10-25 · Ada kartı ve Alt+0
 
