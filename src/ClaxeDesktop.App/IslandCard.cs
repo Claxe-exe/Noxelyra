@@ -47,6 +47,8 @@ internal sealed class IslandCard : Window
     private readonly FrameworkElement progress, nowPlaying, nothingPlaying;
     private readonly Button back10, previous, play, next, forward10;
     private readonly TextBlock weatherGlyph = new() { FontFamily = new FontFamily("Segoe UI Symbol"), FontSize = 24, Margin = new(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
+    // HH:mm next to the weather, always 24-hour and without seconds.
+    private readonly TextBlock clockText = new() { FontSize = 22, FontWeight = FontWeights.Light, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new(0, 2, 2, 0) };
     private readonly TextBlock weatherTemp = new() { FontSize = 22, FontWeight = FontWeights.Light, VerticalAlignment = VerticalAlignment.Center }, weatherLine = Small();
     private readonly StackPanel weatherShown = new(), weatherAsk = new();
     private readonly TextBox cityInput = new() { MaxLength = OpenMeteo.MaxCityLength, FontSize = 12, Padding = new(6, 3, 6, 3) };
@@ -182,7 +184,8 @@ internal sealed class IslandCard : Window
         askGo.Click += async (_, _) => await SaveCityAsync();
         cityInput.KeyDown += async (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; await SaveCityAsync(); } };
         System.Windows.Automation.AutomationProperties.SetName(cityInput, "Hava durumu şehri");
-        var weatherBox = new Grid { Height = 64 }; weatherBox.Children.Add(weatherShown); weatherBox.Children.Add(weatherAsk); side.Children.Add(weatherBox);
+        var weatherBox = new Grid { Height = 64 }; weatherBox.Children.Add(weatherShown); weatherBox.Children.Add(weatherAsk); weatherBox.Children.Add(clockText); side.Children.Add(weatherBox);
+        System.Windows.Documents.Typography.SetNumeralAlignment(clockText, FontNumeralAlignment.Tabular); clockText.Text = DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture);
         foreach (var (key, label) in new[] { ("cpu", "CPU"), ("gpu", "GPU"), ("ram", "RAM") }) side.Children.Add(StatRow(key, label));
         var timerRow = new DockPanel { Margin = new(0, 8, 0, 0) };
         timerStop = IconButton("\uE711", "Zamanlayıcıyı durdur", controller.StopTimer, 11); timerStop.Padding = new(6, 2, 6, 2); DockPanel.SetDock(timerStop, Dock.Right); timerRow.Children.Add(timerStop);
@@ -373,7 +376,7 @@ internal sealed class IslandCard : Window
             }
             catch (Exception ex) when (ex is COMException or InvalidCastException or UnauthorizedAccessException) { micButton.IsEnabled = false; micButton.ToolTip = "Mikrofon bulunamadı"; }
             finally { refreshing = false; }
-            UpdateStats(); TimerChanged();
+            UpdateStats(); TimerChanged(); clockText.Text = DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture);
             UpdateProgress();
             if (DateTime.UtcNow >= weatherDue) _ = LoadWeatherAsync();
             try { track = await media.ReadAsync(); trackRead = DateTime.UtcNow; }

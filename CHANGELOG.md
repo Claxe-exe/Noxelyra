@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.38.3 · 2026-10-26 · Ada kartında saat
+
+- Ada kartının 1. sayfasında hava durumunun sağında saat (24 saat, 00:00 biçiminde). Test edilmeden kuruldu.
+
 ## 0.38.2 · 2026-10-26 · Barlar masaüstünde kaybolmuyor
 
 - Noxelyra masaüstüne sağ tıklayınca ya da "Görünüm"e basınca üst bar ve dock masaüstü alanının arkasına düşüyordu (Alt+K veya Alt+Tab gerekiyordu). Artık her tıklamadan sonra yeniden öne alınıyorlar. Test edilmeden yayımlandı.
