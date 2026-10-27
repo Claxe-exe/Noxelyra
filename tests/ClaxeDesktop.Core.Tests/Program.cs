@@ -228,6 +228,11 @@ Test("Media app ids map to the right process, Store package and volume label", (
     Check(IslandRules.MatchesApp("Chrome", "chrome") && !IslandRules.MatchesApp("Chrome", "msedge") && IslandRules.MatchesApp("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify", "x", "...SpotifyAB.SpotifyMusic_zpdnekdrzrea0..."));
     Check(IslandRules.AppLabel("chrome") == "tüm Chrome" && IslandRules.AppLabel("Spotify") == "Spotify" && IslandRules.AppLabel("vlc") == "Vlc");
 });
+Test("Store apps launch only by a well-formed AppUserModelID through the Apps folder", () => {
+    Check(LaunchPolicy.IsAllowed(@"shell:AppsFolder\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App") && LaunchPolicy.IsPackagedApp(@"shell:AppsFolder\OpenAI.ChatGPT-Desktop_2p2nqsd0c76g0!ChatGPT"));
+    foreach (var bad in new[] { @"shell:AppsFolder\notepad.exe", @"shell:AppsFolder\x_cv1g1gvanyjgm!App & calc", @"shell:AppsFolder\..\..\cmd", @"shell:startup", "http://evil/x_cv1g1gvanyjgm!App" }) Check(!LaunchPolicy.IsAllowed(bad), bad);
+    Check(LaunchPolicy.IsAllowed(@"C:\Apps\app.exe") && !LaunchPolicy.IsAllowed(@"\\server\share\app.exe"));
+});
 var selectedTests = args.Contains("--v033") ? tests.Skip(v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }

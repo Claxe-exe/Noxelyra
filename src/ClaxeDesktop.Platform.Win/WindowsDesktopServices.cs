@@ -64,6 +64,32 @@ public sealed class WindowsApplicationIndex
             catch(Exception ex) when(ex is IOException or UnauthorizedAccessException) { }
         }
         foreach(var folder in new[]{Environment.SpecialFolder.Programs,Environment.SpecialFolder.CommonPrograms}) Scan(Environment.GetFolderPath(folder),0);
+        // Store apps (ChatGPT, WhatsApp, ...) have no .lnk in the Start menu folders; Windows lists them in its Apps folder.
+        foreach(var app in PackagedApps()) if(!found.Any(f=>string.Equals(f.Name,app.Name,StringComparison.CurrentCultureIgnoreCase))) found.Add(app);
         return found.OrderBy(a=>a.Name,StringComparer.CurrentCultureIgnoreCase).ToArray();
+    }
+    private static List<Shortcut> PackagedApps()
+    {
+        var result=new List<Shortcut>();
+        // Shell.Application is an apartment-threaded COM object; read it on its own STA thread.
+        var thread=new Thread(()=>
+        {
+            dynamic? shell=null;
+            try
+            {
+                shell=Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application")!);
+                dynamic folder=shell!.NameSpace("shell:AppsFolder");
+                foreach(dynamic item in folder.Items())
+                {
+                    string name=item.Name; string path=item.Path; var target=LaunchPolicy.AppsFolderPrefix+path;
+                    if(!string.IsNullOrWhiteSpace(name)&&LaunchPolicy.IsPackagedApp(target)) lock(result) result.Add(new(name.Length>80?name[..80]:name,target));
+                    if(result.Count>=1000)break;
+                }
+            }
+            catch(Exception ex) when(ex is COMException or InvalidCastException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException or ArgumentException) { }
+            finally { if(shell is not null) Marshal.FinalReleaseComObject(shell); }
+        }){IsBackground=true,Name="Noxelyra Store apps"};
+        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join(TimeSpan.FromSeconds(10));
+        lock(result) return result.ToList();
     }
 }

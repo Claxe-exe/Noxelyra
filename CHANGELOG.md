@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.39.0 · 2026-10-27 · Başlatıcıda Store uygulamaları
+
+- Başlatıcı yalnız Başlat menüsü klasörlerindeki kısayolları okuduğu için ChatGPT, WhatsApp gibi Microsoft Store uygulamaları aramada çıkmıyordu. Artık Windows'un uygulama klasöründeki Store uygulamaları da listeleniyor, simgeleriyle görünüyor, açılabiliyor ve dock'a sabitlenebiliyor. Açma, Başlat menüsünün kullandığı yol (AppUserModelID) ile yapılır; yalnız biçimi doğrulanmış kimlikler kabul edilir.
+
 ## 0.38.3 · 2026-10-26 · Ada kartında saat
 
 - Ada kartının 1. sayfasında hava durumunun sağında saat (24 saat, 00:00 biçiminde). Test edilmeden kuruldu.

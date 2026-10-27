@@ -83,8 +83,12 @@ public sealed record Settings
 
 public static class LaunchPolicy
 {
-    public static bool IsAllowed(string? path) => !string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path) && !path.StartsWith(@"\\") &&
-        new[] { ".exe", ".lnk" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+    /// <summary>Microsoft Store (packaged) apps are launched by their AppUserModelID through Windows' Apps folder.</summary>
+    public const string AppsFolderPrefix = @"shell:AppsFolder\";
+    private static readonly System.Text.RegularExpressions.Regex PackagedId = new(@"^[A-Za-z0-9][A-Za-z0-9.\-]{0,127}_[a-z0-9]{13}![A-Za-z0-9][A-Za-z0-9._\-]{0,127}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    public static bool IsPackagedApp(string? target) => target is not null && target.StartsWith(AppsFolderPrefix, StringComparison.OrdinalIgnoreCase) && PackagedId.IsMatch(target[AppsFolderPrefix.Length..]);
+    public static bool IsAllowed(string? path) => IsPackagedApp(path) || (!string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path) && !path.StartsWith(@"\\") &&
+        new[] { ".exe", ".lnk" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase));
 }
 public sealed record MonitorInfo(string Id, string Name, int X, int Y, int Width, int Height, double Scale, bool Primary)
 {
