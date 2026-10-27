@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.39.1 · 2026-10-27 · Güncelleme kilidi
+
+- Başlatıcıdan veya dock'tan açılan uygulamalar Noxelyra'nın kurulum klasörünü çalışma klasörü olarak alıyordu; bu uygulamalar açık kaldıkça klasör kilitleniyor ve güncelleme kurulamıyordu. Artık uygulamalar kendi klasöründe (ya da kullanıcı klasöründe) başlıyor.
+
 ## 0.39.0 · 2026-10-27 · Başlatıcıda Store uygulamaları
 
 - Başlatıcı yalnız Başlat menüsü klasörlerindeki kısayolları okuduğu için ChatGPT, WhatsApp gibi Microsoft Store uygulamaları aramada çıkmıyordu. Artık Windows'un uygulama klasöründeki Store uygulamaları da listeleniyor, simgeleriyle görünüyor, açılabiliyor ve dock'a sabitlenebiliyor. Açma, Başlat menüsünün kullandığı yol (AppUserModelID) ile yapılır; yalnız biçimi doğrulanmış kimlikler kabul edilir.

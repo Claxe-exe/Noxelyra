@@ -15,6 +15,9 @@ public static class Program
                 try { new StartupService().SetEnabled(false); } catch (Exception ex) when (ex is IOException or InvalidOperationException or System.Runtime.InteropServices.COMException) { }
             })
             .Run();
+        // Apps started from the launcher or dock inherit the working directory; keep it out of the install folder, or an app left
+        // open would lock that folder and block the next update. Verification runs keep theirs (they read samples relative to it).
+        if (!args.Any(a => a.StartsWith("--verify", StringComparison.Ordinal))) Environment.CurrentDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         // The taskbar guardian lives as long as Noxelyra. It needs no UI, so it runs here without WPF and costs a few MB instead of a full app.
         if (args.Length == 3 && (args[0] == "--taskbar-guardian" || (args[0] == "--taskbar-guardian-fixture" && Environment.GetEnvironmentVariable("CLAXE_TEST_FIXTURE") == "1"))
             && int.TryParse(args[1], out var parentId) && long.TryParse(args[2], out var parentTicks))
