@@ -3,6 +3,7 @@
 ## 0.39.2 · 2026-10-27 · Alt+0 oyunda da
 
 - League of Legends gibi bazı oyunlar oyun içindeyken Windows kısayollarını kapatıyor (ham giriş, `RIDEV_NOHOTKEYS`); Alt+0 ve kart açıkken ok/Boşluk/Tab/Esc bu yüzden ulaşmıyordu. Klavye kancası açıksa (Win başlatıcı, Alt+Tab veya döşemeden biri) bu tuşlar artık kancadan da yakalanıyor. Gerçek "özel tam ekran" modunda kart yine görünmeyebilir; oyunu "kenarlıksız" modda kullan.
+- Windows açılış kısayolunu yalnız kurulu kopya güncelliyor; bir derleme klasöründen açılan kopya kısayolu kendine çeviremez (bu, güncellemelerin takılmasına da yol açıyordu).
 
 ## 0.39.1 · 2026-10-27 · Güncelleme kilidi
 
