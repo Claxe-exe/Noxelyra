@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.39.2 · 2026-10-27 · Alt+0 oyunda da
+
+- League of Legends gibi bazı oyunlar oyun içindeyken Windows kısayollarını kapatıyor (ham giriş, `RIDEV_NOHOTKEYS`); Alt+0 ve kart açıkken ok/Boşluk/Tab/Esc bu yüzden ulaşmıyordu. Klavye kancası açıksa (Win başlatıcı, Alt+Tab veya döşemeden biri) bu tuşlar artık kancadan da yakalanıyor. Gerçek "özel tam ekran" modunda kart yine görünmeyebilir; oyunu "kenarlıksız" modda kullan.
+
 ## 0.39.1 · 2026-10-27 · Güncelleme kilidi
 
 - Başlatıcıdan veya dock'tan açılan uygulamalar Noxelyra'nın kurulum klasörünü çalışma klasörü olarak alıyordu; bu uygulamalar açık kaldıkça klasör kilitleniyor ve güncelleme kurulamıyordu. Artık uygulamalar kendi klasöründe (ya da kullanıcı klasöründe) başlıyor.

@@ -324,7 +324,7 @@ internal sealed class IslandCard : Window
     // ---- Keys: registered while summoned (the game keeps focus), handled directly when the card has focus ----
     private void RegisterKeys()
     {
-        UnregisterKeys();
+        UnregisterKeys(); controller.CardKeysActive(true);
         for (int i = 0; i < GameKeys.Length; i++)
         {
             var key = GameKeys[i]; var repeat = key is 0x25 or 0x27 or 0x26 or 0x28;
@@ -332,7 +332,7 @@ internal sealed class IslandCard : Window
             else controller.Log.Write("island-key-busy-" + key);
         }
     }
-    private void UnregisterKeys() { foreach (var id in registered) UnregisterHotKey(hwnd, id); registered.Clear(); }
+    private void UnregisterKeys() { controller.CardKeysActive(false); foreach (var id in registered) UnregisterHotKey(hwnd, id); registered.Clear(); }
     private nint Hook(nint window, int message, nint w, nint l, ref bool handled)
     {
         if (message == 0x312 && w >= 780 && w < 780 + GameKeys.Length) { Press(GameKeys[w - 780]); handled = true; }

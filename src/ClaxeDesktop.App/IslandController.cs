@@ -38,6 +38,9 @@ public sealed partial class DesktopController
         var card = EnsureCard();
         if (card.IsVisible) { card.Leave(); return; }
         card.Summon();
+        // Which app was in front (process name only), to tell "hotkey never arrived" from "card hidden by a fullscreen game".
+        var front = ClaxeDesktop.Platform.Win.WindowOps.ProcessId(ClaxeDesktop.Platform.Win.WindowOps.Foreground);
+        try { using var process = System.Diagnostics.Process.GetProcessById(front); Log.Write("island-summon " + process.ProcessName); } catch (ArgumentException) { Log.Write("island-summon"); }
     }
     internal void ShowTimerMenu(FrameworkElement target)
     {

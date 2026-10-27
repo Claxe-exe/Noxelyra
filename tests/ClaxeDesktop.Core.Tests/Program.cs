@@ -233,6 +233,15 @@ Test("Store apps launch only by a well-formed AppUserModelID through the Apps fo
     foreach (var bad in new[] { @"shell:AppsFolder\notepad.exe", @"shell:AppsFolder\x_cv1g1gvanyjgm!App & calc", @"shell:AppsFolder\..\..\cmd", @"shell:startup", "http://evil/x_cv1g1gvanyjgm!App" }) Check(!LaunchPolicy.IsAllowed(bad), bad);
     Check(LaunchPolicy.IsAllowed(@"C:\Apps\app.exe") && !LaunchPolicy.IsAllowed(@"\\server\share\app.exe"));
 });
+Test("Key router catches the island shortcut and the summoned card keys even when games switch hotkeys off", () => {
+    var r = new KeyRouter { Island = HotkeyGesture.Parse("Alt+#48") };
+    var hit = r.Route(0x30, true, false, false, true, false); Check(hit.Decision == KeyDecision.Trigger && hit.Action == "island" && hit.MaskStart);
+    Check(r.Route(0x30, false, false, false, true, false).Decision == KeyDecision.Swallow);
+    Check(r.Route(0x30, true, false, false, false, false).Decision == KeyDecision.Pass && r.Route(0x25, true, false, false, false, false).Decision == KeyDecision.Pass);
+    r.CardKeys = true; var left = r.Route(0x25, true, false, false, false, false); Check(left.Action == "card.37" && left.Decision == KeyDecision.Trigger);
+    Check(r.Route(0x20, true, false, false, false, false).Action == "card.32" && r.Route(0x25, true, false, true, false, false).Decision == KeyDecision.Pass);
+    r.CardKeys = false; Check(r.Route(0x1B, true, false, false, false, false).Decision == KeyDecision.Pass);
+});
 var selectedTests = args.Contains("--v033") ? tests.Skip(v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }

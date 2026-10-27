@@ -64,7 +64,7 @@ public sealed partial class DesktopController
         lock (keyboardHook.Router)
         {
             keyboardHook.Router.ShowDesktop = showDesktop; keyboardHook.Router.SuperLauncher = options.SuperLauncher;
-            keyboardHook.Router.AltTab = options.AltTab; keyboardHook.Router.WinBindings = bindings;
+            keyboardHook.Router.AltTab = options.AltTab; keyboardHook.Router.WinBindings = bindings; keyboardHook.Router.Island = Gesture("island");
         }
     }
     private void OnKeyAction(string action)
@@ -74,7 +74,11 @@ public sealed partial class DesktopController
         else if (action == "superLauncher") ToggleLauncher();
         else if (action.StartsWith("switcher.", StringComparison.Ordinal)) Switcher(action);
         else if (action.StartsWith("tile.", StringComparison.Ordinal)) TileCommand(action);
+        else if (action == "island") ToggleIslandSummon();
+        else if (action.StartsWith("card.", StringComparison.Ordinal) && int.TryParse(action[5..], out var key)) islandCard?.Press(key);
     }
+    /// <summary>The summoned card claims its keys in the hook too (games may switch RegisterHotKey off).</summary>
+    internal void CardKeysActive(bool on) { if (keyboardHook is not null) lock (keyboardHook.Router) keyboardHook.Router.CardKeys = on; }
     internal void SwitcherClosed() { if (keyboardHook is not null) lock (keyboardHook.Router) keyboardHook.Router.CloseSwitcher(); }
     // Emergency: ask the UI thread for a fast clean exit; if it does not answer in 2.5 s, restore Windows from here and end the process.
     private void EmergencyPressed()

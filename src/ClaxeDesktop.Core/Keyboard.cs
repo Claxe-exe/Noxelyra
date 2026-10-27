@@ -111,6 +111,13 @@ public sealed class KeyRouter
     public bool ShowDesktop { get; set; }
     public bool AltTab { get; set; }
     public IReadOnlyDictionary<HotkeyGesture, string> WinBindings { get; set; } = new Dictionary<HotkeyGesture, string>();
+    /// <summary>
+    /// The island shortcut, also caught here because games that read raw input with RIDEV_NOHOTKEYS (League of Legends in game)
+    /// switch RegisterHotKey off while they have focus. A low-level hook still sees the keys.
+    /// </summary>
+    public HotkeyGesture? Island { get; set; }
+    /// <summary>While the summoned island card is up: arrows, Space, Tab and Esc drive it ("card.&lt;vk&gt;").</summary>
+    public bool CardKeys { get; set; }
     private bool winDown, winUsed, switcher;
     private readonly HashSet<int> swallowed = [];
     public bool SwitcherOpen => switcher;
@@ -139,6 +146,15 @@ public sealed class KeyRouter
             string? action = ShowDesktop && key == D && !ctrl && !alt && !shift ? "showDesktop" : WinBindings.TryGetValue(gesture, out var bound) ? bound : null;
             if (action is null) return new(KeyDecision.Pass);
             swallowed.Add(key); return new(KeyDecision.Trigger, action, MaskStart: true);
+        }
+        if (Island is { Win: false } island && key == island.Key && ctrl == island.Ctrl && alt == island.Alt && shift == island.Shift)
+        {
+            // Mask while Alt is held so releasing it does not open the focused app's menu bar.
+            swallowed.Add(key); return new(KeyDecision.Trigger, "island", MaskStart: alt);
+        }
+        if (CardKeys && !ctrl && !alt && key is Left or Right or Up or Down or Tab or Escape or 0x20)
+        {
+            swallowed.Add(key); return new(KeyDecision.Trigger, "card." + key);
         }
         if (switcher)
         {
