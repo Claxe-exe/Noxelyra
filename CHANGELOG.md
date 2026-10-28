@@ -1,5 +1,9 @@
 # Değişiklikler
 
+## 0.39.3 · 2026-10-29 · Alt+0 kartı oyunun üstünde kalıyor
+
+- Kayıtlar Alt+0'ın League of Legends içinde de geldiğini gösterdi; kart bazen görünmüyordu çünkü oyun kendi penceresini sürekli en üste itiyor. Kart Alt+0 ile açıkken üstte kalmayı saniyede dört kez yeniliyor (pencereyi etkinleştirmeden). Gerçek "özel tam ekran" modunda yine görünmeyebilir. Test edilmeden yayımlandı.
+
 ## 0.39.2 · 2026-10-27 · Alt+0 oyunda da
 
 - League of Legends gibi bazı oyunlar oyun içindeyken Windows kısayollarını kapatıyor (ham giriş, `RIDEV_NOHOTKEYS`); Alt+0 ve kart açıkken ok/Boşluk/Tab/Esc bu yüzden ulaşmıyordu. Klavye kancası açıksa (Win başlatıcı, Alt+Tab veya döşemeden biri) bu tuşlar artık kancadan da yakalanıyor. Gerçek "özel tam ekran" modunda kart yine görünmeyebilir; oyunu "kenarlıksız" modda kullan.

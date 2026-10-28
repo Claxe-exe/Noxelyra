@@ -39,6 +39,8 @@ internal sealed class IslandCard : Window
     private readonly Ellipse dot1 = Dot(), dot2 = Dot();
     private readonly DispatcherTimer poll = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly DispatcherTimer idle = new() { Interval = TimeSpan.FromSeconds(12) };
+    // Some games (League of Legends) keep pushing their own window to the top; while summoned, the card claims the top again.
+    private readonly DispatcherTimer stayOnTop = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private readonly DispatcherTimer brightnessSave = new() { Interval = TimeSpan.FromMilliseconds(250) };
     // Page 1
     private readonly Border art = new() { Width = 56, Height = 56, CornerRadius = new(14), Margin = new(0, 0, 12, 0) };
@@ -234,6 +236,7 @@ internal sealed class IslandCard : Window
         MouseMove += (_, _) => Touch();
         poll.Tick += async (_, _) => await RefreshAsync();
         idle.Tick += (_, _) => Leave();
+        stayOnTop.Tick += (_, _) => { if (summoned && IsVisible && !leaving) { WindowPlacement.RaiseTopmost(hwnd); if (backdrop is { IsVisible: true }) ApplyBackground(); } };
         controller.TimerChanged += TimerChanged;
         Closed += (_, _) => { Stop(); controller.TimerChanged -= TimerChanged; };
     }
@@ -261,7 +264,7 @@ internal sealed class IslandCard : Window
         Show(); SetNoActivate(true);
         WindowPlacement.Move(hwnd, (int)(monitor.X + (monitor.Width - Width * monitor.Scale) / 2), (int)(monitor.Y + (10 - Shadow) * monitor.Scale));
         WindowPlacement.RaiseTopmost(hwnd);
-        RegisterKeys(); idle.Stop(); idle.Start();
+        RegisterKeys(); idle.Stop(); idle.Start(); stayOnTop.Start();
         Arrive(); _ = ReadBrightnessAsync();
     }
     internal void Leave()
@@ -282,7 +285,7 @@ internal sealed class IslandCard : Window
     private void Stop()
     {
         backdrop?.Leave(); videoScan?.Cancel(); videoKey = null; videoCrop = null; appVolumeSave.Stop();
-        UnregisterKeys(); idle.Stop(); poll.Stop(); brightnessSave.Stop();
+        UnregisterKeys(); idle.Stop(); poll.Stop(); brightnessSave.Stop(); stayOnTop.Stop();
         weatherCancel?.Cancel(); weatherCancel?.Dispose(); weatherCancel = null;
         sampler?.Dispose(); sampler = null;
     }
