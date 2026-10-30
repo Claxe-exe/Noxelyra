@@ -32,6 +32,8 @@ internal sealed class IntroWindow : Window
         var palette = ThemePresets.Resolve(settings);
         Color Hex(string value) => (Color)ColorConverter.ConvertFromString(value);
         var accent = Hex(palette.Accent);
+        // Runs on its own UI thread: the app's implicit styles point at theme brushes owned by the main thread, so opt out of them.
+        Style = new Style(typeof(IntroWindow)); FontFamily = new FontFamily("Segoe UI"); FontSize = 13; Foreground = Brushes.White;
         WindowStyle = WindowStyle.None; AllowsTransparency = true; ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Topmost = true;
         Background = Brushes.Transparent; Title = "Noxelyra"; WindowStartupLocation = WindowStartupLocation.Manual;
         Left = 0; Top = 0; Width = SystemParameters.PrimaryScreenWidth; Height = SystemParameters.PrimaryScreenHeight;
@@ -68,7 +70,7 @@ internal sealed class IntroWindow : Window
         }
 
         center.Children.Add(word);
-        letters = "NOXELYRA".Select(c => new TextBlock { Text = c.ToString(), FontSize = 40, FontWeight = FontWeights.Light, Foreground = Brushes.White, Margin = new(9, 0, 9, 0), Opacity = 0, RenderTransform = new TranslateTransform(0, 14) }).ToList();
+        letters = "NOXELYRA".Select(c => new TextBlock { Style = new Style(typeof(TextBlock)), Text = c.ToString(), FontSize = 40, FontWeight = FontWeights.Light, Foreground = Brushes.White, Margin = new(9, 0, 9, 0), Opacity = 0, RenderTransform = new TranslateTransform(0, 14) }).ToList();
         foreach (var letter in letters) word.Children.Add(letter);
         // A soft band of light that sweeps across the name once.
         shine = new Rectangle { Width = 90, Fill = new LinearGradientBrush(Color.FromArgb(0, 255, 255, 255), Color.FromArgb(0, 255, 255, 255), 0) { GradientStops = { new(Color.FromArgb(0, 255, 255, 255), 0), new(Color.FromArgb(150, 255, 255, 255), .5), new(Color.FromArgb(0, 255, 255, 255), 1) } }, HorizontalAlignment = HorizontalAlignment.Left, RenderTransform = new TranslateTransform(-120, 0), Opacity = 0, IsHitTestVisible = false };
@@ -139,12 +141,17 @@ internal sealed class IntroWindow : Window
     /// Runs once, just before the boot picture lifts: Noxelyra starts underneath while the last frame is still up, so the plain
     /// Windows desktop and taskbar never flash between the intro and Noxelyra.
     /// </summary>
-    internal static Func<Task>? BeforeReveal { get; set; }
+    internal static Func<Task>? BeforeReveal { get => Volatile.Read(ref beforeReveal); set => Volatile.Write(ref beforeReveal, value); }
+    private static Func<Task>? beforeReveal;
+    /// <summary>The intro never waits longer than this for Noxelyra; a slow start must not hold a frozen picture over the screen.</summary>
+    private static readonly TimeSpan ReadyLimit = TimeSpan.FromSeconds(8);
     private bool boot, revealed;
     private async void Lift(Action reveal)
     {
         if (revealed) return; revealed = true;
-        if (boot && BeforeReveal is { } ready) { BeforeReveal = null; try { await ready(); } catch (Exception) { /* The desktop must appear even if a part failed to start. */ } }
+        // Noxelyra starts on the main thread while this thread keeps the intro alive; the start reports its own errors.
+        if (boot && Interlocked.Exchange(ref beforeReveal, null) is { } ready && Application.Current?.Dispatcher is { } main)
+            await Task.WhenAny(main.InvokeAsync(ready).Task.Unwrap(), Task.Delay(ReadyLimit));
         reveal();
     }
     private void Finish(int milliseconds) => Lift(() => FinishNow(milliseconds));
@@ -236,12 +243,30 @@ internal sealed class IntroWindow : Window
     private static async Task PlayAsync(Settings settings, bool boot, string? clip, bool force = false)
     {
         if (!force && !Allowed(settings)) return;
-        var window = new IntroWindow(settings) { boot = boot };
-        window.Loaded += (_, _) => { if (!boot) window.PowerOff(); else if (clip is not null) window.PlayCustom(clip, settings.DesktopSpace.IntroTransition, settings.DesktopSpace.IntroFadeMs); else window.Boot(); };
-        window.Show(); window.Activate();
+        // The intro gets its own UI thread so that work on the main thread (starting or tearing down Noxelyra) can never freeze
+        // a full-screen, topmost picture; a frozen one reads as a hang and Windows offers to kill the app.
+        var shown = new TaskCompletionSource<IntroWindow?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var thread = new Thread(() =>
+        {
+            IntroWindow? window = null;
+            void Fail() { if (window is { } open) { open.done.TrySetResult(); try { open.Close(); } catch (InvalidOperationException) { } } shown.TrySetResult(null); System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvokeShutdown(System.Windows.Threading.DispatcherPriority.Background); }
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.UnhandledException += (_, args) => { args.Handled = true; Fail(); };
+            try
+            {
+                window = new IntroWindow(settings) { boot = boot };
+                window.Loaded += (_, _) => { if (!boot) window.PowerOff(); else if (clip is not null) window.PlayCustom(clip, settings.DesktopSpace.IntroTransition, settings.DesktopSpace.IntroFadeMs); else window.Boot(); };
+                window.Closed += (_, _) => { window.done.TrySetResult(); System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvokeShutdown(System.Windows.Threading.DispatcherPriority.Background); };
+                window.Show(); window.Activate();
+                shown.TrySetResult(window);
+            }
+            catch (Exception) { Fail(); return; }
+            System.Windows.Threading.Dispatcher.Run();
+        }) { IsBackground = true, Name = "Noxelyra intro" };
+        thread.SetApartmentState(ApartmentState.STA); thread.Start();
+        if (await shown.Task is not { } intro) return;
         // Boot allows a few extra seconds for Noxelyra to start under the last frame.
-        await Task.WhenAny(window.done.Task, Task.Delay(boot ? (clip is null ? 9000 : 17000 + settings.DesktopSpace.IntroFadeMs + 3000) : 3000));
-        if (!window.done.Task.IsCompleted) window.Close();
+        await Task.WhenAny(intro.done.Task, Task.Delay(boot ? (clip is null ? 9000 : 17000 + settings.DesktopSpace.IntroFadeMs + 3000) + (int)ReadyLimit.TotalMilliseconds : 3000));
+        if (!intro.done.Task.IsCompleted) _ = intro.Dispatcher.BeginInvoke(intro.Close);
     }
     internal static Task PlayAsync(Settings settings, string dataDirectory) => PlayAsync(settings, true, CustomClip(settings, dataDirectory));
     /// <summary>Plays the boot sequence now from the control center, even when it is switched off for startup.</summary>

@@ -158,3 +158,8 @@
 ## Yeni kurulumda önerilen ayarlar · 30 Ekim 2026
 
 - Kullanıcı yeni bir PC'de kurunca Win tuşu ve Alt+Tab'ın Windows'ta kaldığını gördü ve bunların varsayılan olarak Noxelyra'nınki olmasını istedi. Kural "riskli özellik varsayılan kapalı" olduğu için ayar modelinin varsayılanları kapalı kaldı; bunun yerine ilk kurulum rehberi Win başlatıcısı, Alt+Tab, döşeme, görev çubuğu gizleme ve Windows ile başlamayı açıklamalı ve işaretli sunar. Kullanıcı Bitir'e basana kadar hiçbir şey değişmez; "Atla" hepsini kapalı bırakır; acil çıkış rehberin ilk sayfasında yazar.
+
+## Açılış animasyonu ayrı iş parçacığında · 30 Ekim 2026
+
+- 0.40.0'daki "animasyonun altında başla" akışı, ana iş parçacığındaki her takılmayı ekranı kaplayan, en üstteki bir pencerenin donması hâline getirdi; kullanıcı bunu çökme olarak yaşadı (Windows AppHang kaydı, iki kez). Animasyon kendi STA iş parçacığına ve kendi Dispatcher'ına taşındı; uygulamanın örtük stilleri ana iş parçacığının fırçalarını kullandığı için animasyon penceresi bunlardan çıkarıldı. Bekleme süresi 8 sn ile sınırlı.
+- Geliştirme notu: Claude masaüstü uygulaması paketli (MSIX) bir uygulama; onun içinden başlatılan komutların `%LOCALAPPDATA%` altına yeni oluşturduğu dosyalar Claude'un kendi `Packages\Claude_…\LocalCache` klasörüne yönlendiriliyor. Buradan yapılan kurulumlar bu yüzden kullanıcının gerçek kurulumunu değil sanal bir kopyasını güncelliyordu. Yerel kurulum ve açılış paket bağlamı dışında (WMI `Win32_Process.Create`) yapılmalı.

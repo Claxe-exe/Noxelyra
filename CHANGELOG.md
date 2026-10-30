@@ -1,5 +1,13 @@
 # Değişiklikler
 
+## 0.40.1 · 2026-10-30 · Açılışta donma düzeltmesi
+
+- **Açılış animasyonu artık donmaz:** 0.40.0'da Noxelyra, tam ekran açılış animasyonunun altında aynı iş parçacığında kuruluyordu. Kurulum (özellikle güncellemeden sonraki ilk, soğuk açılışta) birkaç saniye takılınca tüm ekran donmuş görünüyor, tıklayınca Windows "yanıt vermiyor" deyip uygulamayı kapatıyordu. Animasyon artık kendi iş parçacığında oynuyor, Noxelyra'yı en fazla 8 sn bekliyor ve sonra her durumda kalkıyor.
+- Animasyonun altında başlarken oluşan bir hata artık sessizce yutulmuyor; normal "başlatılamadı" yoluna düşüyor.
+- Ana arayüz 3 sn'den uzun takılırsa yerel günlüğe hangi aşamada takıldığı yazılıyor (`ui-stall-start` / `ui-stall-end`), sonraki sorun daha hızlı bulunsun diye.
+
+QA: birim testleri; kurulu sürüm Claude dışından açılıp yanıt verme durumu izlendi.
+
 ## 0.40.0 · 2026-10-30 · Daha kullanışlı: rehber, ayar merkezi, temiz açılış
 
 - **İlk kurulum rehberi:** yeni kurulumda renk seçimi; Win tuşu başlatıcısı, Alt+Tab, otomatik döşeme, görev çubuğunu gizleme ve Windows ile başlama önerilen ayar olarak işaretli gelir (her biri açıklamalı, kaldırılabilir); bilmen gereken kısayollar. "Atla" hepsini kapalı bırakır. Ayarlar'dan yeniden açılabilir.

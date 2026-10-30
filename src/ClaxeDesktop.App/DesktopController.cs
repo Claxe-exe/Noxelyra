@@ -61,8 +61,9 @@ public sealed partial class DesktopController
         {
             window.Moved += OnMoved; window.Closing += WindowClosing; window.Show();
         }
-        StartDesktopServices(); Widgets.Start(); StartAdvancedServices(); StartDesktopSpace(); TrimMemoryLater();
-        ApplyAppearance(); PlaceAll(safe); Tick();
+        StallWatch.Stage = "start:services"; StartDesktopServices(); StallWatch.Stage = "start:widgets"; Widgets.Start(); StallWatch.Stage = "start:advanced"; StartAdvancedServices();
+        StallWatch.Stage = "start:desktop-space"; StartDesktopSpace(); TrimMemoryLater();
+        StallWatch.Stage = "start:appearance"; ApplyAppearance(); PlaceAll(safe); Tick(); StallWatch.Stage = "start:tray";
         timer.Tick += (_, _) => Tick(); timer.Start();
         saveTimer.Tick += async (_, _) => { saveTimer.Stop(); await SaveCommittedAsync(); };
         SystemEvents.DisplaySettingsChanged += DisplayChanged; SystemEvents.SessionSwitch += SessionChanged; SystemEvents.PowerModeChanged += PowerChanged;

@@ -46,9 +46,20 @@ public partial class App : Application
             IntroWindow.Suppressed = verification || e.Args.Contains("--verify") || dirty || e.Args.Contains("--safe-mode");
             var safeStart = dirty || e.Args.Contains("--safe-mode");
             // Start under the intro's last frame; when the intro is off or skipped, start right after it.
-            IntroWindow.BeforeReveal = async () => { controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, safeStart, advancedSignals); controller.Start(); await controller.DesktopReadyAsync(); };
+            // The intro thread calls this on the main thread; a failure here is rethrown below so it reaches the normal startup error.
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo? startFailure = null;
+            IntroWindow.BeforeReveal = async () =>
+            {
+                if (controller is not null) return;
+                try { StallWatch.Stage = "start"; controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, safeStart, advancedSignals); controller.Start(); }
+                catch (Exception ex) { startFailure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex); return; }
+                StallWatch.Stage = "desktop-ready"; await controller.DesktopReadyAsync();
+            };
+            StallWatch.Start(log); StallWatch.Stage = "intro";
             await IntroWindow.PlayAsync(loaded.Settings, directory);
             IntroWindow.BeforeReveal = null;
+            startFailure?.Throw();
+            StallWatch.Stage = "after-intro";
             if (controller is null) { controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, safeStart, advancedSignals); controller.Start(); }
             if (!verification && !e.Args.Contains("--verify")) controller.ShowFirstRun();
             if(!verification&&!e.Args.Contains("--verify"))commands=new(command=>{if(command=="launcher")controller.ShowLauncher();else if(command=="dock")controller.SummonDock();else if(command=="exit")controller.Exit();else controller.ShowFullControls();});
@@ -69,7 +80,8 @@ public partial class App : Application
             else if (e.Args.Contains("--desktop-follow")) await controller.ConfigureDesktopFollowAsync(true);
             else if (e.Args.Contains("--dock")) controller.SummonDock();
             else if (e.Args.Contains("--launcher")) controller.ShowLauncher();
-            else if (!controller.IsSafeMode && !controller.ViewModel.Settings.IntegratedDesktop) controller.ShowFullControls();
+            else if (!controller.IsSafeMode && !controller.ViewModel.Settings.IntegratedDesktop) { StallWatch.Stage = "controls"; controller.ShowFullControls(); }
+            StallWatch.Stage = "running";
         }
         catch (Exception ex) { log.Write("startup-error", ex); MessageBox.Show("Noxelyra başlatılamadı. Windows arayüzü değişmedi. Yerel tanılama günlüğünü kontrol edin.", "Noxelyra Desktop", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
     }
