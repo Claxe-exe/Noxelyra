@@ -199,6 +199,8 @@ internal sealed partial class IslandCard : Window
         timerButton = new Button { Padding = new(8, 3, 8, 3), FontSize = 11, HorizontalContentAlignment = HorizontalAlignment.Left };
         var timerContent = new StackPanel { Orientation = Orientation.Horizontal }; var clockGlyph = Glyph("\uE916", 12); clockGlyph.Margin = new(0, 0, 6, 0); timerContent.Children.Add(clockGlyph); timerContent.Children.Add(timerText);
         timerButton.Content = timerContent; timerButton.Click += (_, _) => controller.ShowTimerMenu(timerButton); timerRow.Children.Add(timerButton);
+        // Page 1's own button for the control center, beside the timer.
+        var expand = BuildExpandButton(); DockPanel.SetDock(expand, Dock.Right); timerRow.Children.Insert(0, expand);
         side.Children.Add(timerRow);
         strip.Children.Add(one);
 
@@ -232,9 +234,8 @@ internal sealed partial class IslandCard : Window
         arrow.Click += (_, _) => Flip(page == 0 ? 1 : 0); Grid.SetColumn(arrow, 1); layout.Children.Add(arrow);
         var footer = new Grid { Margin = new(0, 4, 0, 0) }; Grid.SetRow(footer, 1); Grid.SetColumnSpan(footer, 2); layout.Children.Add(footer);
         hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); footer.Children.Add(hint);
-        var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         dot1.Margin = new(3); dot2.Margin = new(3); dots.Children.Add(dot1); dots.Children.Add(dot2); footer.Children.Add(dots);
-        footer.Children.Add(BuildExpandButton());
         BuildWide(host);
 
         SourceInitialized += (_, _) => { hwnd = new WindowInteropHelper(this).Handle; HwndSource.FromHwnd(hwnd)?.AddHook(Hook); };

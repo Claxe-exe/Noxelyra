@@ -39,7 +39,8 @@ internal sealed partial class IslandCard
     private Button BuildExpandButton()
     {
         var content = new StackPanel { Orientation = Orientation.Horizontal }; content.Children.Add(expandGlyph); content.Children.Add(expandText);
-        var button = new Button { Content = content, Padding = new(10, 3, 10, 3), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Kontrol merkezi: bağlantılar, ağ, sistem, açık uygulamalar, Windows kısayolları" };
+        expandText.Visibility = Visibility.Collapsed; expandGlyph.FontSize = 13;
+        var button = new Button { Content = content, Padding = new(8, 3, 8, 3), Margin = new(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Genişlet: kontrol merkezi (bağlantılar, ağ, sistem, açık uygulamalar, Windows kısayolları)" };
         System.Windows.Automation.AutomationProperties.SetName(button, "Kartı genişlet");
         button.Click += (_, _) => { Touch(); SetExpanded(!expanded); };
         return expandButton = button;
@@ -115,7 +116,7 @@ internal sealed partial class IslandCard
     {
         if (expanded == on && animate) return;
         expanded = on; wideTicks = 0; windowsSignature = "";
-        expandGlyph.Text = on ? "" : ""; expandText.Text = on ? "Küçült" : "Genişlet";
+        expandGlyph.Text = on ? "" : ""; expandText.Text = on ? "Küçült" : "Genişlet"; if (expandButton is not null) expandButton.ToolTip = on ? "Küçült" : "Genişlet: kontrol merkezi";
         idle.Interval = TimeSpan.FromSeconds(on ? 45 : 12); Touch();
         double width = on ? WideWidth : CardWidth, height = on ? WideHeight : CardHeight;
         if (on) { ResizeWindow(width, height); _ = RenderWideAsync(); _ = ConnectivityService.ReadAsync(); }
