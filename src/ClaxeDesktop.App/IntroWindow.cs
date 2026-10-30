@@ -135,7 +135,20 @@ internal sealed class IntroWindow : Window
         var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(milliseconds) };
         timer.Tick += (_, _) => { timer.Stop(); action(); }; timer.Start();
     }
-    private void Finish(int milliseconds)
+    /// <summary>
+    /// Runs once, just before the boot picture lifts: Noxelyra starts underneath while the last frame is still up, so the plain
+    /// Windows desktop and taskbar never flash between the intro and Noxelyra.
+    /// </summary>
+    internal static Func<Task>? BeforeReveal { get; set; }
+    private bool boot, revealed;
+    private async void Lift(Action reveal)
+    {
+        if (revealed) return; revealed = true;
+        if (boot && BeforeReveal is { } ready) { BeforeReveal = null; try { await ready(); } catch (Exception) { /* The desktop must appear even if a part failed to start. */ } }
+        reveal();
+    }
+    private void Finish(int milliseconds) => Lift(() => FinishNow(milliseconds));
+    private void FinishNow(int milliseconds)
     {
         if (leaving) return; leaving = true;
         var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(milliseconds)) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn } };
@@ -164,9 +177,9 @@ internal sealed class IntroWindow : Window
                 // Kararma + TV: sink to black, a short dark beat, then the TV power-on reveal.
                 case "fade-tv":
                     layer.BeginAnimation(OpacityProperty, A(0, fadeMs, 0, easing: new SineEase { EasingMode = EasingMode.EaseInOut }));
-                    After(fadeMs + 350, () => Reveal(layer, () => video?.Close(), false));
+                    After(fadeMs + 350, () => Lift(() => Reveal(layer, () => video?.Close(), false)));
                     break;
-                default: Reveal(layer, () => video?.Close(), true); break;
+                default: Lift(() => Reveal(layer, () => video?.Close(), true)); break;
             }
         }
         void Fallback() { if (ended) return; ended = true; stage.Children.Remove(layer); foreach (UIElement child in stage.Children) child.Visibility = Visibility.Visible; Boot(); }
@@ -223,10 +236,11 @@ internal sealed class IntroWindow : Window
     private static async Task PlayAsync(Settings settings, bool boot, string? clip, bool force = false)
     {
         if (!force && !Allowed(settings)) return;
-        var window = new IntroWindow(settings);
+        var window = new IntroWindow(settings) { boot = boot };
         window.Loaded += (_, _) => { if (!boot) window.PowerOff(); else if (clip is not null) window.PlayCustom(clip, settings.DesktopSpace.IntroTransition, settings.DesktopSpace.IntroFadeMs); else window.Boot(); };
         window.Show(); window.Activate();
-        await Task.WhenAny(window.done.Task, Task.Delay(boot ? (clip is null ? 5000 : 13000 + settings.DesktopSpace.IntroFadeMs + 3000) : 3000));
+        // Boot allows a few extra seconds for Noxelyra to start under the last frame.
+        await Task.WhenAny(window.done.Task, Task.Delay(boot ? (clip is null ? 9000 : 17000 + settings.DesktopSpace.IntroFadeMs + 3000) : 3000));
         if (!window.done.Task.IsCompleted) window.Close();
     }
     internal static Task PlayAsync(Settings settings, string dataDirectory) => PlayAsync(settings, true, CustomClip(settings, dataDirectory));

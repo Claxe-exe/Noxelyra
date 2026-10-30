@@ -44,7 +44,7 @@ internal sealed class LauncherWindow : Window
         [
             new("Hızlı ayarlar", "", controller.ShowControls), new("Kontrol merkezi", "", controller.ShowFullControls),
             new("Klavye ve kısayollar", "", controller.ShowKeyboard), new("Hafifletme", "", controller.ShowLighten),
-            new("Widget atölyesi", "", controller.Widgets.ShowEditor), new("Ayarlar", "", controller.ShowSettings),
+            new("Widget atölyesi", "", controller.Widgets.ShowEditor), new("Ayarlar", "", controller.ShowHub), new("Kısayollar ve ipuçları", "", controller.ShowShortcuts),
             new("Noxelyra masaüstü", "", controller.ShowDesktopSpace), new("Windows uygulamaları", "", () => controller.OpenSystem("apps")),
         ];
         // Dimmed backdrop: clicking it closes the launcher.

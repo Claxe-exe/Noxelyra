@@ -44,8 +44,13 @@ public partial class App : Application
             IMonitorService monitorService = verificationMonitors ?? (IMonitorService)new WindowsMonitorService();
             var advancedSignals=verification&&(e.Args.Contains("--verify-noxelyra")||e.Args.Contains("--verify-release")||e.Args.Contains("--verify-advanced")||e.Args.Contains("--capture-advanced"))?new VerificationWindowService():null;
             IntroWindow.Suppressed = verification || e.Args.Contains("--verify") || dirty || e.Args.Contains("--safe-mode");
+            var safeStart = dirty || e.Args.Contains("--safe-mode");
+            // Start under the intro's last frame; when the intro is off or skipped, start right after it.
+            IntroWindow.BeforeReveal = async () => { controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, safeStart, advancedSignals); controller.Start(); await controller.DesktopReadyAsync(); };
             await IntroWindow.PlayAsync(loaded.Settings, directory);
-            controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, dirty || e.Args.Contains("--safe-mode"),advancedSignals); controller.Start();
+            IntroWindow.BeforeReveal = null;
+            if (controller is null) { controller = new(loaded, store, monitorService, new WindowsMetrics(), new WindowsLauncher(), recovery, log, safeStart, advancedSignals); controller.Start(); }
+            if (!verification && !e.Args.Contains("--verify")) controller.ShowFirstRun();
             if(!verification&&!e.Args.Contains("--verify"))commands=new(command=>{if(command=="launcher")controller.ShowLauncher();else if(command=="dock")controller.SummonDock();else if(command=="exit")controller.Exit();else controller.ShowFullControls();});
             if(verification&&e.Args.Contains("--verify-desktop-acceptance"))await DesktopAcceptanceVerifier.RunAsync(controller,directory);
             else if(verification&&e.Args.Contains("--verify-noxelyra"))await NoxelyraVerifier.RunAsync(controller,directory,advancedSignals!);

@@ -1,5 +1,15 @@
 # Değişiklikler
 
+## 0.40.0 · 2026-10-30 · Daha kullanışlı: rehber, ayar merkezi, temiz açılış
+
+- **İlk kurulum rehberi:** yeni kurulumda renk seçimi; Win tuşu başlatıcısı, Alt+Tab, otomatik döşeme, görev çubuğunu gizleme ve Windows ile başlama önerilen ayar olarak işaretli gelir (her biri açıklamalı, kaldırılabilir); bilmen gereken kısayollar. "Atla" hepsini kapalı bırakır. Ayarlar'dan yeniden açılabilir.
+- **Ayar merkezi:** "Ayarlar" artık tek bir yerden açılıyor: her alan bir kart (görünüm, hızlı ayarlar, klavye, masaüstü ve Windows, widget'lar, hafifletme, profiller, Noxelyra Music, kısayollar) ve tüm ayarlarda arama ("alt tab", "duvar kağıdı", "saat"…) doğru pencereyi açar.
+- **Kısayollar ve ipuçları:** kullanılan tuşlarla tüm kısayollar, ada kartı tuşları ve kolay gözden kaçan özellikler tek sayfada (Ayarlar, başlatıcı, bar menüsü ve tepsi menüsünden).
+- **Temiz açılış:** Noxelyra artık giriş animasyonunun son karesinin arkasında kuruluyor; animasyon, masaüstü alanı açılıp gizlenecek görev çubuğu gizlenince kalkıyor. Aradaki anlık normal masaüstü ve görev çubuğu görünmüyor, açılış da kurulum animasyonla paralel olduğu için daha kısa.
+- İlk açılıştaki "Windows ile başlasın mı?" kutusu rehbere taşındı (animasyonun arkasında kalabiliyordu).
+
+QA: 103/103 birim testi. Rehber, ayar merkezi ve yeni açılış akışı görsel olarak denenmedi (kullanıcı oyundaydı); elle denenmeli.
+
 ## 0.39.3 · 2026-10-29 · Alt+0 kartı oyunun üstünde kalıyor
 
 - Kayıtlar Alt+0'ın League of Legends içinde de geldiğini gösterdi; kart bazen görünmüyordu çünkü oyun kendi penceresini sürekli en üste itiyor. Kart Alt+0 ile açıkken üstte kalmayı saniyede dört kez yeniliyor (pencereyi etkinleştirmeden). Gerçek "özel tam ekran" modunda yine görünmeyebilir. Test edilmeden yayımlandı.

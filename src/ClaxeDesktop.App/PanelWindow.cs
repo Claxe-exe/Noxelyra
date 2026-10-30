@@ -149,7 +149,8 @@ public sealed class PanelWindow : FloatingWindow
     {
         var menu = new ContextMenu();
         void Add(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => action(); menu.Items.Add(item); }
-        Add("Ayarlar", controller.ShowSettings);
+        Add("Ayarlar", controller.ShowHub);
+        Add("Kısayollar ve ipuçları", controller.ShowShortcuts);
         Add("Kontrol merkezi", controller.ShowFullControls);
         Add("Klavye ve kısayollar", controller.ShowKeyboard);
         Add("Masaüstü alanını aç", controller.ShowDesktopSpace);

@@ -58,7 +58,7 @@ internal sealed class QuickSettingsWindow : Window
         var header = new DockPanel { Margin = new(4, 0, 0, 12) };
         var actions = new StackPanel { Orientation = Orientation.Horizontal }; DockPanel.SetDock(actions, Dock.Right); header.Children.Add(actions);
         actions.Children.Add(IconButton("\uE8A7", "Kontrol merkezini aç", () => { Leave(); controller.ShowFullControls(); }));
-        actions.Children.Add(IconButton("\uE713", "Ayarlar", () => { Leave(); controller.ShowSettings(); }));
+        actions.Children.Add(IconButton("\uE713", "Ayarlar", () => { Leave(); controller.ShowHub(); }));
         var power = IconButton("\uE7E8", "Noxelyra menüsü", null); actions.Children.Add(power);
         power.Click += (_, _) => PowerMenu(power);
         var titles = new StackPanel(); header.Children.Add(titles);

@@ -13,6 +13,18 @@ public sealed partial class DesktopController
     internal nint ForegroundWindow => windowService.Foreground;
     internal void RaiseDesktopParts() { foreach (var window in windows.Where(w => w.IsVisible)) RaiseDesktopPart(new System.Windows.Interop.WindowInteropHelper(window).Handle, 0, 0, 0, 0, 0, 0x0013); }
     internal DesktopSpaceWindow? SpaceWindow => desktopSpace;
+    /// <summary>Waits (at most 2.5 s) until the Noxelyra desktop is up and a hidden taskbar is really hidden.</summary>
+    internal async Task DesktopReadyAsync()
+    {
+        for (int i = 0; i < 25; i++)
+        {
+            KeepTaskbarHidden();
+            var space = safe || !committed.DesktopSpace.Enabled || desktopSpace is { IsVisible: true };
+            var taskbar = safe || !(committed.HideWindowsTaskbar && committed.DesktopSpace.HideTaskbarCompletely) || !TaskbarWindows.AnyVisible();
+            if (space && taskbar) return;
+            await Task.Delay(100);
+        }
+    }
     private void StartDesktopSpace() { _ = CheckUpdatesLaterAsync(); _ = RestoreExternalWallpaperAsync(); ConfigureDesktopFollowing(); ConfigureShowDesktop(); if (!safe && committed.DesktopSpace.Enabled) OpenDesktopSpace(!committed.DesktopSpace.FollowDesktop); }
     public async void ShowDesktopSpace()
     {

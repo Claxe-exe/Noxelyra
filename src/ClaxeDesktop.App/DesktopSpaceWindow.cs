@@ -159,7 +159,7 @@ internal sealed class DesktopSpaceWindow : Window
         menu.Items.Add(new Separator());
         Item(menu, "Widget atölyesi", controller.Widgets.ShowEditor);
         Item(menu, "Kontrol merkezi", controller.ShowFullControls);
-        Item(menu, "Ayarlar", controller.ShowSettings);
+        Item(menu, "Ayarlar", controller.ShowHub);
         return menu;
     }
     private static void Item(ItemsControl menu, string text, Action action, bool enabled = true) { var item = new MenuItem { Header = text, IsEnabled = enabled }; item.Click += (_, _) => action(); menu.Items.Add(item); }

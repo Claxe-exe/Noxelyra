@@ -67,20 +67,11 @@ public sealed partial class DesktopController
         saveTimer.Tick += async (_, _) => { saveTimer.Stop(); await SaveCommittedAsync(); };
         SystemEvents.DisplaySettingsChanged += DisplayChanged; SystemEvents.SessionSwitch += SessionChanged; SystemEvents.PowerModeChanged += PowerChanged;
         tray = new Forms.NotifyIcon { Text = "Noxelyra Desktop", Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application, Visible = true };
-        var menu = new Forms.ContextMenuStrip(); menu.Items.Add("Noxelyra masaüstü alanını aç", null, (_, _) => ShowDesktopSpace()); menu.Items.Add("Dock'u öne getir · Alt+K", null, (_, _) => SummonDock()); menu.Items.Add("Uygulamalar", null, (_, _) => ShowLauncher()); menu.Items.Add("Hızlı ayarlar ve bildirimler", null, (_, _) => ShowQuickSettings()); menu.Items.Add("Kontrol merkezi", null, (_, _) => ShowFullControls()); menu.Items.Add("Hafifletme", null, (_, _) => ShowLighten()); menu.Items.Add("Profiller ve pencere düzenleri", null, (_, _) => ShowAdvanced()); menu.Items.Add("Ayarlar", null, (_, _) => ShowSettings()); menu.Items.Add("Widget atölyesi", null, (_, _) => Widgets.ShowEditor()); menu.Items.Add("Widget rafını göster / gizle", null, (_, _) => Widgets.ToggleShelf()); menu.Items.Add("Panelleri göster", null, (_, _) => { foreach (var w in windows.Where(w => w.IsVisible)) w.Activate(); }); menu.Items.Add("Noxelyra'dan çık", null, (_, _) => Exit()); tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => ShowSettings();
+        var menu = new Forms.ContextMenuStrip(); menu.Items.Add("Noxelyra masaüstü alanını aç", null, (_, _) => ShowDesktopSpace()); menu.Items.Add("Dock'u öne getir · Alt+K", null, (_, _) => SummonDock()); menu.Items.Add("Uygulamalar", null, (_, _) => ShowLauncher()); menu.Items.Add("Hızlı ayarlar ve bildirimler", null, (_, _) => ShowQuickSettings()); menu.Items.Add("Kontrol merkezi", null, (_, _) => ShowFullControls()); menu.Items.Add("Hafifletme", null, (_, _) => ShowLighten()); menu.Items.Add("Profiller ve pencere düzenleri", null, (_, _) => ShowAdvanced()); menu.Items.Add("Ayarlar", null, (_, _) => ShowHub()); menu.Items.Add("Kısayollar ve ipuçları", null, (_, _) => ShowShortcuts()); menu.Items.Add("Widget atölyesi", null, (_, _) => Widgets.ShowEditor()); menu.Items.Add("Widget rafını göster / gizle", null, (_, _) => Widgets.ToggleShelf()); menu.Items.Add("Panelleri göster", null, (_, _) => { foreach (var w in windows.Where(w => w.IsVisible)) w.Activate(); }); menu.Items.Add("Noxelyra'dan çık", null, (_, _) => Exit()); tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => ShowHub();
         // Only the installed copy may (re)write the sign-in shortcut; a build or publish folder must never become what Windows starts.
         if (!safe && Environment.GetEnvironmentVariable("CLAXE_DATA_DIR") is null && Startup.Enabled && Updates.Installed)
         {
             try { Startup.SetEnabled(true); } catch (Exception ex) { Log.Write("startup-migration-failed", ex); ViewModel.Status = "Başlangıç kısayolu güncellenemedi; ayarlardan yeniden etkinleştir."; }
-        }
-        if (!committed.FirstRunComplete)
-        {
-            ShowSettings();
-            var choice = MessageBox.Show(settingsWindow!, "Noxelyra Desktop Windows oturumuyla birlikte başlasın mı?\n\nBu tercihi Ekranlar ve oturum bölümünden değiştirebilirsin.", "Noxelyra'a hoş geldin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            if (choice == MessageBoxResult.Yes) { try { Startup.SetEnabled(true); } catch (Exception ex) { Log.Write("startup-failed", ex); ViewModel.Status = "Otomatik başlatma ayarlanamadı."; } }
-            committed = committed with { FirstRunComplete = true }; ViewModel.Replace(committed);
-            if (settingsWindow is not null) settingsWindow.StartupCheck.IsChecked = Startup.Enabled;
-            _ = SaveCommittedAsync();
         }
         if (safe) ShowSettings();
         Log.Write(safe ? "started-safe" : "started");

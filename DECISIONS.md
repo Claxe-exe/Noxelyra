@@ -154,3 +154,7 @@
 - Alt+0 ile açılan kart WS_EX_NOACTIVATE ile odak almaz, böylece oyun alta inmez. Fare kilitli oyunlarda kullanılabilsin diye kart açıkken ←/→/↑/↓/Boşluk/Tab/Esc RegisterHotKey ile geçici olarak karta bağlanır; 12 sn boşta kalınca veya kart kapanınca bırakılır. Tuş kaydı ya da genel kanca yoktur.
 - Monitör parlaklığı belgelenmiş Monitor Configuration API (dxva2, DDC/CI) ile; desteklenmiyorsa sahte kaydırıcı yerine açıklama gösterilir. Gece ışığı ve ses çıkış aygıtı değiştirme için belgelenmiş API olmadığından eklenmedi.
 - "Uygulamayı kapat" iki aşamalıdır ve explorer, dwm, csrss, winlogon, svchost gibi kabuk/oturum süreçleri ile Noxelyra'yı reddeder; yönetici olarak çalışan uygulamalar kapatılamazsa bunu söyler.
+
+## Yeni kurulumda önerilen ayarlar · 30 Ekim 2026
+
+- Kullanıcı yeni bir PC'de kurunca Win tuşu ve Alt+Tab'ın Windows'ta kaldığını gördü ve bunların varsayılan olarak Noxelyra'nınki olmasını istedi. Kural "riskli özellik varsayılan kapalı" olduğu için ayar modelinin varsayılanları kapalı kaldı; bunun yerine ilk kurulum rehberi Win başlatıcısı, Alt+Tab, döşeme, görev çubuğu gizleme ve Windows ile başlamayı açıklamalı ve işaretli sunar. Kullanıcı Bitir'e basana kadar hiçbir şey değişmez; "Atla" hepsini kapalı bırakır; acil çıkış rehberin ilk sayfasında yazar.
