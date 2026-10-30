@@ -34,7 +34,7 @@ internal static class HubEntries
             new("\uE790", "Duvar kâğıdından renk al", "Duvar kâğıdından okunaklı bir palet üret", "pywal renk tema duvar kağıdı rice", c => _ = c.UseWallpaperPaletteAsync()),
             new("\uE8C8", "Rice dışa / içe aktar", "Görünümün tamamını tek dosyayla paylaş", "rice noxrice paylaş yedek dışa aktar içe aktar", c => c.ShowFullControls()),
             new("\uE7BA", "Acil çıkış", "Ctrl+Shift+Ü Noxelyra'yı hemen kapatır, Windows'u eski haline getirir", "acil kapat panik çıkış", c => c.ShowShortcuts()),
-            new("\uE8D6", "Dinamik ada kartı", "Adaya tıkla ya da Alt+0: parça, ±10 sn, hava durumu, ses, parlaklık", "ada alt 0 kart müzik hava durumu şehir parlaklık mikrofon", c => c.ShowShortcuts()),
+            new("\uE8D6", "Dinamik ada kartı", "Adaya tıkla ya da Alt+0: parça, ±10 sn, hava, ses, parlaklık; Genişlet ile kontrol merkezi", "ada alt 0 kart müzik hava durumu şehir parlaklık mikrofon wifi bluetooth ağ sistem görev yöneticisi kapat yeniden başlat kontrol merkezi", c => c.ShowShortcuts()),
             new("\uE70E", "Gizli simgeler (tepsi)", "Bardaki ˄ düğmesi Windows'un gizli simgeler panelini açar", "tepsi tray gizli simgeler bildirim alanı", c => c.ShowTray()),
         };
         foreach (var setting in SettingsCatalog.Supported)

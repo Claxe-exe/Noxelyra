@@ -21,9 +21,10 @@ namespace ClaxeDesktop.App;
 /// monitor brightness, a screenshot, "close the frozen app" and pinned apps. Both pages keep one size; the arrow switches them.
 /// From the bar it opens under the island like a menu. With the island shortcut (Alt+0) it drops in at the top of the screen
 /// without taking focus, so a game keeps running; while it is up, ←/→ seek, ↑/↓ volume, Space plays/pauses, Tab flips the page
-/// and Esc closes it, and it hides itself after a few idle seconds so those keys go back to the game.
+/// and Esc closes it, and it hides itself after a few idle seconds so those keys go back to the game. The button under page 1
+/// grows it into the full control center (IslandCardWide.cs).
 /// </summary>
-internal sealed class IslandCard : Window
+internal sealed partial class IslandCard : Window
 {
     private const string IconFont = "Segoe Fluent Icons, Segoe MDL2 Assets";
     private const double CardWidth = 468, CardHeight = 236, Shadow = 16, PageWidth = 404, PageHeight = 186;
@@ -111,16 +112,20 @@ internal sealed class IslandCard : Window
         SetResourceReference(ForegroundProperty, "Text");
         card.SetResourceReference(Border.BorderBrushProperty, "Line");
         card.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 30, ShadowDepth = 6, Opacity = .5, Color = Colors.Black };
+        // Centred and pinned to the top, so growing into the control center opens downwards and to both sides.
+        card.HorizontalAlignment = HorizontalAlignment.Center; card.VerticalAlignment = VerticalAlignment.Top;
         card.RenderTransformOrigin = new(.5, 0); card.RenderTransform = grow; Content = card;
 
         var layout = new Grid();
         layout.ColumnDefinitions.Add(new() { Width = new(PageWidth) }); layout.ColumnDefinitions.Add(new());
         layout.RowDefinitions.Add(new() { Height = new(PageHeight) }); layout.RowDefinitions.Add(new());
         // Background layer (blurred cover or the video showing through) under the pages, clipped to the card's corners.
-        var host = new Grid { Clip = new RectangleGeometry(new Rect(0, 0, CardWidth - 2, CardHeight - 2), 27, 27) };
+        var host = new Grid(); host.SizeChanged += (_, e) => host.Clip = new RectangleGeometry(new Rect(e.NewSize), 27, 27);
         shade.Background = new LinearGradientBrush(Color.FromArgb(0xC8, 0, 0, 0), Color.FromArgb(0x50, 0, 0, 0), 0);
         host.Children.Add(blurArt); host.Children.Add(shade); host.Children.Add(videoRim);
-        layout.Margin = new(16, 16, 16, 8); host.Children.Add(layout); card.Child = host;
+        // The pages keep their size and corner when the card grows; the control center fills the rest.
+        layout.Margin = new(16, 16, 16, 8); layout.Width = CardWidth - 34; layout.Height = CardHeight - 26; layout.HorizontalAlignment = HorizontalAlignment.Left; layout.VerticalAlignment = VerticalAlignment.Top;
+        host.Children.Add(layout); card.Child = host;
         // A Canvas, not a StackPanel: a panel narrower than its content clips it, which would hide page 2 after the slide.
         var strip = new Canvas { RenderTransform = slide };
         var viewport = new Border { ClipToBounds = true, Child = strip }; layout.Children.Add(viewport);
@@ -229,6 +234,8 @@ internal sealed class IslandCard : Window
         hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); footer.Children.Add(hint);
         var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         dot1.Margin = new(3); dot2.Margin = new(3); dots.Children.Add(dot1); dots.Children.Add(dot2); footer.Children.Add(dots);
+        footer.Children.Add(BuildExpandButton());
+        BuildWide(host);
 
         SourceInitialized += (_, _) => { hwnd = new WindowInteropHelper(this).Handle; HwndSource.FromHwnd(hwnd)?.AddHook(Hook); };
         Deactivated += (_, _) => { if (!summoned && IsVisible) Leave(); };
@@ -291,6 +298,7 @@ internal sealed class IslandCard : Window
     }
     private void Prepare(nint target)
     {
+        SetExpanded(false, animate: false);
         var palette = ThemePresets.Resolve(controller.ViewModel.Settings);
         var canvas = (Color)ColorConverter.ConvertFromString(palette.Canvas); canvas.A = 0xF2; opaqueBrush = new SolidColorBrush(canvas); canvas.A = 0x30; glassBrush = new SolidColorBrush(canvas); card.Background = opaqueBrush;
         hint.Text = summoned ? "←/→ 10 sn · ↑/↓ ses · Boşluk oynat · Tab sayfa · Esc kapat" : "";
@@ -317,6 +325,7 @@ internal sealed class IslandCard : Window
     private void Flip(int target, bool animate = true)
     {
         page = target; arrowGlyph.Text = page == 0 ? "\uE76C" : "\uE76B";
+        if (expandButton is not null) expandButton.Visibility = page == 0 || expanded ? Visibility.Visible : Visibility.Hidden;
         dot1.SetResourceReference(Shape.FillProperty, page == 0 ? "Accent" : "Line"); dot2.SetResourceReference(Shape.FillProperty, page == 1 ? "Accent" : "Line");
         if (animate && Motion.Enabled(controller.ViewModel)) Motion.To(slide, TranslateTransform.XProperty, -page * PageWidth, 320);
         else { slide.BeginAnimation(TranslateTransform.XProperty, null); slide.X = -page * PageWidth; }
@@ -386,6 +395,7 @@ internal sealed class IslandCard : Window
             catch (Exception ex) when (ex is COMException or InvalidOperationException or UnauthorizedAccessException) { track = null; }
             ShowTrack();
             await RefreshAppAsync();
+            await RenderWideAsync();
         }
         finally { polling = false; }
     }
@@ -435,7 +445,7 @@ internal sealed class IslandCard : Window
     }
     private void ApplyBackground()
     {
-        var front = page == 0 && IsVisible && !leaving;
+        var front = page == 0 && !expanded && IsVisible && !leaving;
         var video = front && videoOn && videoCrop is not null && playerWindow != 0 && WindowOps.Read(playerWindow) is { Minimized: false };
         if (video && WindowOps.Read(hwnd)?.Bounds is { } b)
         {
@@ -498,7 +508,7 @@ internal sealed class IslandCard : Window
             sampler ??= await Task.Run(() => new PerformanceSampler());
             var current = sampler; if (current is null || !IsVisible) return;
             var sample = await Task.Run(current.Sample);
-            if (IsVisible) Stat("gpu", sample.Gpu);
+            if (IsVisible) { lastPerformance = sample; Stat("gpu", sample.Gpu); }
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or ObjectDisposedException) { Stat("gpu", null); }
     }

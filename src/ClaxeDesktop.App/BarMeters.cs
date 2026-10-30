@@ -11,6 +11,8 @@ namespace ClaxeDesktop.App;
 internal sealed class NetworkMeter
 {
     internal const int HistoryLength = 60;
+    /// <summary>Sampled once a second by the bar; read by the island card.</summary>
+    internal static readonly NetworkMeter Shared = new();
     private readonly object gate = new();
     private readonly Queue<(double Down, double Up)> history = new();
     private long lastDown, lastUp; private DateTime lastAt; private bool primed;
@@ -57,6 +59,16 @@ internal sealed class NetworkMeter
         < 1024L * 1024 * 1024 => $"{bytes / 1024.0 / 1024:0} MB",
         _ => (bytes / 1024.0 / 1024 / 1024).ToString("0.00", CultureInfo.GetCultureInfo("tr-TR")) + " GB",
     };
+}
+
+/// <summary>The last minute of CPU and RAM load (percent), filled by the bar's tick.</summary>
+internal static class SystemHistory
+{
+    private static readonly object gate = new();
+    private static readonly Queue<(double Cpu, double Memory)> samples = new();
+    internal static void Push(double cpu, double memory) { lock (gate) { samples.Enqueue((cpu, memory)); while (samples.Count > NetworkMeter.HistoryLength) samples.Dequeue(); } }
+    internal static double[] Cpu { get { lock (gate) return samples.Select(s => s.Cpu).ToArray(); } }
+    internal static double[] Memory { get { lock (gate) return samples.Select(s => s.Memory).ToArray(); } }
 }
 
 /// <summary>Per-app CPU and memory, grouped by process name, for the system panel. CPU needs two samples; protected processes are skipped.</summary>

@@ -4,48 +4,10 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using System.Windows.Interop;
-using ClaxeDesktop.Platform.Win;
 using System.Windows.Shapes;
 namespace ClaxeDesktop.App;
 
-/// <summary>
-/// A drop-down panel under a bar island. A small window rather than a WPF Popup, so it opens and closes with the same
-/// animation as Noxelyra's other windows; a click elsewhere, Esc or the island again closes it.
-/// </summary>
-internal sealed class BarPanel : Window
-{
-    internal FrameworkElement Anchor { get; }
-    internal BarPanel(FrameworkElement anchor, double width, StackPanel body, DesktopController controller)
-    {
-        Anchor = anchor;
-        WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false; Topmost = true;
-        ResizeMode = ResizeMode.NoResize; SizeToContent = SizeToContent.WidthAndHeight; WindowStartupLocation = WindowStartupLocation.Manual; Left = -32000; Top = -32000;
-        Title = "Noxelyra"; SetResourceReference(ForegroundProperty, "Text");
-        var card = new Border { Width = width, Padding = new(18, 16, 18, 16), CornerRadius = new(16), BorderThickness = new(1), Child = body };
-        card.SetResourceReference(Border.BackgroundProperty, "Surface"); card.SetResourceReference(Border.BorderBrushProperty, "Line");
-        card.Effect = new DropShadowEffect { BlurRadius = 26, ShadowDepth = 5, Opacity = .42, Color = Colors.Black };
-        // The margin leaves room for the shadow; the card itself lands just under the island, centred on it.
-        Content = new Border { Child = card, Margin = new(14) };
-        Motion.Attach(this, controller.ViewModel, () => controller.IsExiting);
-        Loaded += (_, _) => Place();
-        Deactivated += (_, _) => { if (IsVisible) Close(); };
-        PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { Close(); e.Handled = true; } };
-    }
-    private void Place()
-    {
-        if (PresentationSource.FromVisual(Anchor) is null) return;
-        var origin = Anchor.PointToScreen(new Point(0, 0));
-        var anchorScale = VisualTreeHelper.GetDpi(Anchor).DpiScaleX; var scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-        double width = ActualWidth * scale, anchorWidth = Anchor.ActualWidth * anchorScale;
-        var x = origin.X + (anchorWidth - width) / 2; var y = origin.Y + Anchor.ActualHeight * anchorScale - 8 * scale;
-        var area = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)origin.X, (int)origin.Y)).WorkingArea;
-        x = Math.Clamp(x, area.Left - 10 * scale, Math.Max(area.Left, area.Right - width + 10 * scale));
-        WindowPlacement.Move(new WindowInteropHelper(this).Handle, (int)x, (int)y);
-    }
-}
-
-/// <summary>Building blocks for the bar's drop-down panels: small graphs, meters and rows.</summary>
+/// <summary>Building blocks for the island card's expanded view: small graphs, meters and rows.</summary>
 internal static class BarPopup
 {
     private const string IconFont = "Segoe Fluent Icons, Segoe MDL2 Assets";
