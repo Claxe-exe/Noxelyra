@@ -182,7 +182,27 @@ public sealed partial class PanelWindow : FloatingWindow
         var infinite = new Size(double.PositiveInfinity, double.PositiveInfinity);
         left.Measure(infinite); right.Measure(infinite);
         var centred = clockIsland.Parent == center;
+        GrowToFit(left.DesiredSize.Width + right.DesiredSize.Width + (centred ? IslandRoom : 0));
         island.Available = Math.Max(80, (centred ? row.ActualWidth - left.DesiredSize.Width - right.DesiredSize.Width : 380) - 12);
+    }
+    // Room the centred island needs for the clock, weather and a short track title.
+    private const double IslandRoom = 330;
+    private bool growing;
+    /// <summary>
+    /// A floating bar widens (about its centre, within the screen) when its modules need more than the chosen width, and returns
+    /// to the chosen width when they need less, so islands never overlap.
+    /// </summary>
+    private void GrowToFit(double content)
+    {
+        if (growing || Integrated || !IsLoaded || PresentationSource.FromVisual(this) is null) return;
+        var area = System.Windows.Forms.Screen.FromHandle(new System.Windows.Interop.WindowInteropHelper(this).Handle).WorkingArea;
+        var scale = VisualTreeHelper.GetDpi(this).DpiScaleX; double screenLeft = area.Left / scale, screenWidth = area.Width / scale;
+        var chrome = ActualWidth - row.ActualWidth;
+        var wanted = Math.Min(screenWidth - 16, Math.Max(Math.Min(vm.PanelWidth, screenWidth), content + chrome));
+        if (Math.Abs(wanted - Width) < 2) return;
+        growing = true;
+        try { var middle = Left + Width / 2; Width = wanted; Left = Math.Clamp(middle - wanted / 2, screenLeft + 8, screenLeft + screenWidth - wanted - 8); }
+        finally { growing = false; }
     }
     public void UpdateOrder(bool clockLeft)
     {
