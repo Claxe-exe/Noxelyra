@@ -216,7 +216,8 @@ internal sealed partial class IslandCard
             System.Windows.Automation.AutomationProperties.SetName(close, window.Title + " kapat");
             var target = window; close.Click += (_, _) => { Touch(); WindowOps.Close(target.Handle); windowsSignature = ""; };
             DockPanel.SetDock(close, Dock.Right); row.Children.Add(close);
-            var face = new StackPanel { Orientation = Orientation.Horizontal };
+            // A fixed width keeps short titles at the left edge; the button template centres its content.
+            var face = new StackPanel { Orientation = Orientation.Horizontal, Width = WideColumn - 44 };
             var image = new Image { Width = 16, Height = 16, Margin = new(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center }; face.Children.Add(image);
             face.Children.Add(new TextBlock { Text = window.Title, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = WideColumn - 70, VerticalAlignment = VerticalAlignment.Center });
             var open = new Button { Content = face, Padding = new(6, 4, 6, 4), Background = Brushes.Transparent, BorderThickness = new(0), HorizontalContentAlignment = HorizontalAlignment.Left, ToolTip = window.Title };
