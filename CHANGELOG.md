@@ -1,5 +1,10 @@
 # Değişiklikler
 
+## 0.40.2 · 2026-10-30 · Otomatik döşeme varsayılan olarak kapalı
+
+- İlk kurulum rehberi otomatik döşemeyi artık işaretsiz sunuyor: açılan her pencerenin kendiliğinden yarım/tam ekrana yerleşmesi çoğu kullanıcıyı rahatsız etti. Pencereler Windows'taki gibi kendi boyutunda açılır; isteyen rehberden ya da Ayarlar → Klavye ve kısayollar'dan açar. Win tuşu başlatıcısı, Alt+Tab ve görev çubuğunu gizleme işaretli kalıyor.
+- 0.40.1'deki açılışta donma düzeltmesini de içerir.
+
 ## 0.40.1 · 2026-10-30 · Açılışta donma düzeltmesi
 
 - **Açılış animasyonu artık donmaz:** 0.40.0'da Noxelyra, tam ekran açılış animasyonunun altında aynı iş parçacığında kuruluyordu. Kurulum (özellikle güncellemeden sonraki ilk, soğuk açılışta) birkaç saniye takılınca tüm ekran donmuş görünüyor, tıklayınca Windows "yanıt vermiyor" deyip uygulamayı kapatıyordu. Animasyon artık kendi iş parçacığında oynuyor, Noxelyra'yı en fazla 8 sn bekliyor ve sonra her durumda kalkıyor.

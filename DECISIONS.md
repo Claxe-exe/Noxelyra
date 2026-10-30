@@ -163,3 +163,7 @@
 
 - 0.40.0'daki "animasyonun altında başla" akışı, ana iş parçacığındaki her takılmayı ekranı kaplayan, en üstteki bir pencerenin donması hâline getirdi; kullanıcı bunu çökme olarak yaşadı (Windows AppHang kaydı, iki kez). Animasyon kendi STA iş parçacığına ve kendi Dispatcher'ına taşındı; uygulamanın örtük stilleri ana iş parçacığının fırçalarını kullandığı için animasyon penceresi bunlardan çıkarıldı. Bekleme süresi 8 sn ile sınırlı.
 - Geliştirme notu: Claude masaüstü uygulaması paketli (MSIX) bir uygulama; onun içinden başlatılan komutların `%LOCALAPPDATA%` altına yeni oluşturduğu dosyalar Claude'un kendi `Packages\Claude_…\LocalCache` klasörüne yönlendiriliyor. Buradan yapılan kurulumlar bu yüzden kullanıcının gerçek kurulumunu değil sanal bir kopyasını güncelliyordu. Yerel kurulum ve açılış paket bağlamı dışında (WMI `Win32_Process.Create`) yapılmalı.
+
+## Otomatik döşeme rehberde işaretsiz · 30 Ekim 2026
+
+- Kullanıcı, açılan her pencerenin otomatik yarım/tam ekrana yerleşmesinden rahatsız olup döşemenin tamamen kapanmasını istedi. Rehber bu seçeneği artık işaretsiz sunuyor; ayar modelinde zaten kapalıydı. Özellik kaldırılmadı, isteyen açabilir.

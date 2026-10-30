@@ -6,7 +6,7 @@ using ClaxeDesktop.Core;
 namespace ClaxeDesktop.App;
 
 /// <summary>
-/// First-run guide: theme, the Linux-style takeovers (pre-ticked; each one explained and switchable), start with Windows and the
+/// First-run guide: theme, the Linux-style takeovers (each one explained and switchable; all but auto tiling pre-ticked), start with Windows and the
 /// shortcuts worth knowing. Nothing changes until "Bitir"; "Atla" leaves every takeover off.
 /// </summary>
 internal sealed class FirstRunWindow : Window
@@ -16,7 +16,7 @@ internal sealed class FirstRunWindow : Window
     private readonly StackPanel dots = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button back = new() { Content = "Geri", Padding = new(16, 8, 16, 8) }, next = new() { Content = "İleri", Padding = new(20, 8, 20, 8) }, skip = new() { Content = "Atla", Padding = new(14, 8, 14, 8) };
     private readonly CheckBox super = Option("Win tuşu Noxelyra başlatıcısını açsın", true), altTab = Option("Alt+Tab Noxelyra'nın canlı önizlemeli değiştiricisi olsun", true),
-        tiling = Option("Yeni pencereler otomatik döşensin (Hyprland gibi)", true), taskbar = Option("Windows görev çubuğu Noxelyra açıkken gizlensin", true),
+        tiling = Option("Yeni pencereler otomatik döşensin (Hyprland gibi)", false), taskbar = Option("Windows görev çubuğu Noxelyra açıkken gizlensin", true),
         startup = Option("Noxelyra Windows ile birlikte başlasın", true);
     private readonly List<Func<FrameworkElement>> pages;
     private int index;
@@ -95,7 +95,7 @@ internal sealed class FirstRunWindow : Window
             list.Children.Add(line);
         }
         list.Children.Add(startup);
-        return Page("Windows'u Noxelyra'ya bırak", "Hepsi önerilen ayar olarak işaretli; istemediğini kaldır. Bitir'e basana kadar hiçbir şey değişmez, sonra Ayarlar → Klavye ve kısayollar'dan da değiştirebilirsin.", list);
+        return Page("Windows'u Noxelyra'ya bırak", "Otomatik döşeme dışında hepsi önerilen ayar olarak işaretli; istemediğini kaldır. Bitir'e basana kadar hiçbir şey değişmez, sonra Ayarlar → Klavye ve kısayollar'dan da değiştirebilirsin.", list);
     }
     private FrameworkElement Shortcuts()
     {
