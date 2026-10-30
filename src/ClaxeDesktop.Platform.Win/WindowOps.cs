@@ -68,6 +68,7 @@ public static class WindowOps
     }
     public static void Close(nint hwnd) => PostMessage(hwnd, 0x0010, 0, 0);
     public static void Maximize(nint hwnd, bool on) => ShowWindow(hwnd, on ? 3 : 9);
+    public static void Minimize(nint hwnd) => ShowWindow(hwnd, 6);
     public static bool Focus(nint hwnd) { if (IsIconic(hwnd)) ShowWindow(hwnd, 9); return SetForegroundWindow(hwnd); }
     public static nint Foreground => GetForegroundWindow();
     /// <summary>Where the visible frame (what screen capture sees) starts inside the window rectangle (what DWM thumbnails use).</summary>

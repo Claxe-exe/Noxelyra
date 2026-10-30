@@ -29,6 +29,12 @@ internal sealed class QuickSettingsWindow : Window
     private readonly List<(ToggleButton Tile, TextBlock State, Func<bool> Read, bool Editable)> tiles = [];
     private readonly Slider volume = new() { Minimum = 0, Maximum = 100, Margin = new(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, IsSnapToTickEnabled = true, TickFrequency = 1 };
     private readonly TextBlock volumeText = Figure(), volumeGlyph = Glyph("\uE767", 16);
+    private readonly Slider brightness = new() { Minimum = 0, Maximum = 100, Margin = new(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, IsSnapToTickEnabled = true, TickFrequency = 1 };
+    private readonly TextBlock brightnessText = Figure();
+    private readonly DockPanel brightnessRow = new() { Margin = new(4, 6, 4, 0), Visibility = Visibility.Collapsed };
+    private readonly DispatcherTimer brightnessSave = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private nint brightnessMonitor;
+    private readonly TextBlock connection = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new(4, 8, 4, 0) };
     private readonly Button muteButton;
     private readonly Border mediaCard = new() { CornerRadius = new(16), Padding = new(10), Margin = new(4, 12, 4, 0), Visibility = Visibility.Collapsed };
     private readonly Border mediaArt = new() { Width = 44, Height = 44, CornerRadius = new(10), Margin = new(0, 0, 12, 0) };
@@ -69,6 +75,10 @@ internal sealed class QuickSettingsWindow : Window
 
         // Switches: three columns of real settings. Locked ones are dimmed in safe or read-only mode.
         var grid = new UniformGrid { Columns = 3, Margin = new(0, 0, 0, 4) }; root.Children.Add(grid);
+        // Radios first, like a phone's quick panel; Windows may refuse a change (policy, airplane mode) and says so in the status line.
+        Tile(grid, "\uE701", "Wi-Fi", () => ConnectivityService.Last.WifiOn == true, async on => controller.ViewModel.Status = await ConnectivityService.SetRadioAsync(Windows.Devices.Radios.RadioKind.WiFi, on), true);
+        Tile(grid, "\uE702", "Bluetooth", () => ConnectivityService.Last.BluetoothOn == true, async on => controller.ViewModel.Status = await ConnectivityService.SetRadioAsync(Windows.Devices.Radios.RadioKind.Bluetooth, on), true);
+        Tile(grid, "\uE74F", "Sessiz", () => { try { return audio.Read().Muted; } catch (Exception ex) when (ex is COMException or InvalidCastException) { return false; } }, on => { TryAudio(() => audio.SetMute(on)); _ = RefreshAsync(); return Task.CompletedTask; }, true);
         Tile(grid, "\uE708", "Rahatsız etme", () => controller.Notifications.DoNotDisturb, on => { controller.SetDoNotDisturb(on); return Task.CompletedTask; }, true);
         Tile(grid, "\uE8A9", "Döşeme", () => controller.Keyboard.Tiling, on => ChangeKeyboard(o => o with { Tiling = on }), editable);
         Tile(grid, "\uE721", "Win başlatıcı", () => controller.Keyboard.SuperLauncher, on => ChangeKeyboard(o => o with { SuperLauncher = on }), editable);
@@ -84,6 +94,7 @@ internal sealed class QuickSettingsWindow : Window
         var status = new TextBlock { FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new(4, 6, 4, 0), DataContext = controller.ViewModel };
         status.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); status.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Status)));
         root.Children.Add(status);
+        connection.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); root.Children.Add(connection);
 
         // Volume: Windows' default output device.
         var sound = new DockPanel { Margin = new(4, 14, 4, 0) };
@@ -92,6 +103,14 @@ internal sealed class QuickSettingsWindow : Window
         sound.Children.Add(volume); root.Children.Add(sound);
         System.Windows.Automation.AutomationProperties.SetName(volume, "Windows ses düzeyi");
         volume.ValueChanged += (_, _) => { volumeText.Text = $"%{volume.Value:0}"; if (!refreshing) TryAudio(() => audio.SetLevel((float)(volume.Value / 100))); };
+
+        // Brightness of the monitor the panel opened on, when it answers DDC/CI (laptop panels and many external monitors).
+        var sun = Glyph("\uE706", 16); sun.Margin = new(9, 0, 9, 0); DockPanel.SetDock(sun, Dock.Left); brightnessRow.Children.Add(sun);
+        brightnessText.MinWidth = 46; brightnessText.TextAlignment = TextAlignment.Right; DockPanel.SetDock(brightnessText, Dock.Right); brightnessRow.Children.Add(brightnessText);
+        brightnessRow.Children.Add(brightness); root.Children.Add(brightnessRow);
+        System.Windows.Automation.AutomationProperties.SetName(brightness, "Ekran parlaklığı");
+        brightness.ValueChanged += (_, _) => { brightnessText.Text = $"%{brightness.Value:0}"; if (!refreshing) { brightnessSave.Stop(); brightnessSave.Start(); } };
+        brightnessSave.Tick += (_, _) => { brightnessSave.Stop(); var monitor = brightnessMonitor; var value = (int)brightness.Value; _ = Task.Run(() => MonitorBrightness.Set(monitor, value)); };
 
         // The playing track, when an app publishes one.
         mediaCard.SetResourceReference(Border.BackgroundProperty, "Card");
@@ -140,7 +159,8 @@ internal sealed class QuickSettingsWindow : Window
         Deactivated += (_, _) => { if (IsVisible) Leave(); };
         poll.Tick += async (_, _) => await RefreshAsync();
         controller.NotificationsChanged += NotificationsChanged;
-        Closed += (_, _) => { poll.Stop(); controller.NotificationsChanged -= NotificationsChanged; };
+        ConnectivityService.Changed += ConnectivityChanged;
+        Closed += (_, _) => { poll.Stop(); controller.NotificationsChanged -= NotificationsChanged; ConnectivityService.Changed -= ConnectivityChanged; };
     }
     private Task ChangeKeyboard(Func<KeyboardOptions, KeyboardOptions> change) => controller.SetKeyboardAsync(change).ContinueWith(t => controller.ViewModel.Status = t.Result, TaskScheduler.FromCurrentSynchronizationContext());
     private void Tile(Panel parent, string glyph, string label, Func<bool> read, Func<bool, Task> change, bool editable)
@@ -172,8 +192,29 @@ internal sealed class QuickSettingsWindow : Window
         if (tile.Content is not Panel content) return;
         foreach (var text in content.Children.OfType<TextBlock>()) text.SetBinding(TextBlock.ForegroundProperty, new Binding(nameof(Foreground)) { Source = tile });
     }
+    private void ConnectivityChanged() { if (IsVisible) Sync(); }
+    private void RenderConnection()
+    {
+        var c = ConnectivityService.Last;
+        var text = c.Kind switch { "wifi" => "Wi-Fi", "ethernet" => "Ethernet", "cellular" => "Mobil", _ => "Ağ bağlantısı yok" };
+        if (c.Kind != "none") text += (c.Name is { } name ? " · " + name : "") + (c.Internet ? " · internet var" : " · internet yok");
+        if (c.BluetoothOn == true) text += c.BluetoothDevices.Count > 0 ? "  ·  Bluetooth: " + string.Join(", ", c.BluetoothDevices) : "  ·  Bluetooth açık, bağlı cihaz yok";
+        if (c.Battery is { } battery) text += $"  ·  Pil %{battery}" + (c.Charging ? " (şarjda)" : "");
+        connection.Text = text;
+    }
+    private async Task ReadBrightnessAsync()
+    {
+        var pointer = System.Windows.Forms.Cursor.Position; var monitor = MonitorBrightness.MonitorAt(pointer.X, pointer.Y);
+        MonitorBrightness.Reading? reading = null;
+        try { reading = await Task.Run(() => MonitorBrightness.Read(monitor)); } catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException) { }
+        if (reading is null) { brightnessRow.Visibility = Visibility.Collapsed; return; }
+        brightnessMonitor = monitor; refreshing = true;
+        try { if (!brightness.IsMouseCaptureWithin) brightness.Value = reading.Percent; brightnessText.Text = $"%{reading.Percent}"; } finally { refreshing = false; }
+        brightnessRow.Visibility = Visibility.Visible;
+    }
     private void Sync()
     {
+        RenderConnection();
         foreach (var (tile, state, read, _) in tiles)
         {
             bool on; try { on = read(); } catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException) { on = false; }
@@ -206,7 +247,7 @@ internal sealed class QuickSettingsWindow : Window
             Motion.To(card, OpacityProperty, 1, 200); Motion.To(slide, TranslateTransform.YProperty, 0, 340);
         }
         else { card.BeginAnimation(OpacityProperty, null); slide.BeginAnimation(TranslateTransform.YProperty, null); card.Opacity = 1; slide.Y = 0; }
-        poll.Start(); _ = RefreshAsync();
+        poll.Start(); _ = RefreshAsync(); _ = ReadBrightnessAsync(); _ = ConnectivityService.ReadAsync();
         // Seen now; the bar's unread dot goes away while the list still marks what was new.
         controller.MarkNotificationsRead();
     }

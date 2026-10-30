@@ -1,5 +1,15 @@
 # Değişiklikler
 
+## 0.41.0 · 2026-10-30 · Dolu üst bar
+
+- **Açık uygulamalar:** barın solunda çalışan uygulamaların simgeleri (Hyprland çalışma alanları gibi). Öndeki uygulamanın altında uzun vurgu çizgisi, birden çok penceresi olanın altında orta çizgi. Tıkla: geç; öndeyse simge durumuna küçült ya da sıradaki penceresine geç. Sağ tık: pencere listesi ve kapatma (uygulama normal kapatma isteği alır).
+- **Ağ hızı:** anlık indirme/yükleme hızı (yalnız varsayılan rotayı taşıyan bağdaştırıcılar; sanal anahtarlar iki kez sayılmaz). Tıklayınca son bir dakikanın grafiği, bu oturumda indirilen/yüklenen, bağlantı türü, ağ adı, sinyal ve internet durumu.
+- **Sistem paneli:** CPU/RAM adası mini CPU grafiği gösteriyor; tıklayınca işlemci ve bellek grafikleri, açık kalma süresi, en çok işlemci ve bellek kullanan 5 uygulama, Hafifletme ve Görev Yöneticisi.
+- **Android gibi durum simgeleri:** Wi-Fi sinyali ya da Ethernet, Bluetooth (bağlı cihaz varsa vurgulu), ses, pil (varsa) ve okunmamış bildirim. Tıkla: hızlı ayarlar; tekerlek: ses; orta tık: sessiz. Ayrı ses adası ve hızlı ayarlar dişlisi bu kümeye taşındı.
+- **Hızlı ayarlar:** Wi-Fi, Bluetooth ve Sessiz kutucukları (Windows izin vermezse nedeni yazılır), bağlantı satırı (ağ adı, internet, bağlı Bluetooth cihazları, pil) ve DDC/CI destekleyen ekranlarda parlaklık kaydırıcısı.
+- **Animasyonlar:** bar açılırken adalar soldan sağa sırayla iner; panel açılıp kapanırken yükselip belirir ve söner; odaktaki pencere değişince başlık kayarak gelir; yeni uygulama simgesi büyüyerek gelir, vurgu çizgisi yumuşak uzar/kısalır; müzik adası belirerek açılır. Animasyonlar kapalıysa ya da Windows animasyon efektleri kapalıysa hepsi atlanır.
+- Ağ adı Windows bağlantı profilinden okunur (konum izni gerekmez). CPU/GPU sıcaklığı eklenmedi: Windows'un belgelenmiş bir API'si yok.
+
 ## 0.40.2 · 2026-10-30 · Otomatik döşeme varsayılan olarak kapalı
 
 - İlk kurulum rehberi otomatik döşemeyi artık işaretsiz sunuyor: açılan her pencerenin kendiliğinden yarım/tam ekrana yerleşmesi çoğu kullanıcıyı rahatsız etti. Pencereler Windows'taki gibi kendi boyutunda açılır; isteyen rehberden ya da Ayarlar → Klavye ve kısayollar'dan açar. Win tuşu başlatıcısı, Alt+Tab ve görev çubuğunu gizleme işaretli kalıyor.
