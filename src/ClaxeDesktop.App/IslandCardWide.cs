@@ -17,13 +17,13 @@ namespace ClaxeDesktop.App;
 /// </summary>
 internal sealed partial class IslandCard
 {
-    private const double WideWidth = 940, WideHeight = 608, WideColumn = 278;
+    private const double WideWidth = 760, WideHeight = 480, WideColumn = 226;
     private readonly Grid wide = new() { Visibility = Visibility.Collapsed };
     private readonly TextBlock expandGlyph = Glyph("", 12), expandText = new() { FontSize = 11, Margin = new(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Text = "Genişlet" };
     private readonly List<(ToggleButton Tile, TextBlock State, Func<bool?> Read)> wideTiles = [];
-    private readonly TextBlock connectionLine = new() { FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new(4, 8, 4, 0) };
-    private readonly TextBlock netDownText = BarPopup.Figure("", 18, FontWeights.SemiBold), netUpText = BarPopup.Figure("", 18, FontWeights.SemiBold), netTotals = BarPopup.Muted("", 11);
-    private readonly Canvas netGraph = BarPopup.Graph(WideColumn, 70), loadGraph = BarPopup.Graph(WideColumn, 34);
+    private readonly TextBlock connectionLine = new() { FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new(3, 5, 3, 0) };
+    private readonly TextBlock netDownText = BarPopup.Figure("", 15, FontWeights.SemiBold), netUpText = BarPopup.Figure("", 15, FontWeights.SemiBold), netTotals = BarPopup.Muted("", 11);
+    private readonly Canvas netGraph = BarPopup.Graph(WideColumn, 50), loadGraph = BarPopup.Graph(WideColumn, 26);
     private readonly TextBlock uptimeText = BarPopup.Muted("", 11);
     private readonly Dictionary<string, TextBlock> loads = [];
     private readonly StackPanel processRows = new(), windowRows = new();
@@ -49,7 +49,7 @@ internal sealed partial class IslandCard
     {
         host.Children.Add(wide);
         // Top right, beside the pages: the switches and what is connected.
-        var quick = new StackPanel { Width = WideWidth - CardWidth - 22, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new(CardWidth + 2, 16, 0, 0) };
+        var quick = new StackPanel { Width = WideWidth - CardWidth - 16, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new(CardWidth - 4, 14, 0, 0) };
         var tiles = new UniformGrid { Columns = 3 }; quick.Children.Add(tiles);
         WideTile(tiles, "", "Wi-Fi", () => ConnectivityService.Last.WifiOn, async on => controller.ViewModel.Status = await ConnectivityService.SetRadioAsync(Windows.Devices.Radios.RadioKind.WiFi, on));
         WideTile(tiles, "", "Bluetooth", () => ConnectivityService.Last.BluetoothOn, async on => controller.ViewModel.Status = await ConnectivityService.SetRadioAsync(Windows.Devices.Radios.RadioKind.Bluetooth, on));
@@ -58,20 +58,20 @@ internal sealed partial class IslandCard
         WideTile(tiles, "", "Rahatsız etme", () => controller.Notifications.DoNotDisturb, on => { controller.SetDoNotDisturb(on); return Task.CompletedTask; });
         WideTile(tiles, "", "Koyu Windows", () => controller.WindowsDark, on => { controller.ViewModel.Status = controller.SetWindowsDark(on); return Task.CompletedTask; });
         connectionLine.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); quick.Children.Add(connectionLine);
-        var status = BarPopup.Muted("", 11); status.Margin = new(4, 4, 4, 0); status.DataContext = controller.ViewModel; status.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Status)));
+        var status = BarPopup.Muted("", 11); status.Margin = new(3, 3, 3, 0); status.FontSize = 10; status.DataContext = controller.ViewModel; status.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Status)));
         status.TextTrimming = TextTrimming.CharacterEllipsis; status.TextWrapping = TextWrapping.NoWrap; quick.Children.Add(status);
         wide.Children.Add(quick);
 
-        var rule = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Top, Margin = new(18, CardHeight - 4, 18, 0), Opacity = .7 }; rule.SetResourceReference(Border.BackgroundProperty, "Line"); wide.Children.Add(rule);
+        var rule = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Top, Margin = new(16, CardHeight - 6, 16, 0), Opacity = .7 }; rule.SetResourceReference(Border.BackgroundProperty, "Line"); wide.Children.Add(rule);
 
         // Bottom: network, system and open windows side by side.
-        var columns = new Grid { Margin = new(18, CardHeight + 8, 18, 92), VerticalAlignment = VerticalAlignment.Top, Height = WideHeight - CardHeight - 102 };
-        for (int i = 0; i < 3; i++) { columns.ColumnDefinitions.Add(new()); if (i < 2) columns.ColumnDefinitions.Add(new() { Width = new(22) }); }
+        var columns = new Grid { Margin = new(16, CardHeight + 4, 16, 0), VerticalAlignment = VerticalAlignment.Top, Height = WideHeight - CardHeight - 70 };
+        for (int i = 0; i < 3; i++) { columns.ColumnDefinitions.Add(new()); if (i < 2) columns.ColumnDefinitions.Add(new() { Width = new(14) }); }
         var network = new StackPanel(); network.Children.Add(Section("", "Ağ"));
         var speeds = new UniformGrid { Columns = 2, Margin = new(0, 2, 0, 0) };
         speeds.Children.Add(Speed("", "Accent", netDownText)); speeds.Children.Add(Speed("", "Secondary", netUpText)); network.Children.Add(speeds);
-        netGraph.Margin = new(0, 8, 0, 4); network.Children.Add(netGraph); network.Children.Add(netTotals);
-        var netActions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(0, 12, 0, 0) };
+        netGraph.Margin = new(0, 5, 0, 3); network.Children.Add(netGraph); network.Children.Add(netTotals);
+        var netActions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(0, 8, 0, 0) };
         netActions.Children.Add(Small(BarPopup.Action("", "Ağ ayarları", () => { Leave(); controller.OpenSystem("network"); })));
         netActions.Children.Add(Small(BarPopup.Action("", "Bluetooth", () => { Leave(); controller.OpenSystem("bluetooth"); })));
         network.Children.Add(netActions);
@@ -84,8 +84,8 @@ internal sealed partial class IslandCard
             var row = BarPopup.Row(label, "…", out var value); row.Margin = new(0, 1, 12, 1); loads[key] = value; loadGrid.Children.Add(row);
         }
         system.Children.Add(loadGrid);
-        loadGraph.Margin = new(0, 6, 0, 2); system.Children.Add(loadGraph);
-        var heavy = BarPopup.Heading("En çok kaynak kullananlar"); heavy.Margin = new(0, 8, 0, 4); system.Children.Add(heavy);
+        loadGraph.Margin = new(0, 4, 0, 0); system.Children.Add(loadGraph);
+        var heavy = BarPopup.Heading("En çok kaynak kullananlar"); heavy.Margin = new(0, 6, 0, 2); system.Children.Add(heavy);
         system.Children.Add(processRows);
         Grid.SetColumn(system, 2); columns.Children.Add(system);
 
@@ -94,11 +94,11 @@ internal sealed partial class IslandCard
         wide.Children.Add(columns);
 
         // Windows shortcuts and power along the bottom edge.
-        var dock = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(18, 0, 18, 18) };
+        var dock = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(16, 0, 16, 12) };
         dock.Children.Add(Shortcut("", "Ayarlar", () => OpenUri("ms-settings:")));
         dock.Children.Add(Shortcut("", "Dosyalar", () => OpenUri("explorer.exe")));
         dock.Children.Add(Shortcut("", "Görev Yön.", () => OpenUri("taskmgr.exe")));
-        dock.Children.Add(Shortcut("", "Ekran alıntısı", TakeScreenshot));
+        dock.Children.Add(Shortcut("", "Alıntı", TakeScreenshot));
         dock.Children.Add(Shortcut("", "Ses", () => { Leave(); controller.OpenSystem("sound"); }));
         dock.Children.Add(Shortcut("", "Ekran", () => { Leave(); controller.OpenSystem("display"); }));
         dock.Children.Add(Shortcut("", "Bildirimler", () => { Leave(); controller.ShowQuickSettings(); }));
@@ -106,7 +106,7 @@ internal sealed partial class IslandCard
         dock.Children.Add(Shortcut("", "Kilitle", () => Power("lock", null)));
         dock.Children.Add(Shortcut("", "Uyku", () => Power("sleep", null)));
         Button? restart = null, shutdown = null;
-        restart = Shortcut("", "Yeniden başlat", () => Power("restart", restart)); dock.Children.Add(restart);
+        restart = Shortcut("", "Y. başlat", () => Power("restart", restart)); dock.Children.Add(restart);
         shutdown = Shortcut("", "Kapat", () => Power("shutdown", shutdown)); dock.Children.Add(shutdown);
         wide.Children.Add(dock);
     }
@@ -194,7 +194,7 @@ internal sealed partial class IslandCard
     private void RenderProcesses(IReadOnlyList<ProcessMeter.Usage> usage, bool first)
     {
         processRows.Children.Clear();
-        var top = (first ? usage.OrderByDescending(u => u.Memory) : usage.OrderByDescending(u => u.Cpu).ThenByDescending(u => u.Memory)).Take(5);
+        var top = (first ? usage.OrderByDescending(u => u.Memory) : usage.OrderByDescending(u => u.Cpu).ThenByDescending(u => u.Memory)).Take(3);
         foreach (var item in top)
         {
             var name = item.Count > 1 ? $"{item.Name} ({item.Count})" : item.Name;
@@ -204,7 +204,7 @@ internal sealed partial class IslandCard
     }
     private void RenderWindows()
     {
-        var windows = controller.LastSnapshot.Take(8).ToList();
+        var windows = controller.LastSnapshot.Take(5).ToList();
         var signature = string.Join("|", windows.Select(w => $"{w.Handle}:{w.Title}"));
         if (signature == windowsSignature) return; windowsSignature = signature;
         windowRows.Children.Clear();
@@ -212,15 +212,15 @@ internal sealed partial class IslandCard
         foreach (var window in windows)
         {
             var row = new DockPanel { Margin = new(0, 1, 0, 1) };
-            var close = new Button { Content = Glyph("", 10), Padding = new(7, 5, 7, 5), Background = Brushes.Transparent, BorderThickness = new(0), ToolTip = "Kapat (uygulama kaydetmek isterse sorar)" };
+            var close = new Button { Content = Glyph("", 10), Padding = new(6, 4, 6, 4), Background = Brushes.Transparent, BorderThickness = new(0), ToolTip = "Kapat (uygulama kaydetmek isterse sorar)" };
             System.Windows.Automation.AutomationProperties.SetName(close, window.Title + " kapat");
             var target = window; close.Click += (_, _) => { Touch(); WindowOps.Close(target.Handle); windowsSignature = ""; };
             DockPanel.SetDock(close, Dock.Right); row.Children.Add(close);
             // A fixed width keeps short titles at the left edge; the button template centres its content.
-            var face = new StackPanel { Orientation = Orientation.Horizontal, Width = WideColumn - 44 };
+            var face = new StackPanel { Orientation = Orientation.Horizontal, Width = WideColumn - 40 };
             var image = new Image { Width = 16, Height = 16, Margin = new(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center }; face.Children.Add(image);
-            face.Children.Add(new TextBlock { Text = window.Title, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = WideColumn - 70, VerticalAlignment = VerticalAlignment.Center });
-            var open = new Button { Content = face, Padding = new(6, 4, 6, 4), Background = Brushes.Transparent, BorderThickness = new(0), HorizontalContentAlignment = HorizontalAlignment.Left, ToolTip = window.Title };
+            face.Children.Add(new TextBlock { Text = window.Title, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = WideColumn - 70, VerticalAlignment = VerticalAlignment.Center });
+            var open = new Button { Content = face, Padding = new(4, 3, 4, 3), Background = Brushes.Transparent, BorderThickness = new(0), HorizontalContentAlignment = HorizontalAlignment.Left, ToolTip = window.Title };
             System.Windows.Automation.AutomationProperties.SetName(open, window.Title + " öne getir");
             open.Click += (_, _) => { if (controller.ActivateWindow(target)) Leave(); else controller.ViewModel.Status = "Windows pencereye odak vermedi."; };
             row.Children.Add(open); windowRows.Children.Add(row);
@@ -263,10 +263,10 @@ internal sealed partial class IslandCard
     // ---- Building blocks ----
     private void WideTile(Panel parent, string glyph, string label, Func<bool?> read, Func<bool, Task> change)
     {
-        var tile = new ToggleButton { Style = (Style)FindResource("QuickTile"), Margin = new(3) };
-        var content = new StackPanel(); content.Children.Add(Glyph(glyph, 16));
-        content.Children.Add(new TextBlock { Text = label, FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new(0, 6, 0, 0) });
-        var state = new TextBlock { FontSize = 11, Opacity = .75 }; content.Children.Add(state);
+        var tile = new ToggleButton { Style = (Style)FindResource("QuickTile"), Margin = new(2), Padding = new(9, 6, 9, 6) };
+        var content = new StackPanel(); content.Children.Add(Glyph(glyph, 13));
+        content.Children.Add(new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis });
+        var state = new TextBlock { FontSize = 10, Opacity = .75 }; content.Children.Add(state);
         foreach (var text in content.Children.OfType<TextBlock>()) text.SetBinding(TextBlock.ForegroundProperty, new Binding(nameof(Foreground)) { Source = tile });
         tile.Content = content; System.Windows.Automation.AutomationProperties.SetName(tile, label);
         tile.Click += async (_, _) =>
@@ -280,10 +280,10 @@ internal sealed partial class IslandCard
     }
     private static FrameworkElement Section(string glyph, string title, TextBlock? right = null)
     {
-        var row = new DockPanel { Margin = new(0, 0, 0, 8) };
+        var row = new DockPanel { Margin = new(0, 0, 0, 5) };
         if (right is not null) { right.VerticalAlignment = VerticalAlignment.Center; DockPanel.SetDock(right, Dock.Right); row.Children.Add(right); }
         var icon = Glyph(glyph, 13); icon.Margin = new(0, 0, 8, 0); icon.SetResourceReference(TextBlock.ForegroundProperty, "Accent"); row.Children.Add(icon);
-        row.Children.Add(new TextBlock { Text = title, FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+        row.Children.Add(new TextBlock { Text = title, FontSize = 12, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
         return row;
     }
     private static FrameworkElement Speed(string glyph, string brush, TextBlock value)
@@ -292,12 +292,12 @@ internal sealed partial class IslandCard
         var icon = Glyph(glyph, 12); icon.Margin = new(0, 0, 6, 0); icon.SetResourceReference(TextBlock.ForegroundProperty, brush);
         row.Children.Add(icon); row.Children.Add(value); return row;
     }
-    private static Button Small(Button button) { button.Padding = new(10, 5, 10, 5); button.FontSize = 11; return button; }
+    private static Button Small(Button button) { button.Padding = new(8, 4, 8, 4); button.FontSize = 10; return button; }
     private Button Shortcut(string glyph, string label, Action action)
     {
-        var content = new StackPanel(); var icon = Glyph(glyph, 17); icon.HorizontalAlignment = HorizontalAlignment.Center; content.Children.Add(icon);
-        content.Children.Add(new TextBlock { Text = label, FontSize = 10, Margin = new(0, 5, 0, 0), HorizontalAlignment = HorizontalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 68 });
-        var button = new Button { Content = content, Width = 72, Height = 58, Padding = new(2), Margin = new(0, 0, 6, 0), ToolTip = label };
+        var content = new StackPanel(); var icon = Glyph(glyph, 14); icon.HorizontalAlignment = HorizontalAlignment.Center; content.Children.Add(icon);
+        content.Children.Add(new TextBlock { Text = label, FontSize = 9, Margin = new(0, 3, 0, 0), HorizontalAlignment = HorizontalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 54 });
+        var button = new Button { Content = content, Width = 58, Height = 46, Padding = new(2), Margin = new(0, 0, 4, 0), ToolTip = label };
         System.Windows.Automation.AutomationProperties.SetName(button, label);
         button.Click += (_, _) => { Touch(); action(); };
         return button;
