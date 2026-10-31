@@ -56,7 +56,7 @@ internal sealed partial class IslandCard
         WideTile(tiles, "", "Sessiz", () => { try { return audio.Read().Muted; } catch (Exception ex) when (ex is COMException or InvalidCastException) { return null; } }, on => { TryAudio(() => audio.SetMute(on)); return Task.CompletedTask; });
         WideTile(tiles, "", "Mikrofon", () => { try { return !audio.ReadMicrophone().Muted; } catch (Exception ex) when (ex is COMException or InvalidCastException) { return null; } }, on => { TryAudio(() => audio.SetMicrophoneMute(!on)); return Task.CompletedTask; });
         WideTile(tiles, "", "Rahatsız etme", () => controller.Notifications.DoNotDisturb, on => { controller.SetDoNotDisturb(on); return Task.CompletedTask; });
-        WideTile(tiles, "", "Koyu Windows", () => controller.WindowsDark, on => { controller.ViewModel.Status = controller.SetWindowsDark(on); return Task.CompletedTask; });
+        WideTile(tiles, "", "Koyu mod", () => controller.WindowsDark, on => { controller.ViewModel.Status = controller.SetWindowsDark(on); return Task.CompletedTask; });
         connectionLine.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); quick.Children.Add(connectionLine);
         var status = BarPopup.Muted("", 11); status.Margin = new(3, 3, 3, 0); status.FontSize = 10; status.DataContext = controller.ViewModel; status.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Status)));
         status.TextTrimming = TextTrimming.CharacterEllipsis; status.TextWrapping = TextWrapping.NoWrap; quick.Children.Add(status);
@@ -263,9 +263,9 @@ internal sealed partial class IslandCard
     // ---- Building blocks ----
     private void WideTile(Panel parent, string glyph, string label, Func<bool?> read, Func<bool, Task> change)
     {
-        var tile = new ToggleButton { Style = (Style)FindResource("QuickTile"), Margin = new(2), Padding = new(9, 6, 9, 6) };
+        var tile = new ToggleButton { Style = (Style)FindResource("QuickTile"), Margin = new(2), Padding = new(7, 6, 6, 6) };
         var content = new StackPanel(); content.Children.Add(Glyph(glyph, 13));
-        content.Children.Add(new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis });
+        content.Children.Add(new TextBlock { Text = label, FontSize = 10.5, FontWeight = FontWeights.SemiBold, Margin = new(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis });
         var state = new TextBlock { FontSize = 10, Opacity = .75 }; content.Children.Add(state);
         foreach (var text in content.Children.OfType<TextBlock>()) text.SetBinding(TextBlock.ForegroundProperty, new Binding(nameof(Foreground)) { Source = tile });
         tile.Content = content; System.Windows.Automation.AutomationProperties.SetName(tile, label);
