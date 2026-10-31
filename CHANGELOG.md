@@ -2,7 +2,7 @@
 
 ## 0.41.0 · 2026-10-31 · Alt+0 kontrol merkezi, sade bar
 
-- **Kart büyüyor:** ada kartının (Alt+0 ya da adaya tıkla) altındaki "Genişlet" tuşu kartı kontrol merkezine çevirir; sayfalar sol üstte aynen kalır, kart iki yana ve aşağı açılır. "Küçült" ya da kartı kapatmak eski boyuta döndürür.
+- **Kart büyüyor:** ada kartının (Alt+0 ya da adaya tıkla) 1. sayfasında, zamanlayıcının yanındaki ⤢ tuşu kartı kontrol merkezine çevirir (760×480); sayfalar sol üstte aynen kalır, kart iki yana ve aşağı açılır. "Küçült" ya da kartı kapatmak eski boyuta döndürür.
   - **Hızlı kutucuklar:** Wi-Fi, Bluetooth, Sessiz, Mikrofon, Rahatsız etme, Koyu Windows. Windows radyo değişikliğine izin vermezse nedeni yazılır. Altında ağ adı, sinyal, internet durumu, bağlı Bluetooth cihazları ve pil (varsa).
   - **Ağ:** anlık indirme/yükleme, son bir dakikanın grafiği, oturumda indirilen/yüklenen; Ağ ve Bluetooth ayarları.
   - **Sistem:** CPU, GPU, RAM, disk; son bir dakikanın CPU/RAM grafiği; açık kalma süresi; en çok kaynak kullanan 5 uygulama.
