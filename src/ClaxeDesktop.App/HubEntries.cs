@@ -21,6 +21,7 @@ internal static class HubEntries
         {
             new("\uE771", "Görünüm ve bar", "Tema, panel stili, köşeler, bar ve dock boyutları, animasyonlar", "renk palet saydamlık cam neon köşe kenarlık saat 12 24 saniye dock simge büyüme gizle", c => c.ShowSettings(), true),
             new("\uE713", "Hızlı ayarlar", "Rahatsız etme, ses, çalan parça, paletler ve bildirimler", "bildirim ses medya wifi bluetooth", c => c.ShowQuickSettings(), true),
+            new("\uE790", "Tema galerisi", "Hazır setler, önizlemeli temalar ve kendi paletin", "tema palet rice set renk dracula gruvbox nord catppuccin tokyo", c => c.ShowThemeGallery(), true),
             new("\uE765", "Klavye ve kısayollar", "Win tuşu, Alt+Tab, döşeme ve tüm kısayolları değiştir", "win tuşu alt tab döşeme tiling kısayol tuş acil çıkış alt 0 ada", c => c.ShowKeyboard(), true),
             new("\uE7F4", "Masaüstü ve Windows", "Noxelyra masaüstü, görev çubuğu, duvar kâğıdı, açılış, güncellemeler", "masaüstü alanı görev çubuğu taskbar duvar kağıdı wallpaper açılış animasyon klip güncelleme windows koyu mod", c => c.ShowFullControls(), true),
             new("\uE8A9", "Widget atölyesi", "Widget ekle, taşı, boyutlandır", "widget saat takvim not hava durumu müzik grafik büyük saat taşı", c => c.Widgets.ShowEditor(), true),

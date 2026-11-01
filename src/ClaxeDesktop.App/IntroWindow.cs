@@ -34,7 +34,7 @@ internal sealed class IntroWindow : Window
         var accent = Hex(palette.Accent);
         // Runs on its own UI thread: the app's implicit styles point at theme brushes owned by the main thread, so opt out of them.
         Style = new Style(typeof(IntroWindow)); FontFamily = new FontFamily("Segoe UI"); FontSize = 13; Foreground = Brushes.White;
-        WindowStyle = WindowStyle.None; AllowsTransparency = true; ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Topmost = true;
+        AltTab.Hide(this); WindowStyle = WindowStyle.None; AllowsTransparency = true; ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Topmost = true;
         Background = Brushes.Transparent; Title = "Noxelyra"; WindowStartupLocation = WindowStartupLocation.Manual;
         Left = 0; Top = 0; Width = SystemParameters.PrimaryScreenWidth; Height = SystemParameters.PrimaryScreenHeight;
         Content = stage; stage.Opacity = 0;

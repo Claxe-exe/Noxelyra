@@ -10,7 +10,7 @@ public sealed record AppVolume(float Level, bool Muted, string Label, int Sessio
 /// Per-app volume through the documented Core Audio session API (the mixer Windows shows in Volume Mixer).
 /// Sessions are matched to the media app id; a browser has one volume for all of its tabs.
 /// </summary>
-public static class AppAudio
+public static partial class AppAudio
 {
     public static AppVolume? Read(string? appId)
     {
@@ -66,7 +66,11 @@ public static class AppAudio
         [PreserveSig] int GetDefaultAudioEndpoint(int flow, int role, out IMMDevice device);
     }
     [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] private interface IMMDevice
-    { [PreserveSig] int Activate(ref Guid iid, uint context, nint parameters, [MarshalAs(UnmanagedType.IUnknown)] out object instance); }
+    {
+        [PreserveSig] int Activate(ref Guid iid, uint context, nint parameters, [MarshalAs(UnmanagedType.IUnknown)] out object instance);
+        [PreserveSig] int OpenPropertyStore(uint access, out IPropertyStore store);
+        [PreserveSig] int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
+    }
     [ComImport, Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] private interface IAudioSessionManager2
     {
         [PreserveSig] int GetAudioSessionControl(nint session, uint flags, out nint control);
@@ -92,6 +96,7 @@ public static class AppAudio
         [PreserveSig] int GetSessionIdentifier([MarshalAs(UnmanagedType.LPWStr)] out string identifier);
         [PreserveSig] int GetSessionInstanceIdentifier([MarshalAs(UnmanagedType.LPWStr)] out string identifier);
         [PreserveSig] int GetProcessId(out uint pid);
+        [PreserveSig] int IsSystemSoundsSession();
     }
     [ComImport, Guid("87CE5498-68D6-44E5-9215-6DA47EF883D8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] private interface ISimpleAudioVolume
     {

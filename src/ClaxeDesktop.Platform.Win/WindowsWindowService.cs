@@ -14,17 +14,29 @@ public sealed class WindowsWindowService : IWindowService
         if (!Api.EnumWindows((hwnd, _) =>
         {
             Api.GetWindowThreadProcessId(hwnd, out var pid);
-            var title = new StringBuilder(512); Api.GetWindowText(hwnd, title, title.Capacity);
+            // Hidden windows are the majority and never listed, so their titles are not asked for at all.
+            if (!Api.IsWindowVisible(hwnd)) return true;
+            var title = TitleOf(hwnd);
             var style = IntPtr.Size == 8 ? Api.GetWindowLongPtr(hwnd, -20).ToInt64() : Api.GetWindowLong(hwnd, -20);
             Api.DwmGetWindowAttribute(hwnd, 14, out var cloaked, sizeof(int));
-            var candidate = new WindowCandidate(Api.IsWindowVisible(hwnd), cloaked != 0, (style & 0x80) != 0, (style & 0x08000000) != 0, Api.GetWindow(hwnd, 4) != 0, (style & 0x40000) != 0, pid == Environment.ProcessId, title.ToString());
+            var candidate = new WindowCandidate(Api.IsWindowVisible(hwnd), cloaked != 0, (style & 0x80) != 0, (style & 0x08000000) != 0, Api.GetWindow(hwnd, 4) != 0, (style & 0x40000) != 0, pid == Environment.ProcessId, title);
             if (!WindowFilter.Include(candidate)) return true;
-            windows.Add(new(hwnd, pid, title.ToString(), PathOf(pid), Api.IsIconic(hwnd))); return true;
+            windows.Add(new(hwnd, pid, title, PathOf(pid), Api.IsIconic(hwnd))); return true;
         }, 0)) throw new Win32Exception();
         // Forget processes that have no windows any more so a reused id cannot inherit an old path.
         foreach (var gone in Paths.Keys.Except(windows.Select(w => w.ProcessId)).ToArray()) Paths.TryRemove(gone, out _);
         return windows;
     }
+    /// <summary>
+    /// A window's title without waiting on it. GetWindowText sends a message to the window's owner and blocks for as long as a hung
+    /// app does not answer, which froze the whole interface on Alt+Tab; this gives up at once on a hung window and after 200 ms otherwise.
+    /// </summary>
+    public static string TitleOf(nint hwnd)
+    {
+        var title = new StringBuilder(512);
+        return Api.SendMessageTimeout(hwnd, 0x000D, title.Capacity, title, 0x0002, 200, out _) != 0 ? title.ToString() : Unresponsive;
+    }
+    public const string Unresponsive = "Yanıt vermiyor";
     // Process image paths are cached per id and read with QueryFullProcessImageName (limited query rights), which is
     // much faster than Process.MainModule and also works for elevated processes. Alt+Tab snapshots run on key press.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<uint, string?> Paths = new();
@@ -75,7 +87,7 @@ public sealed class WindowsWindowService : IWindowService
         [DllImport("user32.dll")] internal static extern bool IsWindow(nint hwnd);
         [DllImport("user32.dll")] internal static extern bool IsIconic(nint hwnd);
         [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(nint hwnd, out uint pid);
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern int GetWindowText(nint hwnd, StringBuilder text, int count);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")] internal static extern nint SendMessageTimeout(nint hwnd, uint message, nint wParam, StringBuilder lParam, uint flags, uint timeout, out nint result);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern int GetClassName(nint hwnd, StringBuilder text, int count);
         [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] internal static extern nint GetWindowLongPtr(nint hwnd, int index);
         [DllImport("user32.dll", EntryPoint = "GetWindowLongW")] internal static extern int GetWindowLong(nint hwnd, int index);

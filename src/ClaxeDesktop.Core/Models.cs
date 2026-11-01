@@ -46,8 +46,13 @@ public sealed record Settings
     public bool HoverAnimation { get; init; } = true;
     public bool ClockOnLeft { get; init; }
     public bool DynamicIsland { get; init; } = true;
+    public bool DockPreviews { get; init; } = true;
+    public bool DockRecycleBin { get; init; } = true;
     /// <summary>Colours generated from a wallpaper, used while <see cref="ThemeId"/> is "wallpaper".</summary>
     public ThemePalette? CustomPalette { get; init; }
+    /// <summary>Palettes the user made and kept in the theme gallery.</summary>
+    public List<ThemePalette> SavedPalettes { get; init; } = [];
+    public const int MaxSavedPalettes = 12;
     /// <summary>City for the island card's weather; empty means the first weather widget's city, or none.</summary>
     public string IslandCity { get; init; } = "";
     public Placement? Panel { get; init; }
@@ -66,6 +71,7 @@ public sealed record Settings
         if (IslandCity is null || IslandCity.Length > OpenMeteo.MaxCityLength || IslandCity.Any(char.IsControl)) throw new InvalidDataException("Ada şehri geçersiz.");
         if(WallpaperRotations is null||WallpaperRotations.Count>32||WallpaperRotations.Any(r=>r is null||string.IsNullOrWhiteSpace(r.MonitorId)||r.IntervalSeconds is <30 or >3600||r.AssetPaths is null||r.AssetPaths.Count is <2 or >20||r.AssetPaths.Any(p=>string.IsNullOrWhiteSpace(p)||!Path.IsPathFullyQualified(p)||p.StartsWith(@"\\")))||WallpaperRotations.Select(r=>r.MonitorId).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=WallpaperRotations.Count)throw new InvalidDataException("Arka plan listesi geçersiz.");
         if(Wallpapers is null || Wallpapers.Count>32 || Wallpapers.Any(w=>w is null || string.IsNullOrWhiteSpace(w.MonitorId) || string.IsNullOrWhiteSpace(w.AssetPath) || !Path.IsPathFullyQualified(w.AssetPath) || w.AssetPath.StartsWith(@"\\")) || Wallpapers.Select(w=>w.MonitorId).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=Wallpapers.Count) throw new InvalidDataException("Arka plan atamaları geçersiz.");
+        if (SavedPalettes is null || SavedPalettes.Count > MaxSavedPalettes) throw new InvalidDataException("Kayıtlı palet listesi geçersiz."); foreach (var saved in SavedPalettes) ThemePresets.ValidateCustom(saved);
         if (ThemeId == ThemePresets.WallpaperId) { if (CustomPalette is null) throw new InvalidDataException("Duvar kâğıdı paleti eksik."); ThemePresets.ValidateCustom(CustomPalette); }
         if (!ThemePresets.Known(ThemeId) || Material is not ("glass" or "flat" or "neon" or "acrylic")) throw new InvalidDataException("Tema veya yüzey stili geçersiz.");
         if ((PrimaryAccent is not null && !ThemePresets.IsColor(PrimaryAccent)) || (SecondaryAccent is not null && !ThemePresets.IsColor(SecondaryAccent))) throw new InvalidDataException("Renk #RRGGBB biçiminde olmalı.");
@@ -76,16 +82,29 @@ public sealed record Settings
         foreach (var p in new[] { Panel, Dock, Widget })
             if (p is not null && (string.IsNullOrWhiteSpace(p.MonitorId) || !double.IsFinite(p.X) || !double.IsFinite(p.Y) || Math.Abs(p.X) > 100000 || Math.Abs(p.Y) > 100000))
                 throw new InvalidDataException("Yerleşim geçersiz.");
-        if (Shortcuts is null || Shortcuts.Count > MaxShortcuts || Shortcuts.Any(s => s is null || string.IsNullOrWhiteSpace(s.Name) || s.Name.Length > 80 || !LaunchPolicy.IsAllowed(s.Target)))
+        if (Shortcuts is null || Shortcuts.Count > MaxShortcuts || Shortcuts.Any(s => s is null || string.IsNullOrWhiteSpace(s.Name) || s.Name.Length > 80 || !(LaunchPolicy.IsAllowed(s.Target) || LaunchPolicy.IsFolderPin(s.Target))))
             throw new InvalidDataException("Kısayol geçersiz; yerel .exe veya .lnk seçin.");
     }
 }
 
+/// <summary>Moving one item inside a list, as dragging a dock icon does.</summary>
+public static class DockOrder
+{
+    public static List<T> Move<T>(IReadOnlyList<T> list, int from, int to)
+    {
+        var result = list.ToList();
+        if (from < 0 || from >= result.Count) return result;
+        var item = result[from]; result.RemoveAt(from); result.Insert(Math.Clamp(to, 0, result.Count), item);
+        return result;
+    }
+}
 public static class LaunchPolicy
 {
     /// <summary>Microsoft Store (packaged) apps are launched by their AppUserModelID through Windows' Apps folder.</summary>
     public const string AppsFolderPrefix = @"shell:AppsFolder\";
     private static readonly System.Text.RegularExpressions.Regex PackagedId = new(@"^[A-Za-z0-9][A-Za-z0-9.\-]{0,127}_[a-z0-9]{13}![A-Za-z0-9][A-Za-z0-9._\-]{0,127}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    /// <summary>A folder pinned to the dock is stored with a trailing backslash, so it is never mistaken for an app.</summary>
+    public static bool IsFolderPin(string? target) => target is { Length: > 3 and <= 4096 } && target[^1] == '\\' && Path.IsPathFullyQualified(target) && !target.StartsWith(@"\\");
     public static bool IsPackagedApp(string? target) => target is not null && target.StartsWith(AppsFolderPrefix, StringComparison.OrdinalIgnoreCase) && PackagedId.IsMatch(target[AppsFolderPrefix.Length..]);
     public static bool IsAllowed(string? path) => IsPackagedApp(path) || (!string.IsNullOrWhiteSpace(path) && Path.IsPathFullyQualified(path) && !path.StartsWith(@"\\") &&
         new[] { ".exe", ".lnk" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase));

@@ -51,6 +51,7 @@ public sealed partial class DesktopController
     private void ConfigureKeyboard()
     {
         ConfigureTiling();
+        ConfigureClipboard();
         var options = committed.Keyboard;
         var showDesktop = !safe && committed.DesktopSpace.Enabled && committed.DesktopSpace.CaptureShowDesktop;
         var wanted = !safe && !exiting && (showDesktop || options.SuperLauncher || options.AltTab || options.Tiling);

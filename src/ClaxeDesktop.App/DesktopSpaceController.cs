@@ -69,6 +69,8 @@ public sealed partial class DesktopController
     internal Task<bool> SetDesktopMonitorAsync(string id) => PersistDesktopSpaceAsync(options => options with { MonitorId = id });
     internal Task<bool> SetDesktopIconsVisibleAsync(bool visible) => PersistDesktopSpaceAsync(options => options with { ShowIcons = visible });
     internal Task<bool> SaveDesktopIconsAsync(List<DesktopIconPosition> icons) => PersistDesktopSpaceAsync(options => options with { Icons = icons.Take(300).ToList() });
+    /// <summary>Icon order and size; a new order drops hand-placed positions so the icons really line up that way.</summary>
+    internal Task<bool> SetDesktopIconViewAsync(string sort, int size, bool clearPositions) => PersistDesktopSpaceAsync(options => options with { IconSort = sort, IconSize = size, Icons = clearPositions ? [] : options.Icons });
     internal async Task SetDesktopVideoAsync(string? file)
     {
         if (safe || ReadOnly || exiting) return;

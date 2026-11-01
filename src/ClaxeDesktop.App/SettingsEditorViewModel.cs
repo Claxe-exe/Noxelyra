@@ -65,7 +65,7 @@ public sealed class SettingsEditorViewModel : INotifyPropertyChanged, IDisposabl
     public bool CanUndo => Desktop.CanUndo;
     public bool CanRedo => Desktop.CanRedo;
     public bool CanReset => VisibleRows.Cast<object>().Any();
-    public string ActiveThemeName => ThemePresets.All.Single(t => t.Id == Desktop.Settings.ThemeId).Name;
+    public string ActiveThemeName => ThemePresets.Resolve(Desktop.Settings).Name;
     public string ErrorSummary => Rows.Any(r => r.HasError) ? "Geçersiz değerleri düzelt veya Geri al ile son kayda dön." : "";
     public string Footer => $"{Rows.Count} çalışan ayar · değişiklikler canlı önizlenir";
     public bool ShowRows => SearchText.Length > 0 || !Categories.Skip(5).Contains(SelectedCategory);

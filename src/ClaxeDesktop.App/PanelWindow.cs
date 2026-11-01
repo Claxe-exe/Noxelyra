@@ -60,7 +60,7 @@ public sealed partial class PanelWindow : FloatingWindow
         // Center: the dynamic island. It doubles as the drag handle while the bar floats; a click without movement acts on the island.
         island = new(vm, controller) { Enabled = vm.Settings.DynamicIsland };
         clockIsland = MakeIsland(island); center.Children.Add(clockIsland);
-        clockIsland.ToolTip = "Tıkla: zamanlayıcı veya çalan parça · Sağ tık: menü · Bar serbestken sürükleyerek taşı";
+        clockIsland.ToolTip = "Saate tıkla: takvim · Parça çalarken tıkla: ada kartı (Alt+0) · Sağ tık: menü · Bar serbestken sürükleyerek taşı";
         clockIsland.MouseLeftButtonDown += (_, e) => { if (e.ClickCount != 1 || !CanMove) return; e.Handled = true; if (!TryDrag()) island.Click(); };
         clockIsland.MouseLeftButtonUp += (_, e) => { if (CanMove) return; e.Handled = true; island.Click(); };
         clockIsland.MouseRightButtonUp += (_, e) => { e.Handled = true; island.OpenMenu(); };
@@ -132,6 +132,7 @@ public sealed partial class PanelWindow : FloatingWindow
         var wallpaper = new MenuItem { Header = "Duvar kâğıdından renk al", IsChecked = vm.Settings.ThemeId == ThemePresets.WallpaperId, ToolTip = "Noxelyra masaüstü görselinden ya da Windows duvar kâğıdından okunaklı bir palet üretir." };
         wallpaper.Click += async (_, _) => await controller.UseWallpaperPaletteAsync();
         menu.Items.Add(wallpaper);
+        var gallery = new MenuItem { Header = "Tema galerisi: setler ve kendi paletin…" }; gallery.Click += (_, _) => controller.ShowThemeGallery(); menu.Items.Add(gallery);
         return menu;
     }
     private ContextMenu PowerMenu()

@@ -56,7 +56,7 @@ Test("Crash marker detects dirty exit and clears", () => { var recovery = new Re
 Test("Log excludes exception message and paths", () => { var dir = Path.Combine(root, "logs"); new LocalLog(dir).Write("test", new IOException("secret path and password")); var content = File.ReadAllText(Path.Combine(dir, "events.jsonl")); Check(!content.Contains("secret")); Check(content.Contains("IOException")); });
 Test("Windows monitors return real work areas", () => { var found = new WindowsMonitorService().GetMonitors(); Check(found.Count > 0); Check(found.Any(m => m.Primary)); Check(found.All(m => m.Width > 0 && m.Height > 0 && m.Scale > 0)); Console.WriteLine("  Monitors: " + string.Join("; ", found.Select(m => m.ToString()))); });
 tests.Add(("Windows memory and CPU measurements", async () => { var metrics = new WindowsMetrics(); var first = metrics.Sample(); Check(first.Cpu is null); await Task.Delay(250); var sample = metrics.Sample(); Check(sample.Cpu is >= 0 and <= 100 && sample.Memory is >= 0 and <= 100 && sample.TotalGb > 0); Console.WriteLine($"  CPU={sample.Cpu:0.0}% RAM={sample.UsedGb:0.0}/{sample.TotalGb:0.0}GB"); }));
-Test("Catalog exposes only implemented unique settings", () => { Check(SettingsCatalog.Supported.Count == 27, "catalog count " + SettingsCatalog.Supported.Count); Check(SettingsCatalog.Supported.Select(d => d.Key).Distinct().Count() == 27); foreach (var d in SettingsCatalog.Supported) Check(SettingsCatalog.Value(new(), d.Key) is not null); Check(!SettingsCatalog.Supported.Any(d => d.Key == "privacy.allowWidgetNetwork")); });
+Test("Catalog exposes only implemented unique settings", () => { Check(SettingsCatalog.Supported.Count == 29, "catalog count " + SettingsCatalog.Supported.Count); Check(SettingsCatalog.Supported.Select(d => d.Key).Distinct().Count() == SettingsCatalog.Supported.Count); foreach (var d in SettingsCatalog.Supported) Check(SettingsCatalog.Value(new(), d.Key) is not null); Check(!SettingsCatalog.Supported.Any(d => d.Key == "privacy.allowWidgetNetwork")); });
 Test("Catalog numeric bounds validate against runtime model", () => { foreach (var d in SettingsCatalog.Supported.Where(d => d.Kind == "number")) { SettingsCatalog.Apply(new(), d.Key, d.Minimum).Validate(); SettingsCatalog.Apply(new(), d.Key, d.Maximum).Validate(); Throws(() => SettingsCatalog.Apply(new(), d.Key, d.Maximum + 1)); } });
 Test("Catalog search handles Turkish labels descriptions and keys", () => { Check(SettingsCatalog.Supported.Single(d => d.Key == "appearance.surfaceOpacity").Matches("OPAK")); Check(SettingsCatalog.Supported.Single(d => d.Key == "dock.iconSizeDip").Matches("dock.iconSizeDip")); Check(SettingsCatalog.Supported.Single(d => d.Key == "panels.widthDip").Matches("genişliği ekran")); });
 Test("Unsupported or wrong-typed settings rejected", () => { Throws(() => SettingsCatalog.Apply(new(), "privacy.allowWidgetNetwork", true)); Throws(() => SettingsCatalog.Apply(new(), "dock.autoHide", "true")); Throws(() => SettingsCatalog.Apply(new(), "dock.iconSizeDip", 32.5)); Throws(() => SettingsCatalog.Apply(new(), "themes.panelStyle", "unsupported")); });
@@ -242,7 +242,135 @@ Test("Key router catches the island shortcut and the summoned card keys even whe
     Check(r.Route(0x20, true, false, false, false, false).Action == "card.32" && r.Route(0x25, true, false, true, false, false).Decision == KeyDecision.Pass);
     r.CardKeys = false; Check(r.Route(0x1B, true, false, false, false, false).Decision == KeyDecision.Pass);
 });
-var selectedTests = args.Contains("--v033") ? tests.Skip(v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
+var v042TestsStart = tests.Count;
+Test("File names follow Windows rules", () => {
+    foreach (var bad in new[] { "", "  ", "a:b", "a/b", "kötü?", "son.", "son ", "CON", "con.txt", "COM1", new string('a', 201) }) Check(FileNameRules.Problem(bad) is not null, "accepted " + bad);
+    foreach (var good in new[] { "Yeni klasör", "rapor.son.txt", "CONsole", "ğüşiöç" }) Check(FileNameRules.Problem(good) is null, "refused " + good);
+    var taken = new HashSet<string> { "Yeni klasör", "Yeni klasör (2)" }; Check(FileNameRules.Unique("Yeni klasör", "", taken.Contains) == "Yeni klasör (3)");
+});
+Test("Desktop sort keeps folders first and honours the order", () => {
+    var list = new[] { new DesktopFile("c", "c", false, ".txt", new(2026, 1, 1), 10), new DesktopFile("a", "a", false, ".zip", new(2026, 3, 1), 5), new DesktopFile("b", "b", false, ".exe", new(2026, 2, 1), 99), new DesktopFile("d", "d", true) };
+    string Order(string mode) => string.Concat(DesktopFiles.Sort(list, mode).Select(f => f.Name));
+    Check(Order("name") == "dabc"); Check(Order("type") == "dbca"); Check(Order("date") == "dabc"); Check(Order("size") == "dbca");
+    new DesktopSpaceOptions { IconSort = "size", IconSize = 64 }.Validate(); Throws(() => new DesktopSpaceOptions { IconSize = 50 }.Validate()); Throws(() => new DesktopSpaceOptions { IconSort = "x" }.Validate());
+});
+tests.Add(("Shell copies, renames and moves real files", async () => {
+    var work = Path.Combine(root, "shell"); var into = Path.Combine(work, "hedef klasör"); Directory.CreateDirectory(into);
+    var file = Path.Combine(work, "özgün.txt"); await File.WriteAllTextAsync(file, "x");
+    Check(await ShellFiles.CopyAsync([file], into, 0)); Check(File.Exists(file) && File.Exists(Path.Combine(into, "özgün.txt")));
+    Check(await ShellFiles.CopyAsync([file], work, 0)); Check(Directory.GetFiles(work).Length == 2, "copy onto itself should make a second file");
+    var renamed = Path.Combine(work, "yeni ad.txt"); Check(await ShellFiles.RenameAsync(file, renamed, 0)); Check(File.Exists(renamed) && !File.Exists(file));
+    var second = Path.Combine(work, "ikinci.txt"); await File.WriteAllTextAsync(second, "y"); Check(await ShellFiles.MoveAsync([second], into, 0)); Check(!File.Exists(second) && File.Exists(Path.Combine(into, "ikinci.txt")));
+}));
+Test("Launcher search ranks and forgives", () => {
+    int S(string n, string q) => FuzzyMatcher.Score(n, q) ?? -1;
+    Check(S("Chrome", "chrome") > S("Chrome Beta", "chrome")); Check(S("Chrome", "chr") > S("Google Chrome", "chr")); Check(S("Google Chrome", "chr") > S("Anchor", "chr"));
+    Check(S("Görev Yöneticisi", "gorev") > 0 && S("Ekranı kilitle", "ekrani") > 0, "Turkish letters fold"); Check(S("Visual Studio Code", "vsc") > 0, "initials");
+    Check(S("Discord", "dicsord") > 0, "swapped letters"); Check(S("Spotify", "spotfy") > 0, "missing letter"); Check(S("Spotify", "xyz") == -1); Check(S("Notepad", "tp") == -1, "two letters never guess");
+});
+Test("Calculator evaluates arithmetic and nothing else", () => {
+    double? C(string t) => Calculator.Evaluate(t);
+    Check(C("2+2") == 4); Check(C("2+3*4") == 14); Check(C("(2+3)*4") == 20); Check(C("2^10") == 1024); Check(C("1,5*2") == 3); Check(C("200*10%") == 20); Check(C("-3+5") == 2); Check(C("kök(81)") == 9); Check(C("8 x 2") == 16); Check(C("=7") == 7);
+    foreach (var no in new[] { "7", "chrome", "7-zip", "1/0", "2+", "(2", "", "notepad.exe", "system(1)" }) Check(C(no) is null, "calculated " + no);
+    Check(Calculator.Format(1234.5) == "1.234,5");
+});
+Test("Launcher history favours frequent recent apps and survives damage", () => {
+    var now = DateTimeOffset.Now; var history = new LauncherHistory();
+    history.Record("old", now.AddDays(-60)); history.Record("old", now.AddDays(-60)); history.Record("new", now);
+    Check(history.Top(1, now)[0] == "new"); Check(LauncherHistory.Parse(history.Serialize()).Top(2, now).Count == 2); Check(LauncherHistory.Parse("{bozuk").Count == 0);
+    for (var i = 0; i < 250; i++) history.Record("a" + i, now); Check(history.Count == LauncherHistory.MaxEntries);
+});
+Test("Clipboard buffer dedupes and is bounded", () => {
+    var buffer = new ClipboardBuffer(); buffer.Add("a"); buffer.Add("b"); buffer.Add("a"); buffer.Add("  "); buffer.Add(null); buffer.Add(new string('x', ClipboardBuffer.MaxLength + 1));
+    Check(buffer.Items.Count == 2 && buffer.Items[0] == "a");
+    for (var i = 0; i < 50; i++) buffer.Add("t" + i); Check(buffer.Items.Count == ClipboardBuffer.MaxItems && buffer.Items[0] == "t49");
+});
+Test("File index skips hidden and dependency folders and respects limits", () => {
+    var home = Path.Combine(root, "home"); Directory.CreateDirectory(Path.Combine(home, "belgeler", "alt")); Directory.CreateDirectory(Path.Combine(home, "node_modules", "paket"));
+    File.WriteAllText(Path.Combine(home, "belgeler", "alt", "rapor.txt"), ""); File.WriteAllText(Path.Combine(home, "node_modules", "paket", "gizli.js"), ""); var hidden = Path.Combine(home, "saklı.txt"); File.WriteAllText(hidden, ""); File.SetAttributes(hidden, FileAttributes.Hidden);
+    var found = FileIndex.Build([home, Path.Combine(root, "yok")], 100, 5, default);
+    Check(found.Any(f => f.EndsWith("rapor.txt"))); Check(!found.Any(f => f.EndsWith("gizli.js"))); Check(!found.Any(f => f.EndsWith("saklı.txt")));
+    Check(FileIndex.Build([home], 2, 5, default).Count == 2); Check(!FileIndex.Build([home], 100, 0, default).Any(f => f.EndsWith("rapor.txt")));
+});
+Test("Web targets only leave on request and only as http", () => {
+    Check(WebTarget.Address("github.com") == "https://github.com/"); Check(WebTarget.Address("https://a.dev/x") == "https://a.dev/x");
+    foreach (var no in new[] { "notepad.exe ", "merhaba dünya", "1.5", "2+2", "file:///c:/a", "javascript:alert(1)", "a.1" }) Check(WebTarget.Address(no) is null || no == "notepad.exe ", "address " + no);
+    Check(WebTarget.SearchUrl("a b&c") == WebTarget.SearchPrefix + "a%20b%26c"); Check(EmojiCatalog.Search("kalp").Any() && !EmojiCatalog.Search("yokböyle").Any());
+});
+Test("Dock order and folder pins", () => {
+    Check(string.Concat(DockOrder.Move(new[] { "a", "b", "c", "d" }, 0, 2)) == "bcad"); Check(string.Concat(DockOrder.Move(new[] { "a", "b", "c" }, 2, 0)) == "cab"); Check(string.Concat(DockOrder.Move(new[] { "a", "b" }, 0, 9)) == "ba");
+    Check(LaunchPolicy.IsFolderPin(@"C:\Oyunlar\")); Check(!LaunchPolicy.IsFolderPin(@"C:\Oyunlar")); Check(!LaunchPolicy.IsFolderPin(@"\\sunucu\pay\")); Check(!LaunchPolicy.IsAllowed(@"C:\Oyunlar\"));
+    new Settings { Shortcuts = [new("Oyunlar", @"C:\Oyunlar\")] }.Validate(); Throws(() => new Settings { Shortcuts = [new("x", @"C:\a.txt")] }.Validate());
+    Check(SettingsCatalog.Apply(new(), "dock.windowPreviews", false).DockPreviews == false && SettingsCatalog.Apply(new(), "dock.recycleBin", false).DockRecycleBin == false);
+});
+Test("Palette maker is readable for every choice", () => {
+    for (var hue = 0; hue < 360; hue += 15) foreach (var saturation in new[] { .4, .62, .9 }) foreach (var lift in new[] { 0, .04, .08 }) { var palette = WallpaperPalette.Build("Deneme", hue, saturation, (hue + 90) % 360, lift); ThemePresets.ValidateCustom(palette); new Settings { ThemeId = ThemePresets.WallpaperId, CustomPalette = palette, SavedPalettes = [palette] }.Validate(); }
+    var one = WallpaperPalette.Build("x", 200, .6, 10); Throws(() => new Settings { SavedPalettes = Enumerable.Repeat(one, Settings.MaxSavedPalettes + 1).ToList() }.Validate());
+});
+Test("Ready-made rices validate and survive the rice file format", () => {
+    Check(ThemePresets.All.Select(t => t.Id).Distinct().Count() == ThemePresets.All.Count); Check(RicePresets.All.Select(r => r.Id).Distinct().Count() == RicePresets.All.Count);
+    foreach (var preset in RicePresets.All)
+    {
+        var applied = preset.ApplyTo(new Settings { Widgets = [] }); applied.Validate(); Check(preset.Matches(applied));
+        var rice = RiceFiles.Parse(RiceFiles.Serialize(RiceFiles.Capture(applied, preset.Name, DateTimeOffset.Now, false, null, false, null)));
+        var merged = RiceFiles.Apply(rice, new Settings(), false); Check(preset.Matches(merged), preset.Id);
+    }
+});
+var v043TestsStart = tests.Count;
+Test("Zip round trip keeps folders and names", () => {
+    var work = Path.Combine(root, "zip"); var inner = Path.Combine(work, "klasör", "alt"); Directory.CreateDirectory(inner); Directory.CreateDirectory(Path.Combine(work, "klasör", "boş"));
+    File.WriteAllText(Path.Combine(inner, "ğü.txt"), "içerik"); var single = Path.Combine(work, "tek.txt"); File.WriteAllText(single, "1");
+    var archive = Path.Combine(work, "a.zip"); ZipFiles.Create([Path.Combine(work, "klasör"), single], archive); Check(File.Exists(archive) && !File.Exists(archive + ".tmp"));
+    var output = Path.Combine(work, "çıktı"); ZipFiles.Extract(archive, output);
+    Check(File.ReadAllText(Path.Combine(output, "klasör", "alt", "ğü.txt")) == "içerik"); Check(File.Exists(Path.Combine(output, "tek.txt"))); Check(Directory.Exists(Path.Combine(output, "klasör", "boş")));
+});
+Test("Zip refuses to write outside its folder and cleans up", () => {
+    var work = Path.Combine(root, "zipslip"); Directory.CreateDirectory(work); var evil = Path.Combine(work, "kötü.zip");
+    using (var zip = System.IO.Compression.ZipFile.Open(evil, System.IO.Compression.ZipArchiveMode.Create)) { zip.CreateEntry("iyi.txt"); zip.CreateEntry("../../kaçak.txt"); }
+    var output = Path.Combine(work, "hedef"); Throws(() => ZipFiles.Extract(evil, output)); Check(!Directory.Exists(output)); Check(!File.Exists(Path.Combine(root, "kaçak.txt")));
+    var broken = Path.Combine(work, "bozuk.zip"); File.WriteAllText(broken, "zip değil"); try { ZipFiles.Extract(broken, Path.Combine(work, "b")); Check(false, "broken zip accepted"); } catch (InvalidDataException) { }
+});
+tests.Add(("Recycle Bin restores a deleted file to its old place", async () => {
+    var work = Path.Combine(root, "restore"); Directory.CreateDirectory(work); var file = Path.Combine(work, "geri " + Guid.NewGuid().ToString("N") + ".txt"); await File.WriteAllTextAsync(file, "x");
+    Check(await ShellFiles.RecycleAsync([file], 0)); Check(!File.Exists(file));
+    Check(await ShellFiles.RestoreAsync([file]), "restore failed"); Check(File.Exists(file) && await File.ReadAllTextAsync(file) == "x");
+}));
+Test("Shortcuts point at their target", () => {
+    var work = Path.Combine(root, "link"); Directory.CreateDirectory(work); var target = Path.Combine(work, "hedef.txt"); File.WriteAllText(target, ""); var link = Path.Combine(work, "hedef - Kısayol.lnk");
+    ShellFiles.CreateShortcut(target, link); Check(File.Exists(link));
+});
+Test("Month grid starts on Monday and covers the month", () => {
+    var november = MonthGrid.For(2026, 11); Check(november.Count == MonthGrid.Days); Check(november[0] == new DateOnly(2026, 10, 26)); Check(november[0].DayOfWeek == DayOfWeek.Monday); Check(november[6] == new DateOnly(2026, 11, 1));
+    var february = MonthGrid.For(2027, 2); Check(february[0] == new DateOnly(2027, 2, 1)); Check(february.Contains(new DateOnly(2027, 2, 28)));
+    foreach (var (y, m) in new[] { (2026, 8), (2028, 2), (2027, 12) }) { var grid = MonthGrid.For(y, m); Check(grid[0].DayOfWeek == DayOfWeek.Monday); Check(grid.Count(d => d.Month == m) == DateTime.DaysInMonth(y, m)); }
+});
+Test("Recent files match the app that opens their type", () => {
+    var files = new[] { new RecentFile(@"C:\a\rapor.docx", "rapor.docx", DateTime.Now), new RecentFile(@"C:\a\not.txt", "not.txt", DateTime.Now), new RecentFile(@"C:\a\x.bilinmez", "x.bilinmez", DateTime.Now) };
+    string? Opener(string e) => e switch { ".docx" => @"C:\Office\WINWORD.EXE", ".txt" => @"C:\Windows\notepad.exe", _ => null };
+    Check(RecentMatch.ForApp(files, @"D:\Başka\winword.exe", Opener).Single().Name == "rapor.docx"); Check(RecentMatch.ForApp(files, @"C:\yok.exe", Opener).Count == 0);
+    Check(RecentMatch.ForApp(Enumerable.Repeat(files[0], 20), "winword.exe", Opener, 3).Count == 3);
+    _ = RecentFiles.Read(5); Check(RecentFiles.OpenerOf("") is null);
+});
+Test("Audio listing and mixer read Windows without changing anything", () => {
+    IReadOnlyList<AudioOutput> outputs;
+    try { outputs = AppAudio.Outputs(); _ = AppAudio.Apps(); }
+    catch (System.Runtime.InteropServices.COMException) { Console.WriteLine("  (no audio device)"); return; }
+    Check(outputs.All(o => o.Id.Length > 0 && o.Name.Length > 0)); Check(outputs.Count(o => o.Default) <= 1);
+    // Setting the current default again changes nothing and proves the call reaches Windows.
+    if (outputs.FirstOrDefault(o => o.Default) is { } current) { Check(AppAudio.SetDefaultOutput(current.Id), "IPolicyConfig refused"); Check(AppAudio.Outputs().Single(o => o.Default).Id == current.Id); }
+    Check(!AppAudio.SetDefaultOutput("yok-boyle-bir-aygit"));
+});
+Test("Dock recognises its own apps without merging strangers", () => {
+    const string claude = @"shell:AppsFolder\Claude_pzs8sxrjxfjjc!Claude";
+    Check(DockMatch.Likely("Claude", claude, @"C:\Program Files\WindowsApps\Claude_4.4212.0.0_x64__pzs8sxrjxfjjc\app\Claude.exe"), "store app");
+    Check(!DockMatch.Likely("Claude", claude, @"C:\Program Files\WindowsApps\Claude_4.0.0.0_x64__baskaYayinci12\app\Claude.exe"), "other publisher"); Check(!DockMatch.Likely("Claude", claude, @"C:\Apps\Notepad.exe"));
+    Check(DockMatch.Likely("Discord", @"C:\U\Discord\app-1.0.9266\Discord.exe", @"C:\U\Discord\app-1.0.9300\Discord.exe"), "updated version"); Check(DockMatch.Likely("Discord", @"C:\U\Discord\Update.exe", @"C:\U\Discord\app-1\Discord.exe"), "launcher");
+    Check(DockMatch.Likely("League of Legends", @"C:\Riot Games\Riot Client\RiotClientServices.exe", @"C:\Riot Games\League of Legends\LeagueClientUx.exe"), "folder name");
+    Check(!DockMatch.Likely("Steam", @"C:\Steam\steam.exe", @"C:\Steam\steamapps\common\Oyun\Bin\Oyun.exe"), "game under Steam"); Check(!DockMatch.Likely("Foo", @"C:\A\app.exe", @"C:\B\C\app.exe"), "same file name elsewhere");
+    Check(!DockMatch.Likely("Takvim", @"C:\A\t.exe", @"C:\Windows\ApplicationFrameHost.exe")); Check(!DockMatch.Likely("Takvim", @"C:\A\t.exe", null)); Check(!DockMatch.Likely("x", @"C:\A\t.exe", @"C:\x\x.exe"), "too short a name");
+    Check(DockMatch.Exact(@"C:\A\B.EXE", @"c:\a\b.exe"));
+});
+var selectedTests = args.Contains("--v043") ? tests.Skip(v043TestsStart).ToList() : args.Contains("--v042") ? tests.Skip(v042TestsStart).Take(v043TestsStart - v042TestsStart).ToList() : args.Contains("--v033") ? tests.Skip(v033TestsStart).Take(v042TestsStart - v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }
 Console.WriteLine($"Tests: {selectedTests.Count}; passed: {selectedTests.Count - failed}; failed: {failed}");

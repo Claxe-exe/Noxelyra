@@ -563,6 +563,24 @@
           }
         },
         {
+          "key": "dock.windowPreviews",
+          "label": "Pencere önizlemesi",
+          "type": "bool",
+          "default": true,
+          "description": "Açık uygulamanın üstüne gelince pencerelerinin canlı görüntüsü",
+          "category": "Dock",
+          "implementationState": "implemented"
+        },
+        {
+          "key": "dock.recycleBin",
+          "label": "Geri dönüşüm kutusu",
+          "type": "bool",
+          "default": true,
+          "description": "Dock'ta geri dönüşüm kutusu; dosyaları üstüne sürükleyebilirsin",
+          "category": "Dock",
+          "implementationState": "implemented"
+        },
+        {
           "key": "dock.alwaysOnTop",
           "label": "Her zaman önde",
           "type": "bool",

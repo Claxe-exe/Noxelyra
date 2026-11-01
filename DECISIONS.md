@@ -167,3 +167,25 @@
 ## Otomatik döşeme rehberde işaretsiz · 30 Ekim 2026
 
 - Kullanıcı, açılan her pencerenin otomatik yarım/tam ekrana yerleşmesinden rahatsız olup döşemenin tamamen kapanmasını istedi. Rehber bu seçeneği artık işaretsiz sunuyor; ayar modelinde zaten kapalıydı. Özellik kaldırılmadı, isteyen açabilir.
+
+## 2026-11-01 · 0.42.0: dosya işleri, başlatıcı aramaları, pano
+
+- **Dosya işleri SHFileOperation ile.** Masaüstü silme, taşıma, kopyalama ve yeniden adlandırma Windows kabuğundan geçer; böylece geri dönüşüm kutusu, çakışma ve UAC pencereleri Explorer'la aynıdır ve Noxelyra kendi silme kodunu yazmaz. Kalıcı silme kısayolu bilerek yok.
+- **Kabuk sağ tık menüsü (IContextMenu) yok.** Üçüncü taraf kabuk eklentilerini Noxelyra sürecine yüklerdi; bir eklentinin çökmesi barı ve dock'u da götürürdü. Yerine belgelenmiş `openas` ve `properties` fiilleri kullanılır.
+- **Dosya araması Windows Search dizinini kullanmaz.** Bu, OLE DB için yeni bir bağımlılık (System.Data.OleDb) isterdi. Klasörler arama sırasında okunur (derinlik 5, en çok 30.000 öğe, gizli/sistem/bağlantı/çevrimdışı öğeler ve node_modules gibi klasörler atlanır); sonuç başlatıcı kapanınca bellekten silinir.
+- **Pano geçmişi varsayılan kapalı.** Kopyalanan metin özel olabilir: yalnız metin, yalnız bellekte, en çok 30 öğe; `ExcludeClipboardContentFromMonitorProcessing`, `Clipboard Viewer Ignore` ve `CanIncludeInClipboardHistory=0` işaretli içerik alınmaz.
+- **Web araması yalnız açık Enter ile.** Yazarken ağ isteği yapılmaz; öneri (autocomplete) bu yüzden yok.
+- **Başlatıcı geçmişi yerel.** `launcher-history.json` yalnız başlatıcıdan açılan uygulamaların yolunu ve sayısını tutar, dosya adı tutmaz; "Son kullanılanları temizle" ile silinir.
+- **Hazır setlerde görsel yok.** Setler yalnız renk ve ölçü taşır; lisans sorusu doğurmaz. Yeni temaların renkleri projelerin yayımladığı değerlerden eşlendi; okunaklılık sınırının altında kalan soluk yazı rengi açıldı.
+- **Klasör sabitleme ters eğik çizgiyle saklanır** (`C:\Oyunlar\`), böylece `LaunchPolicy.IsAllowed` değişmez ve klasör hiçbir yerde uygulama sanılmaz.
+
+## 2026-11-01 · 0.43.0: ses çıkışı, Wi-Fi, Bluetooth, son dosyalar
+
+- **Ses çıkışını değiştirmek belgelenmemiş `IPolicyConfig` kullanır.** Windows'un bu iş için genel API'si yok ve kullanıcı açıkça istedi. Sistem dosyasına, kayıt defterine veya başka bir sürece dokunmaz; yalnız bir COM çağrısıdır. Arayüz kaybolur veya reddederse `false` döner ve Windows ses ayarları açılır. Listeleme ve uygulama mikseri belgelenmiş Core Audio'dur.
+- **Bluetooth'ta bağlan düğmesi yok.** Eşleşmiş cihaza bağlanmanın belgelenmiş yolu yok; `BluetoothSetServiceState` hizmeti kapatıp açar ve sürücüleri yeniden kurdurabilir, bu risk alınmadı. Düğme dürüst şekilde "Windows'ta bağlan" diyor.
+- **Wi-Fi belgelenmiş `WiFiAdapter` ile.** Parola uygulamada tutulmaz, `PasswordCredential` ile Windows'a verilir ve profili Windows saklar. Kart oyunun üstünde odak almadan durabildiği için parola ayrı pencerede sorulur. Windows taramayı konum iznine bağlar; izin yoksa neden ve ayar düğmesi gösterilir, izin kendiliğinden istenmez.
+- **Son dosyalar Windows'un Recent klasöründen.** Uygulama başına atlama listelerinin (AutomaticDestinations) belgelenmiş biçimi yok; dock'taki liste, dosya türünün varsayılan uygulamasına (`AssocQueryString`) göre eşlenir.
+- **Geri al, yalnız Noxelyra'nın yaptığı işler içindir.** Oluşturulanlar kalıcı silinmez, geri dönüşüm kutusuna gider. Geri yükleme Shell'in `undelete` fiilidir.
+- **Zip için .NET'in kendi `ZipArchive`'i.** Yeni bağımlılık yok. Klasör dışına yazan öğeler ve diske sığmayan arşivler reddedilir; yarım kalan çıkarma temizlenir. Parolalı zip desteklenmez ve hata mesajı verir.
+- **Saate tıklamak artık takvimi açar.** Kullanıcı isteği; kart Alt+0, sağ tık ve takvimdeki düğmeyle açılır.
+- **Pencere başlıkları `SendMessageTimeout` ile okunur.** `GetWindowText` başka sürecin penceresine mesaj gönderip yanıt bekler; yanıt vermeyen tek bir uygulama, Alt+Tab'i ana iş parçacığında dakikalarca kilitledi (`dotnet-stack` ile görüldü: `Switcher` → `Snapshot`). `SMTO_ABORTIFHUNG` ve 200 ms sınırı bunu önler.

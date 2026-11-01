@@ -41,16 +41,47 @@ public sealed partial class DesktopController
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException or FileFormatException or ArgumentException or System.Runtime.InteropServices.COMException)
         { Log.Write("wallpaper-palette-failed", ex); ViewModel.Status = "Görselden renk alınamadı: " + ex.Message; return false; }
+        return await ApplyCustomPaletteAsync(palette, "Renkler duvar kâğıdından alındı. Eski temaya dönmek için palet menüsünden bir tema seç.");
+    }
+    /// <summary>Makes <paramref name="palette"/> the active colours: the wallpaper's, or one made in the theme gallery.</summary>
+    internal async Task<bool> ApplyCustomPaletteAsync(ThemePalette palette, string done)
+    {
+        if (safe || ReadOnly) { ViewModel.Status = "Güvenli/salt okunur modda tema kaydedilmez."; return false; }
         await persistenceGate.WaitAsync();
         try
         {
             Settings Change(Settings s) => s with { ThemeId = ThemePresets.WallpaperId, CustomPalette = palette, PrimaryAccent = null, SecondaryAccent = null };
             var next = Change(committed); next.Validate(); await store.SaveAsync(next); committed = next;
             ViewModel.Edit(Change(ViewModel.Settings));
-            ViewModel.Status = "Renkler duvar kâğıdından alındı. Eski temaya dönmek için palet menüsünden bir tema seç."; return true;
+            ViewModel.Status = done; return true;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException) { Log.Write("wallpaper-palette-save-failed", ex); ViewModel.Status = "Tema kaydedilemedi: " + ex.Message; return false; }
         finally { persistenceGate.Release(); }
+    }
+    internal async Task<bool> SetSavedPalettesAsync(List<ThemePalette> palettes)
+    {
+        if (safe || ReadOnly) return false;
+        await persistenceGate.WaitAsync();
+        try
+        {
+            var next = committed with { SavedPalettes = palettes }; next.Validate(); await store.SaveAsync(next); committed = next;
+            ViewModel.Edit(ViewModel.Settings with { SavedPalettes = palettes }); return true;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException) { Log.Write("palette-save-failed", ex); ViewModel.Status = "Palet kaydedilemedi: " + ex.Message; return false; }
+        finally { persistenceGate.Release(); }
+    }
+    /// <summary>A ready-made rice goes through the same path as an imported file, so "Önceki görünüme dön" undoes it.</summary>
+    internal Task<string> ApplyRicePresetAsync(RicePreset preset)
+    {
+        var rice = RiceFiles.Capture(preset.ApplyTo(committed), preset.Name, DateTimeOffset.Now, false, null, false, null);
+        return ApplyRiceAsync(rice, null, null, Path.Combine(desktopData, "rice-import", Guid.NewGuid().ToString("N")), replaceWidgets: false);
+    }
+    private ThemeGalleryWindow? themeGallery;
+    internal void ShowThemeGallery()
+    {
+        if (exiting) return;
+        if (themeGallery is null) { themeGallery = new(this); themeGallery.Closed += (_, _) => themeGallery = null; themeGallery.Show(); }
+        themeGallery.Activate();
     }
     // A 96 px thumbnail is plenty for colour statistics and decodes quickly even for 4K photos.
     private static List<(byte R, byte G, byte B)> ReadPixels(string file)

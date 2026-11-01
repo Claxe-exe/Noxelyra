@@ -35,12 +35,17 @@ public static class WallpaperPalette
         else secondHue = (accentHue + 140) % 360;
         double MeanHue(int bin) { var h = Math.Atan2(hueY[bin], hueX[bin]) * 180 / Math.PI; return h < 0 ? h + 360 : h; }
 
-        var canvas = FromHsl(accentHue, .30, .055); var surface = FromHsl(accentHue, .26, .10);
+        return Build("Duvar kâğıdından", accentHue, accentSaturation, secondHue);
+    }
+    /// <summary>A palette from two hues. Surfaces are deep tints of the accent; <paramref name="lift"/> (0 to .08) lightens them. Text is raised until it stays readable, so the result always validates.</summary>
+    public static ThemePalette Build(string name, double accentHue, double accentSaturation, double secondHue, double lift = 0)
+    {
+        var canvas = FromHsl(accentHue, .30, .055 + lift); var surface = FromHsl(accentHue, .26, .10 + lift);
         var accent = Lift(accentHue, Math.Clamp(accentSaturation, .5, .85), .68, canvas, 4.5);
         var secondary = Lift(secondHue, .55, .70, canvas, 4.5);
         var text = Lift(accentHue, .30, .94, surface, 7); var muted = Lift(accentHue, .14, .72, surface, 4.5);
-        var palette = new ThemePalette(ThemePresets.WallpaperId, "Duvar kâğıdından", canvas, surface, FromHsl(accentHue, .22, .15), accent, secondary, text, muted,
-            FromHsl(accentHue, .20, .32), FromHsl(accentHue, .22, .22), FromHsl(accentHue, .38, .30));
+        var palette = new ThemePalette(ThemePresets.WallpaperId, name, canvas, surface, FromHsl(accentHue, .22, .15 + lift), accent, secondary, text, muted,
+            FromHsl(accentHue, .20, .32 + lift), FromHsl(accentHue, .22, .22 + lift), FromHsl(accentHue, .38, .30 + lift));
         ThemePresets.ValidateCustom(palette);
         return palette;
     }

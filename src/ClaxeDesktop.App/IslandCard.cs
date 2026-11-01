@@ -145,9 +145,9 @@ internal sealed partial class IslandCard : Window
         var names = new StackPanel { VerticalAlignment = VerticalAlignment.Center }; artist.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); artist.Margin = new(0, 2, 0, 0);
         names.Children.Add(title); names.Children.Add(artist); head.Children.Add(names);
         playingPanel.Children.Add(head);
-        var bar = new Grid { Height = 4, Margin = new(0, 14, 0, 0) }; bar.ColumnDefinitions.Add(done); bar.ColumnDefinitions.Add(remaining);
-        var rail = new Border { CornerRadius = new(2) }; rail.SetResourceReference(Border.BackgroundProperty, "Line"); Grid.SetColumnSpan(rail, 2); bar.Children.Add(rail);
-        var fill = new Border { CornerRadius = new(2) }; fill.SetResourceReference(Border.BackgroundProperty, "Accent"); bar.Children.Add(fill);
+        var bar = new Grid { Height = 6, Margin = new(0, 13, 0, 0) }; bar.ColumnDefinitions.Add(done); bar.ColumnDefinitions.Add(remaining);
+        var rail = new Border { CornerRadius = new(3) }; rail.SetResourceReference(Border.BackgroundProperty, "Line"); Grid.SetColumnSpan(rail, 2); bar.Children.Add(rail);
+        var fill = new Border { CornerRadius = new(3) }; fill.SetResourceReference(Border.BackgroundProperty, "Accent"); bar.Children.Add(fill);
         var times = new DockPanel { Margin = new(0, 4, 0, 0) }; DockPanel.SetDock(duration, Dock.Right); times.Children.Add(duration); times.Children.Add(position);
         var progressPanel = new StackPanel(); progressPanel.Children.Add(bar); progressPanel.Children.Add(times); progress = progressPanel; playingPanel.Children.Add(progressPanel);
         var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new(0, 6, 0, 0) };
@@ -670,10 +670,10 @@ internal sealed partial class IslandCard : Window
         var row = new Grid { Margin = new(0, 6, 0, 0) };
         row.ColumnDefinitions.Add(new() { Width = new(36) }); row.ColumnDefinitions.Add(new()); row.ColumnDefinitions.Add(new() { Width = new(40) });
         var name = Small(); name.Text = label; row.Children.Add(name);
-        var bar = new Grid { Height = 4, VerticalAlignment = VerticalAlignment.Center }; var fill = new ColumnDefinition { Width = new(0, GridUnitType.Star) }; var rest = new ColumnDefinition { Width = new(100, GridUnitType.Star) };
+        var bar = new Grid { Height = 6, VerticalAlignment = VerticalAlignment.Center }; var fill = new ColumnDefinition { Width = new(0, GridUnitType.Star) }; var rest = new ColumnDefinition { Width = new(100, GridUnitType.Star) };
         bar.ColumnDefinitions.Add(fill); bar.ColumnDefinitions.Add(rest); Grid.SetColumn(bar, 1);
-        var rail = new Border { CornerRadius = new(2) }; rail.SetResourceReference(Border.BackgroundProperty, "Line"); Grid.SetColumnSpan(rail, 2); bar.Children.Add(rail);
-        var used = new Border { CornerRadius = new(2) }; used.SetResourceReference(Border.BackgroundProperty, key == "gpu" ? "Secondary" : "Accent"); bar.Children.Add(used);
+        var rail = new Border { CornerRadius = new(3) }; rail.SetResourceReference(Border.BackgroundProperty, "Line"); Grid.SetColumnSpan(rail, 2); bar.Children.Add(rail);
+        var used = new Border { CornerRadius = new(3) }; used.SetResourceReference(Border.BackgroundProperty, key == "gpu" ? "Secondary" : "Accent"); bar.Children.Add(used);
         row.Children.Add(bar);
         var value = new TextBlock { FontSize = 11, TextAlignment = TextAlignment.Right, Text = "…" }; Grid.SetColumn(value, 2); row.Children.Add(value);
         stats[key] = (fill, rest, value);

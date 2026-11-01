@@ -14,7 +14,12 @@ public static class ThemePresets
         new ThemePalette("catppuccin-mocha", "Catppuccin Mocha", "#11111B", "#1E1E2E", "#313244", "#CBA6F7", "#94E2D5", "#CDD6F4", "#A6ADC8", "#45475A", "#45475A", "#585B70"),
         new ThemePalette("tokyo-night", "Tokyo Night", "#16161E", "#1A1B26", "#24283B", "#7AA2F7", "#BB9AF7", "#C0CAF5", "#A9B1D6", "#414868", "#292E42", "#33467C"),
         new ThemePalette("nord", "Nord", "#242933", "#2E3440", "#3B4252", "#88C0D0", "#B48EAD", "#ECEFF4", "#D8DEE9", "#4C566A", "#434C5E", "#4C566A"),
-        new ThemePalette("rose-pine", "Rosé Pine", "#191724", "#1F1D2E", "#26233A", "#EBBCBA", "#9CCFD8", "#E0DEF4", "#908CAA", "#403D52", "#403D52", "#524F67")
+        new ThemePalette("rose-pine", "Rosé Pine", "#191724", "#1F1D2E", "#26233A", "#EBBCBA", "#9CCFD8", "#E0DEF4", "#908CAA", "#403D52", "#403D52", "#524F67"),
+        // Dracula, Gruvbox, Everforest and Kanagawa, mapped the same way; muted text is lightened where the published value is below 4.5:1.
+        new ThemePalette("dracula", "Dracula", "#21222C", "#282A36", "#343746", "#BD93F9", "#8BE9FD", "#F8F8F2", "#BFC3D9", "#44475A", "#44475A", "#565A73"),
+        new ThemePalette("gruvbox-dark", "Gruvbox", "#1D2021", "#282828", "#3C3836", "#FABD2F", "#8EC07C", "#EBDBB2", "#BDAE93", "#504945", "#504945", "#665C54"),
+        new ThemePalette("everforest-dark", "Everforest", "#1E2326", "#272E33", "#2E383C", "#A7C080", "#7FBBB3", "#D3C6AA", "#A5B0A6", "#475258", "#374145", "#4A555B"),
+        new ThemePalette("kanagawa", "Kanagawa", "#16161D", "#1F1F28", "#2A2A37", "#7E9CD8", "#98BB6C", "#DCD7BA", "#A9A79B", "#54546D", "#363646", "#2D4F67")
     };
     /// <summary>WCAG 2 contrast ratio between two #RRGGBB colours.</summary>
     public static double Contrast(string first, string second)

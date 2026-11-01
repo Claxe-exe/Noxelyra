@@ -51,7 +51,7 @@ internal sealed class QuickSettingsWindow : Window
     public QuickSettingsWindow(DesktopController controller)
     {
         this.controller = controller;
-        Title = "Noxelyra · Hızlı ayarlar"; WindowStyle = WindowStyle.None; AllowsTransparency = true; ResizeMode = ResizeMode.NoResize;
+        AltTab.Hide(this); Title = "Noxelyra · Hızlı ayarlar"; WindowStyle = WindowStyle.None; AllowsTransparency = true; ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = false; Topmost = true; Background = Brushes.Transparent; SizeToContent = SizeToContent.Height; Width = CardWidth + Shadow * 2;
         SetResourceReference(ForegroundProperty, "Text");
         card.SetResourceReference(Border.BackgroundProperty, "Surface"); card.SetResourceReference(Border.BorderBrushProperty, "Line");

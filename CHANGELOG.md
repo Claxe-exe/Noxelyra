@@ -1,5 +1,67 @@
 # Değişiklikler
 
+## 0.43.0 · 2026-11-01 · Ses mikseri, Wi-Fi listesi, takvim, zip ve son dosyalar
+
+**Ses (Alt+0 → Genişlet → Ses)**
+- Genel ses, çıkış aygıtı seçimi (hoparlör, kulaklık) ve her uygulamanın ayrı ses düzeyi ve sessize alması; Windows sistem sesleri dahil.
+- Çıkış değiştirmenin Windows'ta genel bir API'si yok; Windows'un kendi ayarlarının kullandığı belgelenmemiş arayüz denenir. Reddedilirse Windows ses ayarları açılır.
+
+**Wi-Fi ve Bluetooth (Alt+0 → Genişlet → Ağ bölümü)**
+- Çevredeki Wi-Fi ağları, sinyal ve kilit simgesiyle; bağlan, bağlantıyı kes. Kayıtlı ağ parola sormaz, yeni ağın parolası ayrı bir pencerede sorulur ve doğrudan Windows'a gider. Windows konum iznini kapalı tutuyorsa nedeni ve ayar düğmesi gösterilir.
+- Eşleşmiş Bluetooth cihazları ve bağlı olanlar. **Sınır:** Windows, eşleşmiş cihazı başka uygulamanın bağlamasına belgelenmiş bir yol sunmuyor; "Windows'ta bağlan" ayarları açar.
+
+**Takvim**
+- Bardaki saate tıkla: ay takvimi, Pazartesi başlangıçlı, bugün vurgulu; oklar, tekerlek veya PageUp/PageDown ile ay değiştir.
+- **Değişiklik:** saat görünürken ada artık kartı değil takvimi açar. Kart Alt+0, takvimdeki düğme veya sağ tıkla açılır. Parça, ses, bildirim veya zamanlayıcı görünürken tıklamak yine kartı açar.
+
+**Masaüstü**
+- Zip olarak sıkıştır, Buraya çıkar (klasör dışına yazmaya çalışan arşivler reddedilir), Kısayol oluştur, Terminalde aç.
+- Ctrl+Z: yeni öğe, silme, taşıma, kopyalama, yeniden adlandırma, sıkıştırma ve kısayolu geri alır (son 20 işlem, Noxelyra açıkken). Oluşturulanlar kalıcı silinmez, geri dönüşüm kutusuna gider.
+- Boşluk tuşu: resim, metin, video, ses ve klasörler için salt okunur hızlı önizleme; oklarla sonraki dosya.
+
+**Donma düzeltmesi**
+- Bir uygulama yanıt vermezken Alt+Tab'e basmak bütün Noxelyra'yı kilitliyordu: pencere başlığını okurken o uygulamayı bekliyordu. Artık beklemez; o pencere listede "Yanıt vermiyor" olarak görünür.
+
+**Windows Alt+Tab**
+- Bar, dock, widget'lar, açılır paneller ve masaüstü alanı artık Windows'un Alt+Tab ve Görev Görünümü listesinde ayrı pencere gibi görünmüyor. Ayarlar gibi gerçek pencereler görünmeye devam eder.
+
+**Görünüm ve dock**
+- Bütün kaydırıcılar ve çubuklar yenilendi: dolu vurgu renkli hat, yuvarlak düğme, üstüne gelince büyür; hattın herhangi bir yerine tıklamak değeri oraya atar. Ton kaydırıcılarının hattı gökkuşağı.
+- Dock'ta çift simge düzeltildi: Store uygulamaları (Claude gibi), güncellemeyle klasörü değişen uygulamalar (Discord) ve başka bir programı açan kısayollar (League of Legends) çalışırken ikinci simge açmaz. **Sınır:** eski tip çerçevede çalışan bazı Store uygulamaları (ApplicationFrameHost) hâlâ ayrı görünür.
+
+**Son dosyalar**
+- Başlatıcıda boş aramada son dosyalar; aramada önce onlar gelir. Windows'un "son açılanları göster" ayarı kapalıysa liste boş kalır.
+- Dock simgesine sağ tık: o uygulamanın son dosyaları. **Sınır:** eşleşme, dosya türünün varsayılan uygulamasına göre yapılır; varsayılan olmayan uygulamada görünmez.
+
+## 0.42.0 · 2026-11-01 · Günlük işler: masaüstü, başlatıcı, dock, tema galerisi
+
+**Masaüstü gerçek masaüstü gibi**
+- Yeni klasör ve metin belgesi, yeniden adlandırma (F2), geri dönüşüm kutusuna silme (Del), kes/kopyala/yapıştır (Ctrl+X/C/V; Explorer'la karşılıklı çalışır), Birlikte aç, Özellikler. Dosya işleri Windows kabuğundan geçer: ilerleme, çakışma ve izin pencereleri Explorer'ınkiyle aynıdır.
+- Çoklu seçim: boş alanı sürükle, Ctrl+tık, Ctrl+A. Seçili simgeler birlikte taşınır. Ok tuşlarıyla gezilir.
+- Simgeyi klasörün üstüne bırakınca klasöre taşınır, dock'a sürükleyince sabitlenir ya da geri dönüşüm kutusuna atılır. Explorer'dan masaüstüne dosya sürüklenebilir.
+- Sırala (ad, tür, tarih, boyut) ve simge boyutu (küçük, orta, büyük). Görselde "Arka plan yap", uygulamada "Dock'a sabitle".
+
+**Başlatıcı komut merkezi oldu**
+- Arama Türkçe harfleri, baş harfleri (vsc) ve küçük yazım hatalarını tolere eder; çok kullandıkların üste çıkar.
+- Hesap makinesi (2+2, %, üs, kök; Enter kopyalar), açık pencereler, Masaüstü/Belgeler/İndirilenler/Resimler/Müzik/Videolar'da dosya adı araması, kilitle/uyku/yeniden başlat/kapat (son ikisi çift onaylı), Görev Yöneticisi, Dosya Gezgini, ekran alıntısı.
+- `:gül` ile emoji, `pano` ile pano geçmişi: seçtiğini önceki pencereye yapıştırır. Pano geçmişi varsayılan kapalıdır, yalnız bellekte durur ve parola yöneticilerinin gizli işaretlediği metinleri almaz.
+- Web araması ve adres açma yalnız o satırda Enter'a basınca çalışır (Google); Noxelyra arka planda hiçbir şey göndermez.
+- Sağ tık ve Ctrl+Enter: yönetici olarak çalıştır. Sağ tık: dosya konumunu aç.
+
+**Dock**
+- Simgeyi sürükleyerek sırala; komşular yana kayar.
+- Açık uygulamanın üstüne gelince pencerelerin canlı önizlemesi; tıkla geç, ✕ ile kapat. Ayarlardan kapatılabilir.
+- Odaktaki tek pencereye tıklamak küçültür. Sağ tıkta Küçült ve Kapat. Uygulama açılırken simge zıplar (animasyonlar açıksa).
+- Geri dönüşüm kutusu: üstüne dosya sürükle, tıkla aç, sağ tıkla boşalt (Windows sorar). Ayarlardan kaldırılabilir.
+- Klasör sabitleme: tıklayınca içindekiler simgelerle açılır.
+
+**Tema galerisi**
+- Küçük masaüstü önizlemeli sayfa: 8 hazır set (renk, yüzey, köşe ve boyutlar birlikte), temalar ve kendi paletin. Hazır setten "Önceki görünüme dön" ile geri dönülür.
+- Yeni temalar: Dracula, Gruvbox, Everforest, Kanagawa.
+- Palet yapıcı: tonları seç, adını yaz, kaydet (en çok 12). Yazılar her seçimde okunaklı kalacak şekilde ayarlanır.
+
+**Sınırlar:** başlatıcıdaki emoji listesi tek renk görünür (WPF renkli emoji çizmez); yapıştırılan emoji renklidir. Dosya araması Windows dizinini kullanmaz, her aramada adları okur ve 30.000 öğede durur. Yönetici olarak çalışan pencereye yapıştırma Windows tarafından engellenir, metin panoda kalır.
+
 ## 0.41.0 · 2026-10-31 · Alt+0 kontrol merkezi, sade bar
 
 - **Kart büyüyor:** ada kartının (Alt+0 ya da adaya tıkla) 1. sayfasında, zamanlayıcının yanındaki ⤢ tuşu kartı kontrol merkezine çevirir (760×480); sayfalar sol üstte aynen kalır, kart iki yana ve aşağı açılır. "Küçült" ya da kartı kapatmak eski boyuta döndürür.

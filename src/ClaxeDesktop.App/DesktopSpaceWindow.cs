@@ -12,10 +12,10 @@ using ClaxeDesktop.Platform.Win;
 using Microsoft.Win32;
 namespace ClaxeDesktop.App;
 
-internal sealed class DesktopSpaceWindow : Window
+internal sealed partial class DesktopSpaceWindow : Window
 {
-    private const double CellWidth = 96, CellHeight = 104, TileWidth = 88, TileHeight = 98, Gutter = 28;
-    private const string Hint = "Çift tık / Enter: aç   ·   Sürükle veya Alt+yön: taşı   ·   Sağ tık: menü   ·   Alt+K: dock   ·   Esc: Windows";
+    private const double Gutter = 28;
+    private const string Hint = "Çift tık / Enter: aç   ·   Boş alanı sürükle: çoklu seç   ·   Del: sil   ·   F2: yeniden adlandır   ·   Sağ tık: menü   ·   Esc: Windows";
     private readonly DesktopController controller;
     private readonly Canvas icons = new() { Background = Brushes.Transparent };
     private readonly Image background = new() { Stretch = Stretch.UniformToFill, IsHitTestVisible = false };
@@ -52,18 +52,22 @@ internal sealed class DesktopSpaceWindow : Window
         foreach (var (alpha, offset) in new[] { (150, 0d), (40, .16), (0, .3), (0, .78), (120, 1d) }) scrim.GradientStops.Add(new(Color.FromArgb((byte)alpha, 9, 7, 16), offset));
         root.Children.Add(new Rectangle { Fill = scrim, IsHitTestVisible = false });
         if (!SystemParameters.HighContrast) icons.Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 8, ShadowDepth = 0, Opacity = .85 };
+        icons.ContextMenu = new ContextMenu();
         icons.ContextMenuOpening += (_, e) => { if (e.OriginalSource == icons) { icons.ContextMenu = SpaceMenu(); } };
-        icons.MouseLeftButtonDown += (_, _) => Keyboard.ClearFocus();
+        WireFileHandling();
         root.Children.Add(new ScrollViewer { Content = icons, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false });
         root.Children.Add(Header());
         // Always-visible escape hatch on the desktop itself: the emergency shortcut closes Noxelyra and restores Windows.
         emergencyHint.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); root.Children.Add(emergencyHint);
         PreviewKeyDown += (_, e) =>
         {
+            if (renaming is not null) return;
             if (e.Key == Key.Escape && search.IsKeyboardFocused && search.Text.Length > 0) { search.Clear(); e.Handled = true; }
+            else if (e.Key == Key.Escape && selection.Count > 0) { selection.Clear(); PaintSelection(); e.Handled = true; }
             else if (e.Key == Key.Escape) { controller.DismissDesktopSpace(); e.Handled = true; }
             else if (e.Key == Key.F5) { _ = RefreshFilesAsync(); e.Handled = true; }
             else if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control) { search.Focus(); search.SelectAll(); e.Handled = true; }
+            else if (FileKey(e)) e.Handled = true;
         };
         video.MediaOpened += (_, _) => { mediaReady = true; status.Text = "Yerel video hazır · ses kapalı. Başka uygulamaya geçince oynatma bekler."; UpdateActivity(false); };
         video.MediaEnded += (_, _) => { video.Position = TimeSpan.Zero; if (playing) video.Play(); };
@@ -135,6 +139,7 @@ internal sealed class DesktopSpaceWindow : Window
     private ContextMenu SpaceMenu()
     {
         var options = controller.ViewModel.Settings.DesktopSpace; var menu = new ContextMenu();
+        AddFileCommands(menu);
         Item(menu, "Arka plan resmi seç…", PickImage);
         Item(menu, "Yerel video seç…", PickVideo);
         Item(menu, manualPause ? "Videoyu sürdür" : "Videoyu duraklat", () => { manualPause = !manualPause; UpdateActivity(false); }, mediaReady);
@@ -157,6 +162,7 @@ internal sealed class DesktopSpaceWindow : Window
         Item(menu, "Yenile  ·  F5", () => _ = RefreshFilesAsync());
         Item(menu, "Simgeleri otomatik diz", () => { positions.Clear(); saveLayout.Stop(); saveLayout.Start(); RenderIcons(); status.Text = "Simgeler widget ve dock alanlarının etrafına yeniden dizildi."; }, positions.Count > 0);
         menu.Items.Add(new Separator());
+        Item(menu, "Tema galerisi", controller.ShowThemeGallery);
         Item(menu, "Widget atölyesi", controller.Widgets.ShowEditor);
         Item(menu, "Kontrol merkezi", controller.ShowFullControls);
         Item(menu, "Ayarlar", controller.ShowHub);
@@ -167,7 +173,8 @@ internal sealed class DesktopSpaceWindow : Window
     internal void LoadOptions()
     {
         var options = controller.ViewModel.Settings.DesktopSpace;
-        ShowInTaskbar = !options.FollowDesktop;
+        // While it stands in for the desktop it is no app to switch to; opened on its own it stays in Alt+Tab like any window.
+        ShowInTaskbar = !options.FollowDesktop; WindowOps.HideFromAltTab(new WindowInteropHelper(this).EnsureHandle(), options.FollowDesktop);
         if (!saveLayout.IsEnabled) { positions.Clear(); foreach (var position in options.Icons) positions[position.Path] = position; }
         LoadBackground(options.ImagePath);
         if (loadedVideo is not null && loadedVideo == options.VideoPath) return;
@@ -247,7 +254,7 @@ internal sealed class DesktopSpaceWindow : Window
     }
     private async Task ReadFilesAsync()
     {
-        try { var next = await Task.Run(DesktopFiles.Read); if (!closed) { files = next; RenderIcons(); } }
+        try { var sort = controller.ViewModel.Settings.DesktopSpace.IconSort; var next = await Task.Run(() => DesktopFiles.Sort(DesktopFiles.Read(), sort)); if (!closed) { files = next; RenderIcons(); } }
         catch (Exception ex) { if (!closed) status.Text = "Masaüstü okunamadı: " + ex.Message; }
     }
     // Visible Noxelyra windows on this monitor (widgets, dock, mascot) in this window's DIP space.
@@ -269,7 +276,8 @@ internal sealed class DesktopSpaceWindow : Window
     private void RenderIcons()
     {
         if (closed || !double.IsFinite(Width) || !double.IsFinite(Height)) return;
-        icons.Children.Clear();
+        if (renaming is not null) { renderWaiting = true; return; }
+        icons.Children.Clear(); tiles.Clear(); icons.Children.Add(band);
         // Hidden icons give a clean wallpaper-and-widgets desktop; searching still reveals matching files.
         var visible = controller.ViewModel.Settings.DesktopSpace.ShowIcons || search.Text.Length > 0;
         var filtered = visible ? files.Where(f => f.Name.Contains(search.Text, StringComparison.CurrentCultureIgnoreCase)).ToArray() : [];
@@ -282,9 +290,10 @@ internal sealed class DesktopSpaceWindow : Window
         foreach (var file in filtered)
         {
             var stack = new StackPanel();
-            var image = new Image { Width = 44, Height = 44, Margin = new(0, 2, 0, 6) }; stack.Children.Add(image);
+            var image = new Image { Width = IconPixels, Height = IconPixels, Margin = new(0, 2, 0, 6) }; stack.Children.Add(image);
             stack.Children.Add(new TextBlock { Text = file.Name, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center, MaxHeight = 34, FontSize = 12, Foreground = Brushes.White });
-            var button = new Button { Content = stack, Width = TileWidth, Height = TileHeight, Padding = new(4, 6, 4, 4), ToolTip = file.Path, Style = (Style)FindResource("DesktopTile") };
+            var button = new Button { Content = stack, Width = TileWidth, Height = TileHeight, Padding = new(4, 6, 4, 4), ToolTip = file.Path, Tag = file, Style = (Style)FindResource("DesktopTile") };
+            tiles[file.Path] = button;
             System.Windows.Automation.AutomationProperties.SetName(button, file.Name);
             double x, y;
             if (saved.TryGetValue(file.Path, out var p)) { x = Math.Clamp(p.X, 0, maxX); y = Math.Max(headerInset, p.Y); }
@@ -295,15 +304,14 @@ internal sealed class DesktopSpaceWindow : Window
             _ = Icon();
             void Open() { try { DesktopFiles.Open(file); } catch (Exception ex) { status.Text = "Öğe açılamadı: " + ex.Message; } }
             void Remember() { positions[file.Path] = new(file.Path, Canvas.GetLeft(button), Canvas.GetTop(button)); saveLayout.Stop(); saveLayout.Start(); }
-            var tileMenu = new ContextMenu();
-            Item(tileMenu, "Aç", Open);
-            Item(tileMenu, "Dosya konumunu göster", () => { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { ArgumentList = { "/select," + file.Path }, UseShellExecute = false }); } catch (Exception ex) { status.Text = "Explorer açılamadı: " + ex.Message; } });
-            Item(tileMenu, "Otomatik yerleşime al", () => { positions.Remove(file.Path); saveLayout.Stop(); saveLayout.Start(); RenderIcons(); }, positions.ContainsKey(file.Path));
-            button.ContextMenu = tileMenu;
+            button.PreviewMouseRightButtonDown += (_, _) => { if (!selection.Contains(file.Path)) Select(file.Path, false); button.Focus(); };
+            // WPF only opens a menu on an element that already has one; this empty one is replaced as it opens.
+            button.ContextMenu = new ContextMenu();
+            button.ContextMenuOpening += (_, _) => button.ContextMenu = TileMenu(file, button, Open);
             button.MouseDoubleClick += (_, e) => { Open(); e.Handled = true; };
             button.KeyDown += (_, e) =>
             {
-                if (e.Key == Key.Enter) { Open(); e.Handled = true; }
+                if (e.Key == Key.Enter && renaming is null) { Open(); e.Handled = true; }
                 if (Keyboard.Modifiers == ModifierKeys.Alt && e.SystemKey is Key.Left or Key.Right or Key.Up or Key.Down)
                 {
                     var nx = Canvas.GetLeft(button) + (e.SystemKey == Key.Left ? -12 : e.SystemKey == Key.Right ? 12 : 0);
@@ -312,21 +320,50 @@ internal sealed class DesktopSpaceWindow : Window
                     Remember(); e.Handled = true;
                 }
             };
-            Point origin = default; Point start = default; bool dragging = false;
-            button.PreviewMouseLeftButtonDown += (_, e) => { if (e.ClickCount > 1) return; origin = e.GetPosition(icons); start = new(Canvas.GetLeft(button), Canvas.GetTop(button)); dragging = true; };
+            // A Button captures the mouse on every press, so "moved" (not capture) tells a drag from a click.
+            Point origin = default; bool dragging = false, moved = false; List<(Button Tile, DesktopFile File, double X, double Y)> moving = [];
+            button.PreviewMouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ClickCount > 1 || renaming is not null) return;
+                origin = e.GetPosition(icons); dragging = true; moved = false;
+                // A tile that is already selected drags the whole selection; Ctrl+click toggles on release.
+                if (!selection.Contains(file.Path) && Keyboard.Modifiers != ModifierKeys.Control) Select(file.Path, false);
+                moving = [.. tiles.Where(t => selection.Contains(t.Key) || t.Value == button).Select(t => (t.Value, (DesktopFile)t.Value.Tag, Canvas.GetLeft(t.Value), Canvas.GetTop(t.Value)))];
+            };
             button.PreviewMouseMove += (_, e) =>
             {
                 if (!dragging || e.LeftButton != MouseButtonState.Pressed) return;
-                var delta = e.GetPosition(icons) - origin;
-                if (delta.Length < 5 && !button.IsMouseCaptured) return;
-                button.CaptureMouse(); Canvas.SetLeft(button, Math.Clamp(start.X + delta.X, 0, maxX)); Canvas.SetTop(button, Math.Clamp(start.Y + delta.Y, headerInset, 10000));
+                var at = e.GetPosition(icons); var delta = at - origin;
+                if (delta.Length < 5 && !moved) return;
+                moved = true; button.CaptureMouse();
+                foreach (var item in moving) { Canvas.SetLeft(item.Tile, Math.Clamp(item.X + delta.X, 0, maxX)); Canvas.SetTop(item.Tile, Math.Clamp(item.Y + delta.Y, headerInset, 10000)); }
+                var held = moving.Select(m => m.File.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var over = FolderAt(at, held)?.Path;
+                if (over != dropTarget) { dropTarget = over; PaintSelection(); }
+                if (!OverDock()) return;
+                // Reaching the dock turns this into a real file drag: pin it or drop it on the Recycle Bin.
+                dragging = false; moved = false; button.ReleaseMouseCapture(); dropTarget = null; PaintSelection();
+                foreach (var item in moving) { Canvas.SetLeft(item.Tile, item.X); Canvas.SetTop(item.Tile, item.Y); }
+                DragOutside(button, held);
             };
-            button.PreviewMouseLeftButtonUp += (_, e) =>
+            button.PreviewMouseLeftButtonUp += async (_, e) =>
             {
-                dragging = false; if (!button.IsMouseCaptured) return; button.ReleaseMouseCapture();
-                Remember(); e.Handled = true;
+                var pressed = dragging; dragging = false;
+                if (!moved) { if (pressed && Keyboard.Modifiers == ModifierKeys.Control) Select(file.Path, true); else if (pressed && selection.Count > 1) Select(file.Path, false); return; }
+                moved = false; button.ReleaseMouseCapture(); e.Handled = true;
+                var into = dropTarget; dropTarget = null; PaintSelection();
+                if (into is not null)
+                {
+                    foreach (var item in moving) { Canvas.SetLeft(item.Tile, item.X); Canvas.SetTop(item.Tile, item.Y); }
+                    await TransferAsync(moving.Select(m => m.File.Path).ToArray(), into, true); return;
+                }
+                foreach (var item in moving) positions[item.File.Path] = new(item.File.Path, Canvas.GetLeft(item.Tile), Canvas.GetTop(item.Tile));
+                saveLayout.Stop(); saveLayout.Start();
             };
         }
         icons.Height = Math.Max(Height, icons.Children.OfType<Button>().Select(b => Canvas.GetTop(b) + CellHeight + Gutter).DefaultIfEmpty(0).Max());
+        selection.RemoveWhere(path => !files.Any(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase)));
+        PaintSelection();
+        if (renameNext is { } fresh && tiles.TryGetValue(fresh, out var newTile)) { renameNext = null; var target = (DesktopFile)newTile.Tag; Dispatcher.BeginInvoke(() => BeginRename(target, newTile), DispatcherPriority.Loaded); }
     }
 }

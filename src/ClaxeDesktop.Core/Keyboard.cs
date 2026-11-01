@@ -44,6 +44,8 @@ public sealed record KeyboardOptions
     public bool Tiling { get; init; }
     public int TilingGap { get; init; } = 10;
     public string LauncherStyle { get; init; } = "center";
+    /// <summary>Remembers copied text in memory so the launcher can paste it again. Off by default: copied text can be private.</summary>
+    public bool ClipboardHistory { get; init; }
     public List<HotkeyBinding> Bindings { get; init; } = [];
 
     /// <summary>Shortcuts registered with RegisterHotKey (work everywhere, even over elevated windows).</summary>

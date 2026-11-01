@@ -186,7 +186,7 @@ public sealed partial class DesktopController
     }
     internal bool PinToDock(Shortcut app)
     {
-        if (!LaunchPolicy.IsAllowed(app.Target)) { ViewModel.Status = "Yalnız yerel .exe veya .lnk sabitlenebilir."; return false; }
+        if (!LaunchPolicy.IsAllowed(app.Target) && !LaunchPolicy.IsFolderPin(app.Target)) { ViewModel.Status = "Yalnız yerel .exe, .lnk veya klasör sabitlenebilir."; return false; }
         if (IsPinned(app.Target)) { ViewModel.Status = app.Name + " zaten dock'ta."; return false; }
         if (ViewModel.Shortcuts.Count >= Settings.MaxShortcuts) { ViewModel.Status = $"Dock en fazla {Settings.MaxShortcuts} uygulama tutar."; return false; }
         ViewModel.Add(app with { Name = app.Name.Length > 80 ? app.Name[..80] : app.Name }); _ = SaveShortcutsAsync(); ViewModel.Status = app.Name + " dock'a sabitlendi."; return true;

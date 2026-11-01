@@ -21,7 +21,7 @@ public class FloatingWindow : Window
     private DesktopViewModel? model;
     public FloatingWindow(string kind, bool glass = false)
     {
-        Kind = kind; Title = "Noxelyra · " + kind; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
+        AltTab.Hide(this); Kind = kind; Title = "Noxelyra · " + kind; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
         AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false; ShowActivated = false;
         Frame = new Border { CornerRadius = new(16), BorderThickness = new(1), BorderBrush = (Brush)FindResource("Line"), Padding = new(16) };
         Content = Frame;

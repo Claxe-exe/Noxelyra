@@ -36,6 +36,7 @@ internal sealed class KeyboardWindow : Window
         gap.ValueChanged += (_, _) => GapText();
         gap.PreviewMouseLeftButtonUp += async (_, _) => Say(await controller.SetKeyboardAsync(o => o with { TilingGap = (int)gap.Value }));
         System.Windows.Automation.AutomationProperties.SetName(gap, "Döşemede pencere boşluğu");
+        Toggle(linux, "Pano geçmişi", "Başlatıcıda \"pano\" yazınca kopyaladığın son 30 metni gösterir. Yalnız bellekte tutulur, diske yazılmaz, Noxelyra kapanınca silinir; parola yöneticilerinin gizli işaretlediği metinler alınmaz.", options.ClipboardHistory, on => o => o with { ClipboardHistory = on });
         linux.Children.Add(new TextBlock { Text = "Başlatıcı stili", Margin = new(0, 12, 0, 4) });
         var style = new ComboBox { ItemsSource = new[] { "Ortada arama kutusu", "Tam ekran ızgara" }, SelectedIndex = options.LauncherStyle == "grid" ? 1 : 0, IsEnabled = editable };
         style.SelectionChanged += async (_, _) => Say(await controller.SetKeyboardAsync(o => o with { LauncherStyle = style.SelectedIndex == 1 ? "grid" : "center" }));

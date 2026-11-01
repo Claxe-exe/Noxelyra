@@ -52,7 +52,7 @@ internal static class BarPopup
     /// <summary>A thin rounded usage bar; returns the fill so the caller can resize it.</summary>
     internal static Grid Meter(out Border fill)
     {
-        var track = new Border { Height = 6, CornerRadius = new(3) }; track.SetResourceReference(Border.BackgroundProperty, "Card");
+        var track = new Border { Height = 6, CornerRadius = new(3) }; track.SetResourceReference(Border.BackgroundProperty, "Line");
         fill = new Border { Height = 6, CornerRadius = new(3), HorizontalAlignment = HorizontalAlignment.Left, Width = 0 }; fill.SetResourceReference(Border.BackgroundProperty, "Accent");
         var grid = new Grid { Margin = new(0, 6, 0, 0) }; grid.Children.Add(track); grid.Children.Add(fill); return grid;
     }

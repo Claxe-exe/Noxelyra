@@ -17,8 +17,11 @@ public sealed record DesktopSpaceOptions
     public bool CheckForUpdates { get; init; } = true;
     public string? EnginePath { get; init; }
     public List<DesktopIconPosition> Icons { get; init; } = [];
+    public string IconSort { get; init; } = "name";
+    public int IconSize { get; init; } = 44;
     public void Validate()
     {
+        if (IconSort is not ("name" or "type" or "date" or "size") || IconSize is not (36 or 44 or 64)) throw new InvalidDataException("Simge görünümü geçersiz.");
         if (MonitorId?.Length > 512 || Icons is null || Icons.Count > 300 || Icons.Any(i => i is null || !Local(i.Path) || !double.IsFinite(i.X) || !double.IsFinite(i.Y) || i.X is < 0 or > 100000 || i.Y is < 0 or > 100000) || Icons.Select(i => i.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count() != Icons.Count)
             throw new InvalidDataException("Masaüstü alanı yerleşimi geçersiz.");
         if (VideoPath is not null && (!Local(VideoPath) || !new[] { ".mp4", ".wmv", ".m4v" }.Contains(Path.GetExtension(VideoPath), StringComparer.OrdinalIgnoreCase))) throw new InvalidDataException("Yerel MP4, M4V veya WMV seç.");

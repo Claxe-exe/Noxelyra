@@ -79,6 +79,11 @@ public sealed class DesktopViewModel : INotifyPropertyChanged
         if (index < 0 || next < 0 || next >= list.Count) return;
         (list[index], list[next]) = (list[next], list[index]); settings = settings with { Shortcuts = list }; RefreshShortcuts();
     }
+    public void MoveShortcutTo(Shortcut shortcut, int index)
+    {
+        var from = settings.Shortcuts.IndexOf(shortcut); if (from < 0 || from == index) return;
+        settings = settings with { Shortcuts = DockOrder.Move(settings.Shortcuts, from, index) }; RefreshShortcuts();
+    }
     private void RefreshShortcuts() { Shortcuts.Clear(); foreach (var item in settings.Shortcuts) Shortcuts.Add(item); }
     private void Changed([CallerMemberName] string name = "") { Notify(name); Notify(nameof(Settings)); AppearanceChanged?.Invoke(); }
     private void Notify([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new(name));

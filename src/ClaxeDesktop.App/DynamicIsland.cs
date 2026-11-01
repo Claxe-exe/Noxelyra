@@ -152,7 +152,8 @@ internal sealed class DynamicIsland : Grid
         else { BeginAnimation(WidthProperty, null); Width = target; }
     }
     /// <summary>Click or Enter: the island card under the island, whatever the island shows.</summary>
-    public void Click() => controller.ShowIslandCard(this);
+    /// <summary>The plain clock opens the month calendar; anything the island is showing (track, volume, note, timer) opens the card.</summary>
+    public void Click() { if (shown == View.Clock) controller.ShowCalendar(this); else controller.ShowIslandCard(this); }
     /// <summary>Right click: timer presets, the card and quick settings.</summary>
     public void OpenMenu() => controller.ShowTimerMenu(this);
     private static TextBlock Glyph(string code) => new() { Text = code, FontFamily = new FontFamily(IconFont), FontSize = 14, VerticalAlignment = VerticalAlignment.Center };

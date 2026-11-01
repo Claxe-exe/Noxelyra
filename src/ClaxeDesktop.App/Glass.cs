@@ -5,6 +5,12 @@ using System.Windows.Shell;
 using ClaxeDesktop.Platform.Win;
 namespace ClaxeDesktop.App;
 
+/// <summary>Bars, dock, widgets and flyouts are parts of the desktop, not apps: they stay out of Windows' Alt+Tab. Real windows like settings stay in it.</summary>
+internal static class AltTab
+{
+    internal static void Hide(Window window) => window.SourceInitialized += (_, _) => ClaxeDesktop.Platform.Win.WindowOps.HideFromAltTab(new System.Windows.Interop.WindowInteropHelper(window).Handle);
+}
+
 /// <summary>Turns a WPF window into a real Windows 11 glass window. Must run before the window is shown.</summary>
 internal static class Glass
 {

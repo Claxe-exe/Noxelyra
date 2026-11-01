@@ -72,8 +72,8 @@ internal sealed partial class IslandCard
         speeds.Children.Add(Speed("", "Accent", netDownText)); speeds.Children.Add(Speed("", "Secondary", netUpText)); network.Children.Add(speeds);
         netGraph.Margin = new(0, 5, 0, 3); network.Children.Add(netGraph); network.Children.Add(netTotals);
         var netActions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(0, 8, 0, 0) };
-        netActions.Children.Add(Small(BarPopup.Action("", "Ağ ayarları", () => { Leave(); controller.OpenSystem("network"); })));
-        netActions.Children.Add(Small(BarPopup.Action("", "Bluetooth", () => { Leave(); controller.OpenSystem("bluetooth"); })));
+        netActions.Children.Add(Small(BarPopup.Action("", "Wi-Fi ağları", ShowWifi)));
+        netActions.Children.Add(Small(BarPopup.Action("", "Bluetooth", ShowBluetooth)));
         network.Children.Add(netActions);
         columns.Children.Add(network);
 
@@ -99,7 +99,7 @@ internal sealed partial class IslandCard
         dock.Children.Add(Shortcut("", "Dosyalar", () => OpenUri("explorer.exe")));
         dock.Children.Add(Shortcut("", "Görev Yön.", () => OpenUri("taskmgr.exe")));
         dock.Children.Add(Shortcut("", "Alıntı", TakeScreenshot));
-        dock.Children.Add(Shortcut("", "Ses", () => { Leave(); controller.OpenSystem("sound"); }));
+        dock.Children.Add(Shortcut("", "Ses", ShowSound));
         dock.Children.Add(Shortcut("", "Ekran", () => { Leave(); controller.OpenSystem("display"); }));
         dock.Children.Add(Shortcut("", "Bildirimler", () => { Leave(); controller.ShowQuickSettings(); }));
         var gap = new Border { Width = 1, Margin = new(6, 10, 12, 10) }; gap.SetResourceReference(Border.BackgroundProperty, "Line"); dock.Children.Add(gap);
@@ -109,13 +109,14 @@ internal sealed partial class IslandCard
         restart = Shortcut("", "Y. başlat", () => Power("restart", restart)); dock.Children.Add(restart);
         shutdown = Shortcut("", "Kapat", () => Power("shutdown", shutdown)); dock.Children.Add(shutdown);
         wide.Children.Add(dock);
+        BuildDetail(host);
     }
 
     // ---- Growing and shrinking ----
     private void SetExpanded(bool on, bool animate = true)
     {
         if (expanded == on && animate) return;
-        expanded = on; wideTicks = 0; windowsSignature = "";
+        expanded = on; wideTicks = 0; windowsSignature = ""; if (!on) CloseDetail();
         expandGlyph.Text = on ? "" : ""; expandText.Text = on ? "Küçült" : "Genişlet"; if (expandButton is not null) expandButton.ToolTip = on ? "Küçült" : "Genişlet: kontrol merkezi";
         idle.Interval = TimeSpan.FromSeconds(on ? 45 : 12); Touch();
         double width = on ? WideWidth : CardWidth, height = on ? WideHeight : CardHeight;
@@ -157,6 +158,7 @@ internal sealed partial class IslandCard
     private async Task RenderWideAsync()
     {
         if (!expanded || !IsVisible) return;
+        TickDetail();
         foreach (var (tile, state, read) in wideTiles)
         {
             bool? on; try { on = read(); } catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException) { on = null; }
@@ -246,17 +248,8 @@ internal sealed partial class IslandCard
             return;
         }
         powerArmed = null;
-        try
-        {
-            switch (action)
-            {
-                case "lock": Leave(); if (!LockWorkStation()) controller.ViewModel.Status = "Ekran kilitlenemedi."; break;
-                case "sleep": Leave(); System.Windows.Forms.Application.SetSuspendState(System.Windows.Forms.PowerState.Suspend, false, false); break;
-                case "restart": controller.Log.Write("island-restart"); Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 0") { UseShellExecute = false, CreateNoWindow = true }); break;
-                case "shutdown": controller.Log.Write("island-shutdown"); Process.Start(new ProcessStartInfo("shutdown.exe", "/s /t 0") { UseShellExecute = false, CreateNoWindow = true }); break;
-            }
-        }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { controller.ViewModel.Status = "Windows bu işlemi yapmadı."; controller.Log.Write("island-power-failed", ex); }
+        if (action is "lock" or "sleep") Leave();
+        controller.Power(action);
     }
     private static async Task ResetLabelAsync(TextBlock label, string original) { await Task.Delay(4100); label.Text = original; }
 
@@ -302,5 +295,4 @@ internal sealed partial class IslandCard
         button.Click += (_, _) => { Touch(); action(); };
         return button;
     }
-    [DllImport("user32.dll")] private static extern bool LockWorkStation();
 }

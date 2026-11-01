@@ -69,6 +69,12 @@ public static class WindowOps
     public static void Close(nint hwnd) => PostMessage(hwnd, 0x0010, 0, 0);
     public static void Maximize(nint hwnd, bool on) => ShowWindow(hwnd, on ? 3 : 9);
     public static void Minimize(nint hwnd) => ShowWindow(hwnd, 6);
+    /// <summary>Keeps a window out of Windows' Alt+Tab and Task View with the documented WS_EX_TOOLWINDOW style; hiding it from the taskbar alone does not.</summary>
+    public static void HideFromAltTab(nint hwnd, bool hide = true)
+    {
+        var style = GetWindowLongPtr(hwnd, -20).ToInt64();
+        SetWindowLongPtr(hwnd, -20, (nint)(hide ? (style | 0x80) & ~0x40000L : style & ~0x80L));
+    }
     public static bool Focus(nint hwnd) { if (IsIconic(hwnd)) ShowWindow(hwnd, 9); return SetForegroundWindow(hwnd); }
     public static nint Foreground => GetForegroundWindow();
     /// <summary>Where the visible frame (what screen capture sees) starts inside the window rectangle (what DWM thumbnails use).</summary>
@@ -86,6 +92,7 @@ public static class WindowOps
     [DllImport("user32.dll")] private static extern bool IsZoomed(nint hwnd);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(nint hwnd, out Rect rect);
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] private static extern nint GetWindowLongPtr(nint hwnd, int index);
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] private static extern nint SetWindowLongPtr(nint hwnd, int index, nint value);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(nint hwnd, StringBuilder text, int count);
     [DllImport("user32.dll")] private static extern nint MonitorFromWindow(nint hwnd, uint flags);
     [DllImport("user32.dll")] private static extern bool GetMonitorInfo(nint monitor, ref MonitorData data);

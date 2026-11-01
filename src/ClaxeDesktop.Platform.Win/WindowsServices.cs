@@ -46,6 +46,12 @@ public sealed class WindowsLauncher : IAppLauncher
 {
     public void Launch(Shortcut shortcut)
     {
+        if (LaunchPolicy.IsFolderPin(shortcut.Target))
+        {
+            if (!Directory.Exists(shortcut.Target)) throw new FileNotFoundException("Klasör bulunamadı. Kısayolu yeniden ekleyin.");
+            Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe")) { ArgumentList = { shortcut.Target }, UseShellExecute = false });
+            return;
+        }
         if (LaunchPolicy.IsPackagedApp(shortcut.Target))
         {
             // Store apps: Explorer activates the app by its AppUserModelID (the same thing the Start menu does).

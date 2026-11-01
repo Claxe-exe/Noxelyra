@@ -25,7 +25,7 @@ internal sealed class SwitcherWindow : Window
     public SwitcherWindow(DesktopController controller, ShellIconService icons)
     {
         this.controller = controller; this.icons = icons;
-        Title = "Noxelyra · Pencereler"; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; ShowActivated = false; Topmost = true;
+        AltTab.Hide(this); Title = "Noxelyra · Pencereler"; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; ShowActivated = false; Topmost = true;
         SizeToContent = SizeToContent.WidthAndHeight; SetResourceReference(BackgroundProperty, "Surface"); SetResourceReference(ForegroundProperty, "Text");
         var root = new StackPanel { Margin = new(22) }; root.Children.Add(cards); root.Children.Add(title); Content = root;
         SourceInitialized += (_, _) =>
