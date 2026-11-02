@@ -47,7 +47,7 @@ internal sealed class DynamicIsland : Grid
 
         Date.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
         Date.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.ShortDate)));
-        var time = Figure(); time.FontWeight = FontWeights.SemiBold; time.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Time)));
+        var time = new RollingText(() => Motion.Enabled(vm), rollSeconds: false, FontWeights.SemiBold); time.SetBinding(RollingText.TextProperty, new Binding(nameof(DesktopViewModel.Time)));
         Add(View.Clock, Date, time);
 
         artGlyph.FontSize = 12; artGlyph.HorizontalAlignment = HorizontalAlignment.Center; art.Child = artGlyph; art.SetResourceReference(Border.BackgroundProperty, "Card");

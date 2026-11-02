@@ -21,7 +21,7 @@ internal sealed class LightenWindow : Window
         Title = "Noxelyra · Hafifletme"; Width = 640; Height = 860; MinWidth = 520; MinHeight = 520; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         SetResourceReference(BackgroundProperty, "Canvas"); SetResourceReference(ForegroundProperty, "Text"); Glass.PrepareFramed(this, controller.ViewModel.Settings); Motion.Attach(this, controller.ViewModel, () => controller.IsExiting);
         var root = new StackPanel { Margin = new(28) }; Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        root.Children.Add(new TextBlock { Text = "Hafifletme", FontSize = 24, FontWeight = FontWeights.SemiBold });
+        root.Children.Add(SplitText.Make("Hafifletme", 24, FontWeights.SemiBold, controller.ViewModel));
         status.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
         status.Text = "Değişiklikler senin Windows tercihlerindir ve Noxelyra kapanınca da kalır. Hepsi aşağıdan geri alınabilir.";
         root.Children.Add(status);

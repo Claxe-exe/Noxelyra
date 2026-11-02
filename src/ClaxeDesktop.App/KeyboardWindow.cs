@@ -20,7 +20,7 @@ internal sealed class KeyboardWindow : Window
         SetResourceReference(BackgroundProperty, "Canvas"); SetResourceReference(ForegroundProperty, "Text");
         Glass.PrepareFramed(this, controller.ViewModel.Settings); Motion.Attach(this, controller.ViewModel, () => controller.IsExiting);
         var root = new StackPanel { Margin = new(28) }; Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        root.Children.Add(new TextBlock { Text = "Klavye", FontSize = 24, FontWeight = FontWeights.SemiBold });
+        root.Children.Add(SplitText.Make("Klavye", 24, FontWeights.SemiBold, controller.ViewModel));
         status.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
         status.Text = $"Acil çıkış her zaman çalışır: {controller.GestureText("emergency")}. Noxelyra'yı hemen kapatır ve Windows'u eski haline getirir.";
         root.Children.Add(status);

@@ -56,6 +56,7 @@ internal sealed partial class DesktopSpaceWindow : Window
         icons.ContextMenuOpening += (_, e) => { if (e.OriginalSource == icons) { icons.ContextMenu = SpaceMenu(); } };
         WireFileHandling();
         root.Children.Add(new ScrollViewer { Content = icons, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false });
+        root.Children.Add(sparks);
         root.Children.Add(Header());
         // Always-visible escape hatch on the desktop itself: the emergency shortcut closes Noxelyra and restores Windows.
         emergencyHint.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); root.Children.Add(emergencyHint);

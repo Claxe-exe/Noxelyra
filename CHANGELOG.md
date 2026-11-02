@@ -1,5 +1,14 @@
 # Değişiklikler
 
+## 0.44.0 · 2026-11-02 · Küçük hareketler
+
+- **Kayan saat:** bardaki saatin dakika ve saat rakamları değişirken yukarı kayar. Saniyeler barda kaymaz, çünkü bar her saniye baştan çizilirdi. Ada kartındaki büyük saatte saniyeler de kayar.
+- **Tıklama kıvılcımı:** Noxelyra masaüstünün boş yerine tıklayınca kısa bir kıvılcım çıkar.
+- **Dock:** üzerine gelinen simge biraz daha büyür ve hafifçe yukarı çıkar; yanındakiler daha az hareket eder.
+- **Harf harf başlık:** ayar pencerelerinin başlıkları açılışta harf harf gelir, sonra normal metne döner.
+- Hepsi kısa sürer, boştayken çalışmaz; animasyonlar kapalıysa ya da Windows animasyon efektleri veya yüksek karşıtlık bunu gerektiriyorsa atlanır.
+- Fikirler React Bits'ten esinlendi; kod bu projede sıfırdan yazıldı, React Bits kodu içermez.
+
 ## 0.43.0 · 2026-11-01 · Ses mikseri, Wi-Fi listesi, takvim, zip ve son dosyalar
 
 **Ses (Alt+0 → Genişlet → Ses)**

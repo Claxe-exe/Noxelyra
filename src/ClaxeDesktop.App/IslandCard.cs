@@ -166,8 +166,7 @@ internal sealed partial class IslandCard : Window
         appVolumeSave.Tick += (_, _) => { appVolumeSave.Stop(); var id = track?.AppId; var level = (float)(appVolume.Value / 100); _ = Task.Run(() => { try { AppAudio.Set(id, level); } catch (COMException) { } }); };
         playingPanel.Visibility = Visibility.Collapsed; nowPlaying = playingPanel; music.Children.Add(playingPanel);
         var quiet = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var bigTime = new TextBlock { FontSize = 44, FontWeight = FontWeights.Light, DataContext = controller.ViewModel }; bigTime.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Time)));
-        System.Windows.Documents.Typography.SetNumeralAlignment(bigTime, FontNumeralAlignment.Tabular);
+        var bigTime = new RollingText(() => Motion.Enabled(controller.ViewModel), rollSeconds: true, FontWeights.Light, 44) { DataContext = controller.ViewModel, HorizontalAlignment = HorizontalAlignment.Left }; bigTime.SetBinding(RollingText.TextProperty, new Binding(nameof(DesktopViewModel.Time)));
         var bigDate = Small(); bigDate.DataContext = controller.ViewModel; bigDate.SetBinding(TextBlock.TextProperty, new Binding(nameof(DesktopViewModel.Date)));
         var silence = Small(); silence.Text = "Şu an çalan bir şey yok"; silence.Margin = new(0, 8, 0, 0);
         quiet.Children.Add(bigDate); quiet.Children.Add(bigTime); quiet.Children.Add(silence);

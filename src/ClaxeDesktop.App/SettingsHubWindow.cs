@@ -27,7 +27,7 @@ internal sealed class SettingsHubWindow : Window
         Glass.PrepareFramed(this, controller.ViewModel.Settings); Motion.Attach(this, controller.ViewModel, () => controller.IsExiting);
         var root = new DockPanel { Margin = new(28, 24, 28, 24) }; Content = root;
         var header = new StackPanel(); DockPanel.SetDock(header, Dock.Top); root.Children.Add(header);
-        header.Children.Add(new TextBlock { Text = "Ayarlar", FontSize = 26, FontWeight = FontWeights.SemiBold });
+        header.Children.Add(SplitText.Make("Ayarlar", 26, FontWeights.SemiBold, controller.ViewModel));
         var hint = new TextBlock { Text = "Bir alan seç ya da ne aradığını yaz: \"alt tab\", \"duvar kağıdı\", \"saat\"…", FontSize = 13, Margin = new(0, 4, 0, 14) };
         hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); header.Children.Add(hint);
         var field = new Grid(); var placeholder = new TextBlock { Text = "Ayarlarda ara", FontSize = 16, Margin = new(14, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };

@@ -100,20 +100,19 @@ public sealed class DockWindow : FloatingWindow
     public Action? AddApps { get; set; }
     private readonly List<Button> items = [];
     private readonly Dictionary<Button, ContentControl> visuals = [];
-    // macOS-style wave: the icon under the pointer grows most and its neighbours follow on a gaussian falloff.
+    // macOS-style wave: the icon under the pointer grows and rises most, and its neighbours follow on a gaussian falloff.
     private void Magnify(double? pointer)
     {
         foreach (var (button, visual) in visuals)
         {
             if (!button.IsVisible) continue;
-            var scale = 1.0;
+            double scale = 1.0, lift = 0;
             if (pointer is { } x)
             {
                 var center = button.TranslatePoint(new Point(button.ActualWidth / 2, 0), row).X;
-                var distance = (x - center) / (vm.IconSize + 12);
-                scale = 1 + (vm.Settings.Magnification - 1) * Math.Exp(-distance * distance * .9);
+                (scale, lift) = DockHover.At((x - center) / (vm.IconSize + 12), vm.Settings.Magnification);
             }
-            Animate(visual, scale);
+            Animate(visual, scale, lift);
         }
     }
     private int page, pages = 1;
@@ -190,7 +189,7 @@ public sealed class DockWindow : FloatingWindow
     private void AddButton(string name, string? path, IReadOnlyList<AppWindow> windows, Shortcut? shortcut)
     {
         var grid = new Grid();
-        var visual = new ContentControl { Content = name[..1].ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, RenderTransformOrigin = new(.5, .5), RenderTransform = new ScaleTransform(1, 1) }; grid.Children.Add(visual);
+        var visual = new ContentControl { Content = name[..1].ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, RenderTransformOrigin = new(.5, .5), RenderTransform = new TransformGroup { Children = { new ScaleTransform(1, 1), new TranslateTransform() } } }; grid.Children.Add(visual);
         // Running apps get a short accent bar under the icon, longer for several windows, like a Linux dock.
         if (windows.Count > 0) { var marker = new Border { Height = 3, Width = windows.Count > 1 ? 16 : 6, CornerRadius = new(2), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, -3) }; marker.SetResourceReference(Border.BackgroundProperty, "Accent"); grid.Children.Add(marker); }
         var button = new Button { Content = grid, ToolTip = windows.Count == 0 ? name : vm.Settings.DockPreviews ? null : string.Join("\n", windows.Select(w => w.Title)), Width = vm.IconSize + 8, Height = vm.IconSize + 8, Padding = new(4), Margin = new(2, 0, 2, 0), FontSize = 20, Style = (Style)FindResource("DockTile") };
@@ -360,14 +359,15 @@ public sealed class DockWindow : FloatingWindow
         if (asset.Target is not null && !string.Equals(path, asset.Target, StringComparison.OrdinalIgnoreCase) && !string.Equals(targets.GetValueOrDefault(path), asset.Target, StringComparison.OrdinalIgnoreCase))
         { targets[path] = asset.Target; rebuildPending = true; }
     }
-    private void Animate(ContentControl visual, double scale)
+    private void Animate(ContentControl visual, double scale, double lift)
     {
-        if (!vm.Settings.AnimationsEnabled || !vm.Settings.HoverAnimation || !SystemParameters.ClientAreaAnimation || SystemParameters.HighContrast) scale = 1;
-        var transform = (ScaleTransform)visual.RenderTransform;
+        if (!vm.Settings.AnimationsEnabled || !vm.Settings.HoverAnimation || !SystemParameters.ClientAreaAnimation || SystemParameters.HighContrast) { scale = 1; lift = 0; }
+        var parts = ((TransformGroup)visual.RenderTransform).Children; var transform = (ScaleTransform)parts[0];
         // Short, decelerating steps keep the wave glued to the pointer; the duration setting caps it.
         var duration = Math.Min(160, vm.Settings.AnimationDurationMs);
         Motion.To(transform, ScaleTransform.ScaleXProperty, scale, duration);
         Motion.To(transform, ScaleTransform.ScaleYProperty, scale, duration);
+        Motion.To(parts[1], TranslateTransform.YProperty, -lift, duration);
     }
     private void Activate(AppWindow window)
     {

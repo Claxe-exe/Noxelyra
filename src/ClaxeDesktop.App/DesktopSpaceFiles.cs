@@ -12,6 +12,7 @@ namespace ClaxeDesktop.App;
 /// <summary>Selection and file work on the Noxelyra desktop: everything goes through the Windows shell, so deleting lands in the Recycle Bin and conflicts ask like Explorer.</summary>
 internal sealed partial class DesktopSpaceWindow
 {
+    private readonly Canvas sparks = new() { IsHitTestVisible = false };
     private readonly HashSet<string> selection = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> cutPaths = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Button> tiles = new(StringComparer.OrdinalIgnoreCase);
@@ -34,7 +35,7 @@ internal sealed partial class DesktopSpaceWindow
     {
         band.SetResourceReference(Shape.StrokeProperty, "Accent"); band.SetResourceReference(Shape.FillProperty, "Selection"); band.Opacity = .55;
         icons.Focusable = true; icons.FocusVisualStyle = null;
-        icons.MouseLeftButtonDown += (_, e) => { if (e.OriginalSource != icons) return; icons.Focus(); if (Keyboard.Modifiers != ModifierKeys.Control) { selection.Clear(); PaintSelection(); } bandStart = e.GetPosition(icons); banding = true; icons.CaptureMouse(); };
+        icons.MouseLeftButtonDown += (_, e) => { if (e.OriginalSource != icons) return; if (Motion.Enabled(controller.ViewModel)) ClickSpark.Burst(sparks, e.GetPosition(sparks)); icons.Focus(); if (Keyboard.Modifiers != ModifierKeys.Control) { selection.Clear(); PaintSelection(); } bandStart = e.GetPosition(icons); banding = true; icons.CaptureMouse(); };
         icons.MouseMove += (_, e) =>
         {
             if (!banding) return;

@@ -73,6 +73,29 @@ public static class MonthGrid
     }
 }
 
+/// <summary>Which characters of a clock roll when it changes. Text after the second colon (the seconds) may stay still.</summary>
+public static class ClockRoll
+{
+    public static IReadOnlySet<int> Rolling(string before, string after, bool seconds)
+    {
+        var result = new HashSet<int>(); if (before.Length != after.Length) return result;
+        var first = after.IndexOf(':'); var tail = first < 0 ? -1 : after.IndexOf(':', first + 1);
+        for (var i = 0; i < after.Length; i++) if (before[i] != after[i] && char.IsAsciiDigit(after[i]) && (seconds || tail < 0 || i < tail)) result.Add(i);
+        return result;
+    }
+}
+/// <summary>The dock's hover wave: the icon under the pointer grows past the chosen magnification and rises a little; its neighbours follow more gently.</summary>
+public static class DockHover
+{
+    public const double ExtraGrowth = .14, MaximumScale = 2, Rise = 7;
+    /// <param name="slots">Distance from the pointer in icon widths.</param>
+    public static (double Scale, double Lift) At(double slots, double magnification)
+    {
+        var wave = Math.Exp(-slots * slots * .9);
+        return (Math.Min(MaximumScale, 1 + (magnification - 1 + ExtraGrowth) * wave), Rise * Math.Exp(-slots * slots * 2.2));
+    }
+}
+
 /// <summary>A file Windows lists under recent items, and which of them belong to an app.</summary>
 public sealed record RecentFile(string Path, string Name, DateTime When);
 public static class RecentMatch

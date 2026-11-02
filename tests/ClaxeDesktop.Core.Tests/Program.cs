@@ -370,7 +370,18 @@ Test("Dock recognises its own apps without merging strangers", () => {
     Check(!DockMatch.Likely("Takvim", @"C:\A\t.exe", @"C:\Windows\ApplicationFrameHost.exe")); Check(!DockMatch.Likely("Takvim", @"C:\A\t.exe", null)); Check(!DockMatch.Likely("x", @"C:\A\t.exe", @"C:\x\x.exe"), "too short a name");
     Check(DockMatch.Exact(@"C:\A\B.EXE", @"c:\a\b.exe"));
 });
-var selectedTests = args.Contains("--v043") ? tests.Skip(v043TestsStart).ToList() : args.Contains("--v042") ? tests.Skip(v042TestsStart).Take(v043TestsStart - v042TestsStart).ToList() : args.Contains("--v033") ? tests.Skip(v033TestsStart).Take(v042TestsStart - v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
+var v044TestsStart = tests.Count;
+Test("Clock rolls only the digits that changed", () => {
+    Check(ClockRoll.Rolling("20:32:59", "20:33:00", true).SequenceEqual(new[] { 4, 6, 7 })); Check(ClockRoll.Rolling("20:32:59", "20:33:00", false).SequenceEqual(new[] { 4 }));
+    Check(ClockRoll.Rolling("20:33:00", "20:33:01", false).Count == 0, "seconds alone stay still on the bar"); Check(ClockRoll.Rolling("9:59", "10:00", true).Count == 0, "length change is not a roll");
+    Check(ClockRoll.Rolling("20:32", "20:33", false).Single() == 4, "a clock without seconds rolls normally"); Check(ClockRoll.Rolling("1:00 PM", "1:00 AM", true).Count == 0, "only digits roll");
+});
+Test("Dock hover grows and lifts the icon under the pointer most", () => {
+    var (scale, lift) = DockHover.At(0, 1.16); Check(Math.Abs(scale - 1.3) < .001, "scale " + scale); Check(lift == DockHover.Rise);
+    var near = DockHover.At(1, 1.16); Check(near.Scale < scale && near.Scale > 1 && near.Lift < lift && near.Lift > 0);
+    var far = DockHover.At(5, 1.16); Check(far.Scale < 1.001 && far.Lift < .01); Check(DockHover.At(0, 1).Scale > 1, "works with magnification off"); Check(DockHover.At(0, 2).Scale == DockHover.MaximumScale);
+});
+var selectedTests = args.Contains("--v044") ? tests.Skip(v044TestsStart).ToList() : args.Contains("--v043") ? tests.Skip(v043TestsStart).Take(v044TestsStart - v043TestsStart).ToList() : args.Contains("--v042") ? tests.Skip(v042TestsStart).Take(v043TestsStart - v042TestsStart).ToList() : args.Contains("--v033") ? tests.Skip(v033TestsStart).Take(v042TestsStart - v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }
 Console.WriteLine($"Tests: {selectedTests.Count}; passed: {selectedTests.Count - failed}; failed: {failed}");

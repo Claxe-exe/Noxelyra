@@ -189,3 +189,9 @@
 - **Zip için .NET'in kendi `ZipArchive`'i.** Yeni bağımlılık yok. Klasör dışına yazan öğeler ve diske sığmayan arşivler reddedilir; yarım kalan çıkarma temizlenir. Parolalı zip desteklenmez ve hata mesajı verir.
 - **Saate tıklamak artık takvimi açar.** Kullanıcı isteği; kart Alt+0, sağ tık ve takvimdeki düğmeyle açılır.
 - **Pencere başlıkları `SendMessageTimeout` ile okunur.** `GetWindowText` başka sürecin penceresine mesaj gönderip yanıt bekler; yanıt vermeyen tek bir uygulama, Alt+Tab'i ana iş parçacığında dakikalarca kilitledi (`dotnet-stack` ile görüldü: `Switcher` → `Snapshot`). `SMTO_ABORTIFHUNG` ve 200 ms sınırı bunu önler.
+
+## 2026-11-02 · 0.44.0: React Bits kodu kullanılmadı
+
+- React Bits'in lisansı (MIT + Commons Clause) bileşenlerin tek başına, paketlenmiş ya da başka dile çevrilmiş halde yeniden dağıtılmasını yasaklar; Noxelyra'nın MIT'li açık deposu bununla bağdaşmaz. Ayrıca bileşenler React için yazılmıştır ve çalıştırmak her parçada WebView2 isterdi. Bu yüzden yalnız genel efekt fikirleri alındı; kod WPF ile sıfırdan yazıldı, kaynak koda bakılmadı.
+- WebGL ve sürekli hareket eden arka planlar eklenmedi: uygulama hafif kalmalı ve ekran kartı sıfırlanması konusu henüz açık.
+- Bar katmanlı bir pencere olduğundan saniye rakamları barda kaymaz; her saniye bütün barın yeniden çizilmesi gerekirdi.
