@@ -237,7 +237,7 @@ QA (bu bilgisayarda): 99/99 birim testi; `Verify-V033.ps1` 11/11, `Verify-Noxely
 
 ## 0.26.1 · 2026-10-23 · İlk herkese açık sürüm
 
-- GitHub'da MIT lisansıyla yayımlandı. Test çıktıları (bu makinenin masaüstü, açık uygulamaları ve medya başlıklarını içeren `artifacts/`) depodan ve geçmişten çıkarıldı; commit kimliği GitHub noreply adresine taşındı.
+- GitHub'da MIT lisansıyla yayımlandı.
 - Sürüm paketi CI derlemesiyle üretilir: PDB'lerde yerel klasör yolu yerine `/_/` ve GitHub SourceLink bulunur.
 - SECURITY.md (gizli açık bildirme ve güvenlik modeli) ve vitrin README'si.
 
