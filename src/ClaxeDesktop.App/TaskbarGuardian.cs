@@ -26,6 +26,10 @@ internal static class TaskbarGuardian
                 try { TaskbarWindows.SetVisible(true); } catch (Exception ex) { log.Write("taskbar-guardian-show-failed", ex); }
                 try { await new ExternalWallpaperSession(new WindowsExternalWallpaperService(), Path.Combine(directory, "engine-recovery.json")).RestoreAsync(expectedOwner: owner); log.Write("engine-guardian-finished"); }
                 catch (Exception ex) { log.Write("engine-guardian-restore-pending", ex); }
+                // Noxelyra stopped while it had paused Wallpaper Engine.
+                var paused = Path.Combine(directory, "engine-paused.flag");
+                try { if (File.Exists(paused)) { await WallpaperEngineService.SendAsync(File.ReadAllText(paused).Trim(), "play"); File.Delete(paused); log.Write("engine-guardian-resumed"); } }
+                catch (Exception ex) when (ex is InvalidOperationException or IOException or InvalidDataException or UnauthorizedAccessException or OperationCanceledException or System.ComponentModel.Win32Exception) { log.Write("engine-guardian-resume-failed", ex); }
             }
             if(File.Exists(ready))File.Delete(ready);
         }

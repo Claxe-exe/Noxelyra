@@ -19,6 +19,10 @@ public sealed record DesktopSpaceOptions
     public List<DesktopIconPosition> Icons { get; init; } = [];
     public string IconSort { get; init; } = "name";
     public int IconSize { get; init; } = 44;
+    /// <summary>The desktop draws no background of its own, so the Windows wallpaper or Wallpaper Engine shows behind the icons. Off by default.</summary>
+    public bool SeeThrough { get; init; }
+    /// <summary>While see-through: pause Wallpaper Engine when a game or maximized app covers it, and resume on the desktop.</summary>
+    public bool EngineAutoPause { get; init; } = true;
     public void Validate()
     {
         if (IconSort is not ("name" or "type" or "date" or "size") || IconSize is not (36 or 44 or 64)) throw new InvalidDataException("Simge görünümü geçersiz.");

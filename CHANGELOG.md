@@ -1,5 +1,12 @@
 # Değişiklikler
 
+## 0.45.0 · 2026-11-05 · Saydam masaüstü ve Wallpaper Engine
+
+- **Saydam masaüstü:** Noxelyra masaüstü kendi arka planını çizmeden açılabilir; arkasında Wallpaper Engine ya da Windows duvar kâğıdı görünür. Video, sahne ve web arka planlarının hepsi çalışır, çünkü onları Wallpaper Engine oynatır. Dosya kopyalanmaz. Varsayılan kapalı; masaüstü → Görünüm ya da Kontrol merkezi → Wallpaper Engine.
+- **Wallpaper Engine'i aç:** Noxelyra onu Steam kütüphanelerinde kendisi bulur.
+- **Otomatik duraklatma:** oyun veya büyütülmüş pencere açıkken Noxelyra, Wallpaper Engine'in resmi komutuyla duraklatır, masaüstüne dönünce sürdürür; böylece oyunda boşa FPS gitmez. Bunun için Wallpaper Engine'in Oynatma ayarlarında "ekranı kapladığında" ve "tam ekranken" seçeneklerini "Çalıştırmaya devam et" yap, çünkü Noxelyra'nın tam ekran masaüstünü de kaplayan uygulama sanabilir. Noxelyra kapanırken ya da çökerse yeniden oynatılır. Kontrol merkezinden kapatılabilir.
+- **Sınırlar:** Windows simgeleri de görünürse Windows masaüstünde sağ tık → Görünüm → "Masaüstü simgelerini göster" seçeneğini kapatman gerekir; Noxelyra bu ayarı değiştirmez, açıksa nasıl kapatılacağını yazar. Bu ayarı kapalı bırakırsan Noxelyra kapalıyken Windows masaüstünde de simge görünmez. Fareye tepki veren arka planlar Noxelyra masaüstünde tepki vermeyebilir.
+
 ## 0.44.0 · 2026-11-02 · Küçük hareketler
 
 - **Kayan saat:** bardaki saatin dakika ve saat rakamları değişirken yukarı kayar. Saniyeler barda kaymaz, çünkü bar her saniye baştan çizilirdi. Ada kartındaki büyük saatte saniyeler de kayar.

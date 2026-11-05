@@ -381,7 +381,26 @@ Test("Dock hover grows and lifts the icon under the pointer most", () => {
     var near = DockHover.At(1, 1.16); Check(near.Scale < scale && near.Scale > 1 && near.Lift < lift && near.Lift > 0);
     var far = DockHover.At(5, 1.16); Check(far.Scale < 1.001 && far.Lift < .01); Check(DockHover.At(0, 1).Scale > 1, "works with magnification off"); Check(DockHover.At(0, 2).Scale == DockHover.MaximumScale);
 });
-var selectedTests = args.Contains("--v044") ? tests.Skip(v044TestsStart).ToList() : args.Contains("--v043") ? tests.Skip(v043TestsStart).Take(v044TestsStart - v043TestsStart).ToList() : args.Contains("--v042") ? tests.Skip(v042TestsStart).Take(v043TestsStart - v042TestsStart).ToList() : args.Contains("--v033") ? tests.Skip(v033TestsStart).Take(v042TestsStart - v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
+var v045TestsStart = tests.Count;
+Test("See-through desktop is off by default and finds Steam libraries", () => {
+    Check(!new DesktopSpaceOptions().SeeThrough); new DesktopSpaceOptions { SeeThrough = true }.Validate();
+    var vdf = "\"libraryfolders\" { \"0\" { \"path\" \"C:\\\\Program Files (x86)\\\\Steam\" } \"1\" { \"path\"   \"D:\\\\Oyunlar\" } \"2\" { \"path\" \"goreli\\\\yol\" } }";
+    var found = SteamLibraries.Parse(vdf); Check(found.Count == 2, "count " + found.Count); Check(found[0] == @"C:\Program Files (x86)\Steam"); Check(found[1] == @"D:\Oyunlar"); Check(SteamLibraries.Parse("").Count == 0); Check(SteamLibraries.Parse(null!).Count == 0);
+});
+Test("Engine pause waits for a stable change and retries failures later", () => {
+    Check(new DesktopSpaceOptions().EngineAutoPause); var at = new DateTime(2026, 11, 5, 12, 0, 0); var gate = new EnginePauseGate();
+    Check(gate.Update(true, at) is null, "not at once"); Check(gate.Update(false, at.AddSeconds(1)) is null, "a quick Alt+Tab sends nothing"); Check(gate.Update(true, at.AddSeconds(2)) is null); Check(gate.Update(true, at.AddSeconds(3)) is null);
+    Check(gate.Update(true, at.AddSeconds(4)) == "pause" && gate.Paused); Check(gate.Update(true, at.AddSeconds(9)) is null, "sends once");
+    Check(gate.Update(false, at.AddSeconds(10)) is null); Check(gate.Update(false, at.AddSeconds(12)) == "play" && !gate.Paused);
+    Check(gate.Update(true, at.AddSeconds(20)) is null); Check(gate.Update(true, at.AddSeconds(22)) == "pause"); gate.Failed(at.AddSeconds(22)); Check(!gate.Paused, "failure undoes the state");
+    Check(gate.Update(true, at.AddSeconds(30)) is null, "waits before retrying"); Check(gate.Update(true, at.AddSeconds(38)) is null); Check(gate.Update(true, at.AddSeconds(40)) == "pause");
+    var resumed = new EnginePauseGate(paused: true); Check(resumed.Paused); Check(resumed.Update(false, at) is null); Check(resumed.Update(false, at.AddSeconds(2)) == "play", "a flag left by a crash resumes the wallpaper");
+});
+Test("Shell state is only read", () => {
+    var before = DesktopShellState.WindowsIconsHidden(); Check(DesktopShellState.WindowsIconsHidden() == before); _ = DesktopShellState.WallpaperEngineRunning();
+    if (DesktopShellState.FindWallpaperEngine() is { } engine) { Check(File.Exists(engine)); new DesktopSpaceOptions { EnginePath = engine }.Validate(); }
+});
+var selectedTests = args.Contains("--v045") ? tests.Skip(v045TestsStart).ToList() : args.Contains("--v044") ? tests.Skip(v044TestsStart).Take(v045TestsStart - v044TestsStart).ToList() : args.Contains("--v043") ? tests.Skip(v043TestsStart).Take(v044TestsStart - v043TestsStart).ToList() : args.Contains("--v042") ? tests.Skip(v042TestsStart).Take(v043TestsStart - v042TestsStart).ToList() : args.Contains("--v033") ? tests.Skip(v033TestsStart).Take(v042TestsStart - v033TestsStart).ToList() : args.Contains("--widgets") ? tests.Skip(widgetTestsStart).Take(desktopTestsStart - widgetTestsStart).ToList() : args.Contains("--desktop") ? tests.Skip(desktopTestsStart).ToList() : tests;
 var failed = 0;
 foreach (var test in selectedTests) { try { await test.Run(); Console.WriteLine("PASS " + test.Name); } catch (Exception ex) { failed++; Console.WriteLine("FAIL " + test.Name + ": " + ex.Message); } }
 Console.WriteLine($"Tests: {selectedTests.Count}; passed: {selectedTests.Count - failed}; failed: {failed}");

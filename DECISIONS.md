@@ -195,3 +195,10 @@
 - React Bits'in lisansı (MIT + Commons Clause) bileşenlerin tek başına, paketlenmiş ya da başka dile çevrilmiş halde yeniden dağıtılmasını yasaklar; Noxelyra'nın MIT'li açık deposu bununla bağdaşmaz. Ayrıca bileşenler React için yazılmıştır ve çalıştırmak her parçada WebView2 isterdi. Bu yüzden yalnız genel efekt fikirleri alındı; kod WPF ile sıfırdan yazıldı, kaynak koda bakılmadı.
 - WebGL ve sürekli hareket eden arka planlar eklenmedi: uygulama hafif kalmalı ve ekran kartı sıfırlanması konusu henüz açık.
 - Bar katmanlı bir pencere olduğundan saniye rakamları barda kaymaz; her saniye bütün barın yeniden çizilmesi gerekirdi.
+
+## 2026-11-05 · 0.45.0: saydam masaüstü
+
+- **Wallpaper Engine dosyaları çekilmez.** Sahne ve web arka planlarını yalnız Wallpaper Engine oynatabilir. Noxelyra penceresi saydam olunca Wallpaper Engine'in kendi çizimi görünür; WorkerW'ye dokunulmaz ve dosya kopyalanmaz.
+- **Windows simgeleri Noxelyra tarafından gizlenmez.** `SHGetSetSettings` ayarı değiştiriyor ama Windows 11'de simgeleri hemen gizlemiyor (bu sürümde, `ShellState` yayınıyla da denendi). Çalışan yollar belgelenmemiş Explorer komutu veya Explorer'ın penceresini değiştirmek olurdu; ikisi de proje kurallarına aykırı. Ayar yalnız okunur ve kullanıcıya nasıl kapatılacağı söylenir.
+- Tamamen saydam pikseller tıklamayı Windows masaüstüne geçirir; bu yüzden alfa 1 olan siyah kullanılır.
+- **Duraklatmayı Noxelyra yönetir.** Wallpaper Engine, Noxelyra'nın tam ekran saydam penceresini kaplayan uygulamadan ayıramaz. Noxelyra masaüstü ile oyunu ayırabildiği için belgelenmiş `-control pause/play` komutlarını gönderir. Kimin duraklattığı `engine-paused.flag` dosyasında tutulur; temiz kapanış, koruyucu süreç ve sonraki açılış bu sayede yeniden oynatır.

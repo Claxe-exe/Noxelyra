@@ -34,7 +34,8 @@ internal sealed partial class DesktopSpaceWindow : Window
     private readonly TextBlock emergencyHint = new() { FontSize = 11, Opacity = .75, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(Gutter, 0, 0, 12), IsHitTestVisible = false };
     private double headerInset = 92;
     private Task refreshPending = Task.CompletedTask;
-    private bool closed, mediaReady, playing, manualPause;
+    private bool closed, mediaReady, playing, manualPause, rebuilding;
+    private readonly bool seeThrough;
     private string? loadedVideo, loadedImage = "";
     internal bool MediaReady => mediaReady;
     internal bool Playing => playing;
@@ -44,7 +45,9 @@ internal sealed partial class DesktopSpaceWindow : Window
     {
         this.controller = controller;
         Title = "Noxelyra · Masaüstü alanı"; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; ShowInTaskbar = true; ShowActivated = false;
-        Background = Brushes.Black;
+        seeThrough = controller.ViewModel.Settings.DesktopSpace.SeeThrough;
+        // Fully clear pixels would send clicks to the Windows desktop underneath, so see-through uses the faintest visible black.
+        if (seeThrough) { AllowsTransparency = true; Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)); } else Background = Brushes.Black;
         var root = new Grid(); Content = root;
         root.Children.Add(background); root.Children.Add(video);
         // Soft top/bottom scrim keeps labels and the header readable on bright user wallpapers.
@@ -88,7 +91,7 @@ internal sealed partial class DesktopSpaceWindow : Window
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { status.Text = "Otomatik dosya yenileme açılamadı; F5 kullanabilirsin."; }
         }
-        Closing += (_, e) => { if (!controller.IsExiting) { e.Cancel = true; controller.DismissDesktopSpace(); return; } foreach (var watcher in watchers) watcher.Dispose(); refreshDelay.Stop(); saveLayout.Stop(); reflow.Stop(); video.Close(); shellIcons.Dispose(); closed = true; };
+        Closing += (_, e) => { if (!controller.IsExiting && !rebuilding) { e.Cancel = true; controller.DismissDesktopSpace(); return; } foreach (var watcher in watchers) watcher.Dispose(); refreshDelay.Stop(); saveLayout.Stop(); reflow.Stop(); video.Close(); shellIcons.Dispose(); closed = true; };
         // Clicking the desktop activates this window; keep the bar, dock and widgets above it like a real desktop.
         Activated += (_, _) => KeepPartsOnTop();
         PreviewMouseDown += (_, _) => KeepPartsOnTop();
@@ -141,8 +144,12 @@ internal sealed partial class DesktopSpaceWindow : Window
     {
         var options = controller.ViewModel.Settings.DesktopSpace; var menu = new ContextMenu();
         AddFileCommands(menu);
-        Item(menu, "Arka plan resmi seç…", PickImage);
-        Item(menu, "Yerel video seç…", PickVideo);
+        Item(menu, "Arka plan resmi seç…", PickImage, !seeThrough);
+        Item(menu, "Yerel video seç…", PickVideo, !seeThrough);
+        var through = new MenuItem { Header = "Saydam arka plan (Wallpaper Engine)", IsChecked = seeThrough };
+        through.Click += (_, _) => _ = controller.SetDesktopSeeThroughAsync(!seeThrough);
+        menu.Items.Add(through);
+        if (seeThrough) Item(menu, "Wallpaper Engine'i aç", () => _ = OpenEngineAsync(), !DesktopShellState.WallpaperEngineRunning());
         Item(menu, manualPause ? "Videoyu sürdür" : "Videoyu duraklat", () => { manualPause = !manualPause; UpdateActivity(false); }, mediaReady);
         Item(menu, "Özgün gece görünümüne dön", async () => { await controller.SetDesktopVideoAsync(null); await controller.SetDesktopImageAsync(null); LoadOptions(); status.Text = controller.ViewModel.Status; }, options.VideoPath is not null || options.ImagePath is not null);
         Item(menu, "Özgün Nox maskotunu aç", async () => { await controller.UseOriginalMascotAsync(); status.Text = controller.ViewModel.Status; });
@@ -178,14 +185,25 @@ internal sealed partial class DesktopSpaceWindow : Window
         ShowInTaskbar = !options.FollowDesktop; WindowOps.HideFromAltTab(new WindowInteropHelper(this).EnsureHandle(), options.FollowDesktop);
         if (!saveLayout.IsEnabled) { positions.Clear(); foreach (var position in options.Icons) positions[position.Path] = position; }
         LoadBackground(options.ImagePath);
+        if (seeThrough) { video.Visibility = Visibility.Hidden; ExplainSeeThrough(); return; }
         if (loadedVideo is not null && loadedVideo == options.VideoPath) return;
         mediaReady = playing = false; manualPause = false; video.Close(); loadedVideo = options.VideoPath;
         if (loadedVideo is null) { video.Visibility = Visibility.Hidden; if (string.IsNullOrEmpty(status.Text) || status.Text.StartsWith("Yerel video")) status.Text = Hint; return; }
         try { controller.ValidateDesktopVideo(loadedVideo); video.Visibility = Visibility.Visible; video.Source = new Uri(loadedVideo); video.Play(); video.Pause(); status.Text = "Yerel video açılıyor…"; }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { status.Text = ex.Message; video.Visibility = Visibility.Hidden; }
     }
+    private async Task OpenEngineAsync() { status.Text = await controller.StartWallpaperEngineAsync(); }
+    internal void CloseForRebuild() { rebuilding = true; Close(); }
+    // Windows' own icons sit under a see-through desktop and would show twice. Their setting belongs to the user, so this says how to change it.
+    private void ExplainSeeThrough()
+    {
+        if (!DesktopShellState.WindowsIconsHidden()) status.Text = "Simgeler çift görünüyorsa: Esc ile Windows masaüstüne dön, sağ tık → Görünüm → \"Masaüstü simgelerini göster\" seçeneğini kapat.";
+        else if (!DesktopShellState.WallpaperEngineRunning()) status.Text = "Saydam arka plan açık. Wallpaper Engine kapalı; arkada Windows duvar kâğıdı görünür. Görünüm menüsünden açabilirsin.";
+        else status.Text = Hint;
+    }
     private void LoadBackground(string? path)
     {
+        if (seeThrough) { background.Source = null; loadedImage = ""; return; }
         if (path == loadedImage) return;
         loadedImage = path;
         if (path is null) { background.Source = OriginalArt.Wallpaper(); return; }

@@ -258,6 +258,7 @@ public sealed partial class DesktopController
         if (exiting) return; exiting = true;
         // The power-off sequence covers the screen while everything below is saved and closed.
         var outro = safe || emergencyExit ? Task.CompletedTask : IntroWindow.PlayOutroAsync(committed);
+        await ResumeEngineOnExitAsync();
         if (desktopSpace is not null) { committed = committed with { DesktopSpace = committed.DesktopSpace with { Icons = desktopSpace.IconPositions } }; ViewModel.SetAdvanced(committed); }
         timer.Stop(); saveTimer.Stop(); lifetime.Cancel(); await SaveCommittedAsync();
         SystemEvents.DisplaySettingsChanged -= DisplayChanged; SystemEvents.SessionSwitch -= SessionChanged; SystemEvents.PowerModeChanged -= PowerChanged;

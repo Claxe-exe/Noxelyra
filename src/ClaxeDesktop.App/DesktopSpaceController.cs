@@ -175,6 +175,7 @@ public sealed partial class DesktopController
     private static extern bool RaiseDesktopPart(nint hwnd, nint after, int x, int y, int width, int height, uint flags);
     private void DesktopSpaceActivity()
     {
+        UpdateEnginePause();
         if (desktopSpace is null) return;
         var monitor = ViewModel.Monitors.FirstOrDefault(m => m.Id == committed.DesktopSpace.MonitorId) ?? ViewModel.Monitors.First(m => m.Primary);
         desktopSpace.UpdateActivity(locked || suspended || safe || windowService.IsFullscreenOn(monitor));
@@ -315,6 +316,68 @@ public sealed partial class DesktopController
             return "WE varsayılan ekranındaki video doğrulandı. Çıkışta önceki dosya geri yüklenir; harici değişiklik korunur.";
         }
         catch (Exception ex) { Log.Write("engine-video-apply-failed", ex); return "WE video uygulanamadı: " + ex.Message; }
+    }
+    /// <summary>A window cannot change between opaque and see-through once it exists, so the desktop is built again.</summary>
+    internal async Task<bool> SetDesktopSeeThroughAsync(bool on)
+    {
+        if (!await PersistDesktopSpaceAsync(options => options with { SeeThrough = on })) return false;
+        Log.Write(on ? "desktop-see-through-on" : "desktop-see-through-off");
+        if (desktopSpace is not { } old) return true;
+        var visible = old.IsVisible; old.CloseForRebuild(); desktopSpace = null;
+        if (visible) OpenDesktopSpace(activate: true);
+        return true;
+    }
+    internal Task<bool> SetEngineAutoPauseAsync(bool on) => PersistDesktopSpaceAsync(options => options with { EngineAutoPause = on });
+    // ---- Wallpaper Engine pause and play ----
+    // Noxelyra's own full-screen desktop looks like a covering app to Wallpaper Engine, so its own "pause when covered" rules would freeze the wallpaper
+    // on the desktop. Noxelyra knows the difference and uses the official pause/play commands: a game or maximized app pauses it, the desktop resumes it.
+    private EnginePauseGate? engineGate;
+    private bool engineSending;
+    private string EnginePausedFlag => Path.Combine(desktopData, "engine-paused.flag");
+    private bool EngineCovered()
+    {
+        if (ViewModel.Monitors.Any(windowService.IsFullscreenOn)) return true;
+        var foreground = windowService.Foreground;
+        return foreground != 0 && WindowOps.ProcessId(foreground) != Environment.ProcessId && WindowOps.Read(foreground) is { Maximized: true, Minimized: false };
+    }
+    private void UpdateEnginePause()
+    {
+        if (safe || exiting || engineSending) return;
+        engineGate ??= new(File.Exists(EnginePausedFlag));
+        var options = committed.DesktopSpace;
+        var wanted = options.SeeThrough && options.EngineAutoPause && (locked || suspended || EngineCovered());
+        if (engineGate.Update(wanted, DateTime.UtcNow) is { } command) _ = SendEngineCommandAsync(command);
+    }
+    private async Task SendEngineCommandAsync(string command)
+    {
+        engineSending = true;
+        try
+        {
+            var path = committed.DesktopSpace.EnginePath ?? await Task.Run(DesktopShellState.FindWallpaperEngine) ?? throw new InvalidOperationException("Wallpaper Engine bulunamadı.");
+            // The flag goes first: if Noxelyra dies now, the guardian or the next start knows to resume the wallpaper.
+            if (command == "pause") await File.WriteAllTextAsync(EnginePausedFlag, path);
+            await WallpaperEngineService.SendAsync(path, command);
+            if (command == "play") File.Delete(EnginePausedFlag);
+            Log.Write("engine-" + command);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or InvalidDataException or UnauthorizedAccessException or OperationCanceledException or System.ComponentModel.Win32Exception)
+        {
+            // Wallpaper Engine is usually just closed, and then nothing is paused.
+            if (!DesktopShellState.WallpaperEngineRunning()) { try { File.Delete(EnginePausedFlag); } catch (IOException) { } }
+            else Log.Write("engine-" + command + "-failed", ex);
+            engineGate?.Failed(DateTime.UtcNow);
+        }
+        finally { engineSending = false; }
+    }
+    private async Task ResumeEngineOnExitAsync() { if (engineGate?.Paused == true) await SendEngineCommandAsync("play"); }
+    /// <summary>Starts the installed Wallpaper Engine; the wallpaper itself is chosen in its own window.</summary>
+    internal async Task<string> StartWallpaperEngineAsync()
+    {
+        var path = committed.DesktopSpace.EnginePath ?? await Task.Run(DesktopShellState.FindWallpaperEngine);
+        if (path is null) return "Wallpaper Engine bulunamadı. Kontrol merkezinden elle seçebilirsin.";
+        if (committed.DesktopSpace.EnginePath is null) await SetWallpaperEnginePathAsync(path);
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(path)! }); return "Wallpaper Engine açılıyor. Arka planı kendi penceresinden seç."; }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { Log.Write("engine-start-failed", ex); return "Wallpaper Engine açılamadı: " + ex.Message; }
     }
     internal Task<bool> SetWallpaperEnginePathAsync(string path) => PersistDesktopSpaceAsync(options => options with { EnginePath = path });
     internal async Task<string> SendWallpaperEngineAsync(string command)

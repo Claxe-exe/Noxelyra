@@ -126,7 +126,16 @@ internal sealed class ControlCenterWindow : Window
         var engine=Section(root,"Wallpaper Engine · isteğe bağlı");
         engine.Children.Add(new TextBlock{Text="Kurulu Wallpaper Engine'in resmi komutlarını kullanır. Önce Wallpaper Engine'i kendin aç. Otomatik pause/play veya önceki oynatma durumunu geri getirme iddiası yoktur; aşağıdaki komutlar açık seçiminle tüm WE arka planlarına gider.",TextWrapping=TextWrapping.Wrap,Opacity=.75});
         var engineStatus=new TextBlock{Text=controller.ViewModel.Settings.DesktopSpace.EnginePath??"Wallpaper Engine seçilmedi.",TextWrapping=TextWrapping.Wrap};engine.Children.Add(engineStatus);
+        var seeThrough=new CheckBox{Content="Saydam masaüstü: Wallpaper Engine veya Windows duvar kâğıdı simgelerin arkasında görünsün",IsChecked=controller.ViewModel.Settings.DesktopSpace.SeeThrough,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};
+        seeThrough.Click+=async(_,_)=>{await controller.SetDesktopSeeThroughAsync(seeThrough.IsChecked==true);seeThrough.IsChecked=controller.ViewModel.Settings.DesktopSpace.SeeThrough;};
+        engine.Children.Add(seeThrough);
+        var autoPause=new CheckBox{Content="Oyun veya büyütülmüş pencere açıkken Wallpaper Engine'i duraklat, masaüstünde sürdür",IsChecked=controller.ViewModel.Settings.DesktopSpace.EngineAutoPause,IsEnabled=!controller.IsSafeMode&&!controller.ReadOnly};
+        autoPause.Click+=async(_,_)=>{await controller.SetEngineAutoPauseAsync(autoPause.IsChecked==true);autoPause.IsChecked=controller.ViewModel.Settings.DesktopSpace.EngineAutoPause;};
+        engine.Children.Add(autoPause);
+        engine.Children.Add(new TextBlock{Text="Bu açıkken Wallpaper Engine'in Oynatma ayarlarında \"ekranı kapladığında\" ve \"tam ekranken\" seçeneklerini \"Çalıştırmaya devam et\" yap; yoksa Noxelyra masaüstünü de kaplayan uygulama sanıp duraklatabilir.",TextWrapping=TextWrapping.Wrap,Margin=new(0,4,0,8),FontSize=12});
+        engine.Children.Add(new TextBlock{Text="Bütün Wallpaper Engine türleri çalışır, çünkü onu Wallpaper Engine'in kendisi oynatır. Windows simgeleri de görünürse Windows masaüstünde sağ tık → Görünüm → \"Masaüstü simgelerini göster\" seçeneğini kapat. Fareye tepki veren arka planlar Noxelyra masaüstünde tepki vermeyebilir.",TextWrapping=TextWrapping.Wrap,Margin=new(0,4,0,8),FontSize=12});
         var engineActions=new WrapPanel();engine.Children.Add(engineActions);
+        Button(engineActions,"Wallpaper Engine'i aç",async()=>engineStatus.Text=await controller.StartWallpaperEngineAsync());
         Button(engineActions,"Wallpaper Engine uygulamasını seç",async()=>{var picker=new OpenFileDialog{Filter="Wallpaper Engine|wallpaper32.exe;wallpaper64.exe",CheckFileExists=true};if(picker.ShowDialog(this)==true){await controller.SetWallpaperEnginePathAsync(picker.FileName);engineStatus.Text=controller.ViewModel.Settings.DesktopSpace.EnginePath??controller.ViewModel.Status;}});
         Button(engineActions,"Seçili videoyu WE ile Windows'a uygula",async()=>engineStatus.Text=await controller.ApplyExternalVideoAsync());
         Button(engineActions,"Önceki WE arka planını geri getir",async()=>engineStatus.Text=await controller.RestoreExternalWallpaperAsync());

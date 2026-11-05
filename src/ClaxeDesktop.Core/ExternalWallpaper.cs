@@ -1,6 +1,34 @@
 using System.Text.Json;
 namespace ClaxeDesktop.Core;
 
+/// <summary>Library folders from Steam's libraryfolders.vdf; anything unreadable is simply skipped.</summary>
+public static class SteamLibraries
+{
+    public static IReadOnlyList<string> Parse(string vdf) => System.Text.RegularExpressions.Regex.Matches(vdf ?? "", "\"path\"\\s+\"([^\"]+)\"")
+        .Select(m => m.Groups[1].Value.Replace(@"\\", @"\")).Where(Path.IsPathFullyQualified).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+}
+/// <summary>
+/// Decides when to tell Wallpaper Engine to pause or play. A change must hold for a moment first, so a quick Alt+Tab does not start commands,
+/// and a command that failed is retried only after a while.
+/// </summary>
+public sealed class EnginePauseGate(bool paused = false)
+{
+    public static readonly TimeSpan Settle = TimeSpan.FromSeconds(1.5), RetryAfter = TimeSpan.FromSeconds(15);
+    private DateTime? since; private DateTime retryAt;
+    public bool Paused { get; private set; } = paused;
+    /// <summary>"pause" or "play" when that command should go out now, otherwise null.</summary>
+    public string? Update(bool wanted, DateTime now)
+    {
+        if (wanted == Paused) { since = null; return null; }
+        if (now < retryAt) return null;
+        since ??= now;
+        if (now - since < Settle) return null;
+        since = null; Paused = wanted;
+        return wanted ? "pause" : "play";
+    }
+    /// <summary>The last command did not reach Wallpaper Engine (it may be closed): back to the old state, try later.</summary>
+    public void Failed(DateTime now) { Paused = !Paused; retryAt = now + RetryAfter; }
+}
 public interface IExternalWallpaperService
 {
     Task<string> ReadAsync(string executable, CancellationToken token = default);

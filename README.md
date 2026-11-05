@@ -4,7 +4,7 @@
 <p align="center"><b>Windows 11 için Linux rice ruhunda, yumuşak ve kişiselleştirilebilir bir masaüstü katmanı.</b><br>
 <sub>A soft, Linux-rice-style desktop layer for Windows 11 — bar, dock, widgets, its own desktop and a lighten center, without replacing Explorer.</sub></p>
 
-<p align="center">v0.44 · .NET 10 WPF · MIT</p>
+<p align="center">v0.45 · .NET 10 WPF · MIT</p>
 
 > [!TIP]
 > ### 📥 Nasıl kurulur? (30 saniye)
@@ -28,7 +28,7 @@
 | **Başlatıcı** | Uygulama, açık pencere, dosya ve Windows komutları tek aramada; hatalı yazımı tolere eder, çok kullandıklarını öne alır. Hesap makinesi, `:emoji`, isteğe bağlı pano geçmişi. |
 | **Klavye** | Win tuşu başlatıcıyı açar, canlı önizlemeli kendi Alt+Tab, Hyprland "dwindle" otomatik döşeme, kısayol düzenleyici. Acil çıkış: **Ctrl+Shift+Ü**. (İlk üçü varsayılan kapalı.) |
 | **Dock** | Sürükleyerek sıralama ve sabitleme, canlı pencere önizlemesi, geri dönüşüm kutusu, klasör yığınları, sayfalar (1-2-3, tekerlek), macOS benzeri dalga büyütme, çalışan uygulama göstergesi. |
-| **Kendi masaüstü** | Gerçek masaüstü dosyaların: yeni klasör, yeniden adlandır, sil, kes/kopyala/yapıştır, zip, Ctrl+Z, Boşlukla önizleme, çoklu seçim, sıralama. Widget ve dock'un etrafından dizilen simgeler, kendi arka plan resmin veya videon. **Win+D / Win+M** Noxelyra masaüstünü gösterir. |
+| **Kendi masaüstü** | Gerçek masaüstü dosyaların: yeni klasör, yeniden adlandır, sil, kes/kopyala/yapıştır, zip, Ctrl+Z, Boşlukla önizleme, çoklu seçim, sıralama. Widget ve dock'un etrafından dizilen simgeler, kendi arka plan resmin veya videon; isteğe bağlı saydam modla Wallpaper Engine arkada oynar. **Win+D / Win+M** Noxelyra masaüstünü gösterir. |
 | **Temalar** | Önizlemeli tema galerisi: 8 hazır set, 11 tema (Midnight, Tempest, Sakura, Catppuccin Mocha, Tokyo Night, Nord, Rosé Pine, Dracula, Gruvbox, Everforest, Kanagawa) ve kendi paletin. Windows'u koyu moda ve palet rengine eşleyebilir. |
 | **Açılış / kapanış** | TV açılışı gibi ışık çizgisi, zıplayan noktalar ve hilal; ya da kendi 10 saniyelik MP4/GIF klibin, kararma ve TV geçişiyle. |
 | **Hafifletme** | Gerçek RAM kullanımı, açılışta başlayan programlar, Windows ekstraları; isteğe bağlı (UAC'li) telemetri / SysMain / arama servisleri. Hepsi geri alınabilir. |
@@ -72,6 +72,7 @@ Proje yapısı: `ClaxeDesktop.Core` (modeller, ayarlar, kurallar), `ClaxeDesktop
 - Windows sanal masaüstleri için kararlı bir API olmadığından barda çalışma alanı modülü yok.
 - "Panel için çalışma alanı ayır" modunda barın 48 px aşağı kayması için koruma eklendi; hatanın görüldüğü sistemde henüz doğrulanmadı.
 - Eşleşmiş bir Bluetooth cihazını bağlamak için Windows ayarları açılır; belgelenmiş bir API yok. Ses çıkışı değiştirme belgelenmemiş bir Windows arayüzü kullanır, reddedilirse Windows ses ayarları açılır.
+- Saydam masaüstünde Windows simgeleri de görünür; Windows'un "Masaüstü simgelerini göster" ayarını kapatman gerekir. Noxelyra bu ayarı değiştirmez.
 - Dinamik ada ve bildirim merkezi yalnız Noxelyra'nın kendi bildirimlerini gösterir; başka uygulamaların Windows bildirimleri paketlenmemiş bir uygulamadan okunamaz.
 - Döşeme belgelenmiş pencere API'leriyle çalışır; bazı uygulamalar (yönetici olarak çalışanlar, kendi pencere çerçevesini çizenler) konumlandırmayı reddedebilir ve serbest kalır.
 - Temiz VM, karma DPI ve fiziksel uyku testleri henüz tamamlanmadı.
