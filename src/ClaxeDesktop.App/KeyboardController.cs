@@ -96,6 +96,13 @@ public sealed partial class DesktopController
     }
     /// <summary>Immediate exit without the power-off animation; Windows state is still restored.</summary>
     internal void EmergencyExit() { emergencyExit = true; Exit(); }
+    /// <summary>A Windows shutdown is no crash: without this the session marker stayed and every next start was a safe-mode start.</summary>
+    internal void EndSession()
+    {
+        if (exiting) return;
+        try { recovery.Complete(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Write("recovery-cleanup-failed", ex); }
+        Log.Write("session-end");
+    }
     private void StopKeyboard() { keyboardHook?.Dispose(); keyboardHook = null; emergency?.Dispose(); emergency = null; tiling?.Dispose(); tiling = null; switcher?.Close(); keyboardWindow?.Close(); }
     private KeyboardWindow? keyboardWindow;
     public void ShowKeyboard()

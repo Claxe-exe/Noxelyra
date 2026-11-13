@@ -1,5 +1,10 @@
 # Değişiklikler
 
+## 0.45.1 · 2026-11-13 · Kapatınca güvenli mod düzeltmesi
+
+- Bilgisayarı kapatmak ya da oturumu kapatmak Noxelyra'ya çökme gibi görünüyordu; bir sonraki açılış güvenli modda (açılış animasyonu yok, düzen ana ekranda, ayarlar kilitli) başlıyordu. Artık Windows kapanırken oturum temiz kapanmış sayılır ve Noxelyra normal açılır. Gerçek bir çökmeden sonra güvenli mod yine devreye girer.
+- Kapanışta yarım kalan koruyucu süreç işaret dosyaları açılışta temizlenir.
+
 ## 0.45.0 · 2026-11-05 · Saydam masaüstü ve Wallpaper Engine
 
 - **Saydam masaüstü:** Noxelyra masaüstü kendi arka planını çizmeden açılabilir; arkasında Wallpaper Engine ya da Windows duvar kâğıdı görünür. Video, sahne ve web arka planlarının hepsi çalışır, çünkü onları Wallpaper Engine oynatır. Dosya kopyalanmaz. Varsayılan kapalı; masaüstü → Görünüm ya da Kontrol merkezi → Wallpaper Engine.

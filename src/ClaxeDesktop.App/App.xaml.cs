@@ -24,6 +24,10 @@ public partial class App : Application
         if (!first) { if(!await DesktopCommands.SendAsync(e.Args.Contains("--launcher")?"launcher":e.Args.Contains("--dock")?"dock":"controls"))MessageBox.Show("Noxelyra zaten açık. Bildirim alanındaki simgeden kontrol merkezini açabilirsin."); Shutdown(); return; }
         var directory = Environment.GetEnvironmentVariable("CLAXE_DATA_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ClaxeDesktop");
         var log = new LocalLog(Path.Combine(directory, "logs"));
+        // Windows is shutting down or signing out and WPF closes the app right after this event.
+        SessionEnding += (_, _) => controller?.EndSession();
+        // A guardian that Windows ended at shutdown leaves its marker behind; no guardian of this run exists yet.
+        try { if (Directory.Exists(directory)) foreach (var stale in Directory.EnumerateFiles(directory, "taskbar-guardian-*.ready")) File.Delete(stale); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         DispatcherUnhandledException += (_, args) => { log.Write("unhandled-ui-error", args.Exception); /* Fail closed; dirty marker remains for next start. */ };
         try
         {
